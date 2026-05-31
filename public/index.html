@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="id" data-theme-mode="light" data-theme="navy">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alex Phone Banjarnegara — Gadget Terbaik, Harga Terjangkau</title>
+  <meta name="description" content="Toko HP terpercaya di Banjarnegara. Jual beli HP baru & bekas berkualitas, servis kilat, aksesoris lengkap. Harga murah pelayanan ramah.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ─── RESET ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; font: inherit; border: none; background: none; }
+    ul, ol { list-style: none; }
+
+    /* ─── TOKENS ─────────────────────────────────────────── */
+    :root {
+      --bg:         #FFFFFF;
+      --bg-soft:    #F4F6FB;
+      --bg-elev:    #FFFFFF;
+      --ink:        #0A2540;
+      --ink-soft:   #3D5374;
+      --ink-mute:   #7A8AA8;
+      --line:       #E4E9F2;
+      --brand:      #0A2540;
+      --accent:     #2563EB;
+      --accent-ink: #FFFFFF;
+      --success:    #10806B;
+      --warn:       #C2410C;
+
+      --font-ui:   "Helvetica Neue", Helvetica, system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+      --space-1:  4px;
+      --space-2:  8px;
+      --space-3:  12px;
+      --space-4:  16px;
+      --space-5:  24px;
+      --space-6:  32px;
+      --space-7:  48px;
+      --space-8:  64px;
+      --space-9:  96px;
+      --space-10: 140px;
+
+      --section-gap: clamp(72px, 10vw, 140px);
+      --gutter:      clamp(20px, 4vw, 56px);
+      --max-w:       1280px;
+
+      --radius-sm:   10px;
+      --radius-card: 16px;
+      --radius-prod: 20px;
+      --radius-pill: 999px;
+
+      --nav-h:    60px;
+      --strip-h:  36px;
+    }
+
+    /* ── Dark mode ── */
+    [data-theme-mode="dark"] {
+      --bg:         #0A1428;
+      --bg-soft:    #0F1B33;
+      --bg-elev:    #162547;
+      --ink:        #F4F6FB;
+      --ink-soft:   #A8B6D1;
+      --ink-mute:   #6E7EA0;
+      --line:       #1E2D4E;
+      --brand:      #FFFFFF;
+      --accent:     #5B8DEF;
+      --accent-ink: #0A1428;
+      --success:    #3DCFAE;
+      --warn:       #F6A56B;
+    }
+
+    /* ── Theme palettes ── */
+    [data-theme="indigo"]    { --accent: #4F46E5; }
+    [data-theme="slate"]     { --accent: #334155; }
+    [data-theme="warm"]      { --accent: #C2410C; }
+    [data-theme-mode="dark"][data-theme="indigo"] { --accent: #818CF8; }
+    [data-theme-mode="dark"][data-theme="slate"]  { --accent: #94A3B8; }
+    [data-theme-mode="dark"][data-theme="warm"]   { --accent: #F97316; }
+
+    /* ─── BASE ───────────────────────────────────────────── */
+    body {
+      font-family: var(--font-ui);
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--ink);
+      background: var(--bg);
+      transition: background 0.3s ease, color 0.3s ease;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── UTILITY ─────────────────────────────────────────── */
+    .container {
+      width: 100%;
+      max-width: var(--max-w);
+      margin-inline: auto;
+      padding-inline: var(--gutter);
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      font-family: var(--font-mono);
+    }
+
+    .mono { font-family: var(--font-mono); }
+
+    /* ─── BUTTONS ─────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 14px 24px;
+      border-radius: var(--radius-pill);
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1;
+      transition: background 180ms ease, color 180ms ease, border-color 180ms ease, transform 220ms ease, box-shadow 220ms ease;
+      min-height: 44px;
+      white-space: nowrap;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-ink);
+    }
+    .btn-primary:hover {
+      filter: brightness(0.92);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--ink);
+    }
+    .btn-secondary:hover {
+      background: var(--ink);
+      color: var(--bg);
+    }
+
+    .btn-wa {
+      background: var(--success);
+      color: #fff;
+    }
+    .btn-wa:hover {
+      filter: brightness(0.9);
+      transform: translateY(-1px);
+    }
+
+    .btn-shopee {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    .btn-shopee:hover {
+      border-color: var(--ink);
+      background: var(--bg-soft);
+    }
+
+    /* ─── SCROLL REVEAL ───────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 400ms ease-out, transform 400ms ease-out;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+      * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+    }
+
+    /* ─── TOP STRIP ───────────────────────────────────────── */
+    .top-strip {
+      background: var(--bg-soft);
+      border-bottom: 1px solid var(--line);
+      height: var(--strip-h);
+      display: flex;
+      align-items: center;
+      transition: background 0.3s ease;
+    }
+
+    .top-strip .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+    }
+
+    .top-strip__hours {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink-soft);
+    }
+
+    .pip {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      flex-shrink: 0;
+    }
+
+    .top-strip__wa {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+    .top-strip__wa:hover { text-decoration: underline; }
+
+    /* ─── NAV ─────────────────────────────────────────────── */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      background: oklch(99% 0.003 250 / 0.85);
+      backdrop-filter: blur(16px) saturate(1.5);
+      -webkit-backdrop-filter: blur(16px) saturate(1.5);
+      border-bottom: 1px solid var(--line);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    [data-theme-mode="dark"] .nav {
+      background: rgb(10 20 40 / 0.85);
+    }
+
+    .nav .container {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+    }
+
+    .nav__logo {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--brand);
+      letter-spacing: -0.01em;
+      flex-shrink: 0;
+    }
+
+    .nav__links {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+      margin-inline: auto;
+    }
+
+    .nav__links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-soft);
+      transition: color 150ms ease;
+    }
+    .nav__links a:hover { color: var(--ink); }
+    .nav__links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+    .nav__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-shrink: 0;
+    }
+
+    .nav__toggle {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-soft);
+      transition: background 150ms ease, color 150ms ease;
+    }
+    .nav__toggle:hover { background: var(--bg-soft); color: var(--ink); }
+    .nav__toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+    .nav__cta { font-size: 13px; padding: 10px 18px; }
+
+    .nav__hamburger { display: none; }
+
+    /* ─── HERO ────────────────────────────────────────────── */
+    .hero {
+      padding-block: clamp(72px, 10vw, 120px) clamp(72px, 10vw, 120px);
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .hero .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: clamp(40px, 6vw, 80px);
+    }
+
+    .hero__label {
+      margin-bottom: var(--space-5);
+    }
+
+    .hero__headline {
+      font-size: clamp(40px, 6vw, 80px);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      color: var(--ink);
+      text-wrap: balance;
+      margin-bottom: var(--space-5);
+    }
+
+    .hero__headline em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .hero__sub {
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--ink-soft);
+      max-width: 44ch;
+      text-wrap: pretty;
+      margin-bottom: var(--space-7);
+    }
+
+    .hero__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .hero__visual {
+      display: flex;
+      justify-content: center;
+    }
+
+    .hero__img-wrap {
+      width: min(360px, 100%);
+      aspect-ratio: 4/5;
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ─── TRUST STRIP ─────────────────────────────────────── */
+    .trust {
+      background: var(--bg-soft);
+      border-block: 1px solid var(--line);
+      padding-block: var(--space-6);
+      transition: background 0.3s ease;
+    }
+
+    .trust .container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0;
+    }
+
+    .trust__item {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-soft);
+      letter-spacing: 0.06em;
+      padding-inline: var(--space-6);
+      position: relative;
+    }
+
+    .trust__item + .trust__item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1px;
+      height: 16px;
+      background: var(--line);
+    }
+
+    /* ─── SERVICES ────────────────────────────────────────── */
+    .services {
+      padding-block: var(--section-gap);
+      background: var(--bg);
+    }
+
+    .services__header {
+      margin-bottom: var(--space-9);
+    }
+
+    .services__title {
+      font-size: clamp(32px, 4.5vw, 56px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-top: var(--space-3);
+      text-wrap: balance;
+    }
+
+    .services__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-5);
+    }
+
+    .service-card {
+      background: var(--bg-elev);
+      border-radius: var(--radius-card);
+      padding: var(--space-7);
+      border: 1px solid transparent;
+      position: relative;
+      overflow: hidden;
+      transition: transform 220ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .service-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--line);
+      background: var(--bg-soft);
+    }
+
+    .service-card__num {
+      font-size: 96px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--ink-soft);
+      opacity: 0.12;
+      font-family: var(--font-mono);
+      position: absolute;
+      top: -8px;
+      right: 24px;
+      user-select: none;
+    }
+
+    .service-card__title {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: var(--space-3);
+      color: var(--ink);
+      position: relative;
+    }
+
+    .service-card__desc {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink-soft);
+      position: relative;
+      text-wrap: pretty;
+    }
+
+    /* ─── PROMO STRIP ─────────────────────────────────────── */
+    .promo {
+      background: var(--brand);
+      padding-block: clamp(48px, 7vw, 96px);
+      transition: background 0.3s ease;
+    }
+
+    .promo .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-7);
+      flex-wrap: wrap;
+    }
+
+    .promo__eyebrow {
+      color: oklch(99% 0.003 250 / 0.5);
+      margin-bottom: var(--space-3);
+    }
+
+    .promo__text {
+      font-size: clamp(24px, 4vw, 44px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: #fff;
+      max-width: 22ch;
+      text-wrap: balance;
+    }
+
+    .promo__text em {
+      font-style: normal;
+      color: var(--warn);
+    }
+
+    [data-theme-mode="dark"] .promo__text em { color: var(--warn); }
+
+    /* ─── CATALOG ─────────────────────────────────────────── */
+    .catalog {
+      padding-block: var(--section-gap);
+      background: var(--bg-soft);
+    }
+
+    .catalog__header {
+      margin-bottom: var(--space-9);
+    }
+
+    .catalog__title {
+      font-size: clamp(32px, 4.5vw, 56px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-top: var(--space-3);
+      text-wrap: balance;
+    }
+
+    .catalog__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-5);
+    }
+
+    .product-card {
+      background: var(--bg-elev);
+      border-radius: var(--radius-prod);
+      overflow: hidden;
+      border: 1px solid transparent;
+      transition: transform 220ms ease, border-color 180ms ease, box-shadow 220ms ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .product-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--line);
+      box-shadow: 0 4px 24px rgb(10 37 64 / 0.06);
+    }
+
+    [data-theme-mode="dark"] .product-card:hover {
+      box-shadow: 0 4px 24px rgb(0 0 0 / 0.3);
+    }
+
+    .product-card__img {
+      aspect-ratio: 4/5;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-soft);
+    }
+
+    .product-card__badge {
+      position: absolute;
+      top: var(--space-3);
+      right: var(--space-3);
+      background: var(--bg-elev);
+      color: var(--success);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--line);
+    }
+
+    .product-card__body {
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .product-card__brand {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: var(--space-2);
+    }
+
+    .product-card__name {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.25;
+      color: var(--ink);
+      margin-bottom: var(--space-2);
+    }
+
+    .product-card__spec {
+      font-size: 13px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+      margin-bottom: var(--space-4);
+    }
+
+    .product-card__divider {
+      height: 1px;
+      background: var(--line);
+      margin-bottom: var(--space-4);
+    }
+
+    .product-card__price-label {
+      font-size: 12px;
+      color: var(--ink-mute);
+      margin-bottom: var(--space-1);
+    }
+
+    .product-card__price {
+      font-family: var(--font-mono);
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    /* ─── TESTIMONIALS ────────────────────────────────────── */
+    .testimonials {
+      padding-block: var(--section-gap);
+      background: var(--bg);
+    }
+
+    .testimonials__header {
+      margin-bottom: var(--space-9);
+    }
+
+    .testimonials__title {
+      font-size: clamp(32px, 4.5vw, 56px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-top: var(--space-3);
+      text-wrap: balance;
+    }
+
+    .testimonials__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-7);
+    }
+
+    .testimonial {
+      padding: var(--space-8) var(--space-7);
+      background: var(--bg-soft);
+      border-radius: var(--radius-card);
+      border-left: 3px solid var(--accent);
+    }
+
+    .testimonial__quote {
+      font-size: clamp(22px, 3vw, 36px);
+      font-weight: 500;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      max-width: 18ch;
+      text-wrap: pretty;
+      margin-bottom: var(--space-5);
+    }
+
+    .testimonial__attr {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-mute);
+    }
+
+    /* ─── CTA BLOCK ───────────────────────────────────────── */
+    .cta-block {
+      padding-block: var(--section-gap);
+      background: var(--bg-soft);
+      text-align: center;
+    }
+
+    .cta-block__eyebrow { margin-bottom: var(--space-4); }
+
+    .cta-block__title {
+      font-size: clamp(28px, 4vw, 52px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: var(--space-5);
+      text-wrap: balance;
+    }
+
+    .cta-block__sub {
+      font-size: 17px;
+      color: var(--ink-soft);
+      max-width: 44ch;
+      margin-inline: auto;
+      margin-bottom: var(--space-7);
+      text-wrap: pretty;
+    }
+
+    .cta-block__actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    /* ─── FOOTER ──────────────────────────────────────────── */
+    .footer {
+      background: var(--brand);
+      padding-block: clamp(48px, 7vw, 80px) 0;
+      color: oklch(99% 0.003 250 / 0.7);
+      transition: background 0.3s ease;
+    }
+
+    .footer__cols {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: clamp(32px, 5vw, 80px);
+      padding-bottom: clamp(40px, 5vw, 64px);
+    }
+
+    .footer__logo {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -0.01em;
+      margin-bottom: var(--space-4);
+      display: block;
+    }
+
+    .footer__blurb {
+      font-size: 14px;
+      line-height: 1.65;
+      max-width: 32ch;
+      text-wrap: pretty;
+    }
+
+    .footer__col-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: oklch(99% 0.003 250 / 0.4);
+      margin-bottom: var(--space-4);
+    }
+
+    .footer__hours {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: oklch(99% 0.003 250 / 0.8);
+      line-height: 1.8;
+    }
+
+    .footer__addr {
+      font-size: 14px;
+      line-height: 1.65;
+      color: oklch(99% 0.003 250 / 0.8);
+    }
+
+    .footer__bar {
+      border-top: 1px solid oklch(99% 0.003 250 / 0.1);
+      padding-block: var(--space-5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .footer__copy {
+      font-size: 13px;
+      font-family: var(--font-mono);
+    }
+
+    .footer__socials {
+      display: flex;
+      align-items: center;
+      gap: var(--space-5);
+    }
+
+    .footer__socials a {
+      font-size: 13px;
+      font-family: var(--font-mono);
+      color: oklch(99% 0.003 250 / 0.5);
+      transition: color 150ms ease;
+    }
+    .footer__socials a:hover { color: #fff; }
+
+    /* ─── SVG PLACEHOLDER ─────────────────────────────────── */
+    .img-placeholder {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ─── TWEAKS PANEL ────────────────────────────────────── */
+    .tweaks {
+      position: fixed;
+      bottom: var(--space-5);
+      right: var(--space-5);
+      z-index: 200;
+    }
+
+    .tweaks__btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-mute);
+      box-shadow: 0 2px 8px rgb(10 37 64 / 0.08);
+      transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+      margin-left: auto;
+    }
+    .tweaks__btn:hover { background: var(--bg-soft); color: var(--ink); transform: rotate(30deg); }
+    .tweaks__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+    .tweaks__panel {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: var(--space-4);
+      width: 200px;
+      margin-bottom: var(--space-2);
+      box-shadow: 0 4px 24px rgb(10 37 64 / 0.08);
+      display: none;
+    }
+
+    .tweaks__panel.open { display: block; }
+
+    .tweaks__label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: var(--space-2);
+      margin-top: var(--space-3);
+    }
+
+    .tweaks__label:first-child { margin-top: 0; }
+
+    .tweaks__opts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1);
+    }
+
+    .tweaks__opt {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--line);
+      color: var(--ink-soft);
+      background: var(--bg);
+      cursor: pointer;
+      transition: all 120ms ease;
+      font-family: var(--font-mono);
+    }
+    .tweaks__opt:hover { border-color: var(--accent); color: var(--accent); }
+    .tweaks__opt.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .tweaks__opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+    /* ─── MOBILE ──────────────────────────────────────────── */
+    @media (max-width: 1024px) {
+      .catalog__grid { grid-template-columns: repeat(2, 1fr); }
+      .services__grid { grid-template-columns: 1fr; gap: var(--space-4); }
+    }
+
+    @media (max-width: 768px) {
+      .nav__links { display: none; }
+      .nav__hamburger { display: flex; }
+      .nav__cta { display: none; }
+
+      .hero .container {
+        grid-template-columns: 1fr;
+      }
+      .hero__visual { display: none; }
+      .hero__sub { max-width: none; }
+
+      .testimonials__grid { grid-template-columns: 1fr; }
+      .footer__cols { grid-template-columns: 1fr; }
+
+      .promo .container {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .top-strip__wa { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .catalog__grid { grid-template-columns: 1fr; }
+      .trust .container { gap: var(--space-4); flex-direction: column; }
+      .trust__item + .trust__item::before { display: none; }
+    }
+
+    /* ─── MOBILE NAV ─────────────────────────────────────── */
+    .mobile-menu {
+      position: fixed;
+      inset: 0;
+      z-index: 99;
+      background: var(--bg);
+      padding: var(--space-8) var(--gutter);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+      transform: translateX(100%);
+      transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mobile-menu.open { transform: none; }
+    .mobile-menu a {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+    .mobile-menu__close {
+      position: absolute;
+      top: var(--space-5);
+      right: var(--space-5);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-mute);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── TOP STRIP ─────────────────────────────────────────── -->
+  <div class="top-strip" role="complementary" aria-label="Informasi toko">
+    <div class="container">
+      <div class="top-strip__hours">
+        <span class="pip" aria-hidden="true"></span>
+        <span class="mono">Buka Setiap Hari 08.00 – 20.00 WIB</span>
+      </div>
+      <a href="https://wa.me/6289674886141?text=Halo%20Alex%20Phone%2C%20saya%20ingin%20bertanya." class="top-strip__wa" target="_blank" rel="noopener">
+        WhatsApp ↗
+      </a>
+    </div>
+  </div>
+
+  <!-- ── NAVIGATION ─────────────────────────────────────────── -->
+  <header>
+    <nav class="nav" aria-label="Navigasi utama">
+      <div class="container">
+        <a href="#" class="nav__logo" aria-label="Alex Phone Banjarnegara — Beranda">Alex Phone</a>
+
+        <ul class="nav__links" role="list">
+          <li><a href="#layanan">Layanan</a></li>
+          <li><a href="#produk">Produk</a></li>
+          <li><a href="#testimoni">Testimoni</a></li>
+          <li><a href="#kontak">Kontak</a></li>
+        </ul>
+
+        <div class="nav__actions">
+          <button class="nav__toggle" id="themeToggle" aria-label="Ganti tema gelap/terang">
+            <svg id="sunIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+            </svg>
+            <svg id="moonIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+          <a href="https://wa.me/6289674886141?text=Halo%20Alex%20Phone%2C%20saya%20ingin%20bertanya." class="btn btn-primary nav__cta" target="_blank" rel="noopener">
+            Chat WhatsApp
+          </a>
+          <button class="nav__toggle nav__hamburger" id="menuOpen" aria-label="Buka menu" aria-expanded="false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Menu navigasi">
+      <button class="mobile-menu__close nav__toggle" id="menuClose" aria-label="Tutup menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <a href="#layanan" class="mobile-menu__link">Layanan</a>
+      <a href="#produk" class="mobile-menu__link">Produk</a>
+      <a href="#testimoni" class="mobile-menu__link">Testimoni</a>
+      <a href="#kontak" class="mobile-menu__link">Kontak</a>
+      <a href="https://wa.me/6289674886141?text=Halo%20Alex%20Phone%2C%20saya%20ingin%20bertanya." class="btn btn-wa" target="_blank" rel="noopener" style="margin-top:auto">Chat WhatsApp</a>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── HERO ────────────────────────────────────────────── -->
+    <section class="hero" aria-labelledby="heroHeadline">
+      <div class="container">
+        <div class="hero__content">
+          <p class="eyebrow hero__label reveal">Banjarnegara, Jawa Tengah</p>
+          <h1 class="hero__headline reveal" id="heroHeadline" style="transition-delay:60ms">
+            Gadget Terbaik,<br><em>Harga Terjangkau</em>
+          </h1>
+          <p class="hero__sub reveal" style="transition-delay:120ms">
+            Toko HP terpercaya di Banjarnegara — baru, bekas berkualitas, servis kilat.
+          </p>
+          <div class="hero__actions reveal" style="transition-delay:180ms">
+            <a href="#produk" class="btn btn-primary">Lihat Produk</a>
+            <a href="https://wa.me/6289674886141?text=Halo%20Alex%20Phone%2C%20saya%20ingin%20bertanya." class="btn btn-secondary" target="_blank" rel="noopener">Chat Sekarang</a>
+          </div>
+        </div>
+        <div class="hero__visual reveal" aria-hidden="true" style="transition-delay:120ms">
+          <div class="hero__img-wrap">
+            <svg class="img-placeholder" viewBox="0 0 360 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="360" height="450" fill="var(--bg-soft)"/>
+              <defs>
+                <pattern id="heroStripe" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <rect width="12" height="24" fill="var(--line)"/>
+                </pattern>
+              </defs>
+              <rect width="360" height="450" fill="url(#heroStripe)" opacity="0.6"/>
+              <rect x="100" y="80" width="160" height="290" rx="20" fill="var(--bg-elev)" stroke="var(--line)" stroke-width="1.5"/>
+              <rect x="115" y="100" width="130" height="200" rx="8" fill="var(--bg-soft)"/>
+              <circle cx="180" cy="340" r="10" fill="var(--line)"/>
+              <text x="180" y="400" font-family="JetBrains Mono, monospace" font-size="11" fill="var(--ink-mute)" text-anchor="middle">iphone-15-pro.png</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TRUST STRIP ─────────────────────────────────────── -->
+    <div class="trust reveal" role="list" aria-label="Merek yang tersedia">
+      <div class="container">
+        <span class="trust__item" role="listitem">Apple</span>
+        <span class="trust__item" role="listitem">Samsung</span>
+        <span class="trust__item" role="listitem">Xiaomi</span>
+        <span class="trust__item" role="listitem">Oppo</span>
+        <span class="trust__item" role="listitem">Vivo</span>
+        <span class="trust__item" role="listitem">Realme</span>
+      </div>
+    </div>
+
+    <!-- ── SERVICES ────────────────────────────────────────── -->
+    <section class="services" id="layanan" aria-labelledby="servicesTitle">
+      <div class="container">
+        <div class="services__header">
+          <p class="eyebrow reveal">Layanan Kami</p>
+          <h2 class="services__title reveal" id="servicesTitle" style="transition-delay:60ms">
+            Satu konter,<br>semua kebutuhan
+          </h2>
+        </div>
+        <div class="services__grid">
+          <div class="service-card reveal">
+            <span class="service-card__num" aria-hidden="true">01</span>
+            <h3 class="service-card__title">HP Baru &amp; Bekas</h3>
+            <p class="service-card__desc">Pilihan lengkap HP baru bergaransi resmi dan HP second berkualitas dengan harga terbaik. Kondisi terawat, sudah dicek menyeluruh.</p>
+          </div>
+          <div class="service-card reveal" style="transition-delay:60ms">
+            <span class="service-card__num" aria-hidden="true">02</span>
+            <h3 class="service-card__title">Servis Kilat</h3>
+            <p class="service-card__desc">Layar pecah, baterai drop, tombol rusak — kami perbaiki cepat dengan spare part berkualitas. Garansi servis 30 hari.</p>
+          </div>
+          <div class="service-card reveal" style="transition-delay:120ms">
+            <span class="service-card__num" aria-hidden="true">03</span>
+            <h3 class="service-card__title">Aksesoris Lengkap</h3>
+            <p class="service-card__desc">Case, charger, earphone, kabel, pelindung layar — semua merek dan semua tipe tersedia. Harga bersaing, kualitas terjamin.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PROMO STRIP ─────────────────────────────────────── -->
+    <div class="promo" aria-label="Penawaran spesial">
+      <div class="container">
+        <div>
+          <p class="eyebrow promo__eyebrow reveal">Penawaran Spesial</p>
+          <p class="promo__text reveal" style="transition-delay:60ms">
+            Tukar Tambah HP Lama?<br>Kami Kasih <em>Harga Terbaik!</em>
+          </p>
+        </div>
+        <a href="https://wa.me/6289674886141?text=Halo%20Alex%20Phone%2C%20saya%20tertarik%20tukar%20tambah%20HP%20lama." class="btn btn-wa reveal" target="_blank" rel="noopener" style="transition-delay:120ms;flex-shrink:0">
+          Tanya Harga Sekarang
+        </a>
+      </div>
+    </div>
+
+    <!-- ── CATALOG ─────────────────────────────────────────── -->
+    <section class="catalog" id="produk" aria-labelledby="catalogTitle">
+      <div class="container">
+        <div class="catalog__header">
+          <p class="eyebrow reveal">Katalog Produk</p>
+          <h2 class="catalog__title reveal" id="catalogTitle" style="transition-delay:60ms">
+            Paling Banyak<br>Dicari
+          </h2>
+        </div>
+        <div class="catalog__grid">
+
+          <!-- iPhone 15 Pro -->
+          <article class="product-card reveal">
+            <div class="product-card__img">
+              <svg class="img-placeholder" viewBox="0 0 280 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="280" height="350" fill="var(--bg-soft)"/>
+                <defs>
+                  <pattern id="stripe1" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <rect width="10" height="20" fill="var(--line)"/>
+                  </pattern>
+                </defs>
+                <rect width="280" height="350" fill="url(#stripe1)" opacity="0.5"/>
+                <rect x="70" y="50" width="140" height="250" rx="18" fill="var(--bg-elev)" stroke="var(--line)" stroke-width="1"/>
+                <rect x="82" y="65" width="116" height="180" rx="8" fill="var(--bg-soft)"/>
+                <circle cx="140" cy="270" r="8" fill="var(--line)"/>
+                <text x="140" y="318" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-mute)" text-anchor="middle">iphone-15-pro.png</text>
+              </svg>
+              <span class="product-card__badge">★ Tersedia</span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__brand">Apple</p>
+              <h3 class="product-card__name">iPhone 15 Pro</h3>
+              <dl>
+                <div>
+                  <dt class="sr-only">Spesifikasi</dt>
+                  <dd class="product-card__spec">256GB · Garansi Resmi iBox</dd>
+                </div>
+              </dl>
+              <div class="product-card__divider"></div>
+              <p class="product-card__price-label">Mulai dari</p>
+              <p class="product-card__price">Rp 14.999.000</p>
+            </div>
+          </article>
+
+          <!-- Samsung Galaxy S24 -->
+          <article class="product-card reveal" style="transition-delay:60ms">
+            <div class="product-card__img">
+              <svg class="img-placeholder" viewBox="0 0 280 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="280" height="350" fill="var(--bg-soft)"/>
+                <defs>
+                  <pattern id="stripe2" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <rect width="10" height="20" fill="var(--line)"/>
+                  </pattern>
+                </defs>
+                <rect width="280" height="350" fill="url(#stripe2)" opacity="0.5"/>
+                <rect x="70" y="50" width="140" height="250" rx="18" fill="var(--bg-elev)" stroke="var(--line)" stroke-width="1"/>
+                <rect x="82" y="65" width="116" height="180" rx="8" fill="var(--bg-soft)"/>
+                <circle cx="140" cy="270" r="8" fill="var(--line)"/>
+                <text x="140" y="318" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-mute)" text-anchor="middle">samsung-s24.png</text>
+              </svg>
+              <span class="product-card__badge">★ Tersedia</span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__brand">Samsung</p>
+              <h3 class="product-card__name">Galaxy S24</h3>
+              <dl>
+                <div>
+                  <dt class="sr-only">Spesifikasi</dt>
+                  <dd class="product-card__spec">256GB · Garansi Resmi Samsung</dd>
+                </div>
+              </dl>
+              <div class="product-card__divider"></div>
+              <p class="product-card__price-label">Mulai dari</p>
+              <p class="product-card__price">Rp 10.499.000</p>
+            </div>
+          </article>
+
+          <!-- Xiaomi 14 -->
+          <article class="product-card reveal" style="transition-delay:120ms">
+            <div class="product-card__img">
+              <svg class="img-placeholder" viewBox="0 0 280 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="280" height="350" fill="var(--bg-soft)"/>
+                <defs>
+                  <pattern id="stripe3" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <rect width="10" height="20" fill="var(--line)"/>
+                  </pattern>
+                </defs>
+                <rect width="280" height="350" fill="url(#stripe3)" opacity="0.5"/>
+                <rect x="70" y="50" width="140" height="250" rx="18" fill="var(--bg-elev)" stroke="var(--line)" stroke-width="1"/>
+                <rect x="82" y="65" width="116" height="180" rx="8" fill="var(--bg-soft)"/>
+                <circle cx="140" cy="270" r="8" fill="var(--line)"/>
+                <text x="140" y="318" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-mute)" text-anchor="middle">xiaomi-14.png</text>
+              </svg>
+              <span class="product-card__badge">★ Tersedia</span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__brand">Xiaomi</p>
+              <h3 class="product-card__name">Xiaomi 14</h3>
+              <dl>
+                <div>
+                  <dt class="sr-only">Spesifikasi</dt>
+                  <dd class="product-card__spec">512GB · Garansi Resmi Xiaomi</dd>
+                </div>
+              </dl>
+              <div class="product-card__divider"></div>
+              <p class="product-card__price-label">Mulai dari</p>
+              <p class="product-card__price">Rp 6.999.000</p>
+            </div>
+          </article>
+
+          <!-- Oppo Reno 11 -->
+          <article class="product-card reveal" style="transition-delay:180ms">
+            <div class="product-card__img">
+              <svg class="img-placeholder" viewBox="0 0 280 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="280" height="350" fill="var(--bg-soft)"/>
+                <defs>
+                  <pattern id="stripe4" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <rect width="10" height="20" fill="var(--line)"/>
+                  </pattern>
+                </defs>
+                <rect width="280" height="350" fill="url(#stripe4)" opacity="0.5"/>
+                <rect x="70" y="50" width="140" height="250" rx="18" fill="var(--bg-elev)" stroke="var(--line)" stroke-width="1"/>
+                <rect x="82" y="65" width="116" height="180" rx="8" fill="var(--bg-soft)"/>
+                <circle cx="140" cy="270" r="8" fill="var(--line)"/>
+                <text x="140" y="318" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-mute)" text-anchor="middle">oppo-reno11.png</text>
+              </svg>
+              <span class="product-card__badge">★ Tersedia</span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__brand">Oppo</p>
+              <h3 class="product-card__name">Reno 11</h3>
+              <dl>
+                <div>
+                  <dt class="sr-only">Spesifikasi</dt>
+                  <dd class="product-card__spec">256GB · Garansi Resmi Oppo</dd>
+                </div>
+              </dl>
+              <div class="product-card__divider"></div>
+              <p class="product-card__price-label">Mulai dari</p>
+              <p class="product-card__price">Rp 3.999.000</p>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TESTIMONIALS ────────────────────────────────────── -->
+    <section class="testimonials" id="testimoni" aria-labelledby="testimonialTitle">
+      <div class="container">
+        <div class="testimonials__header">
+          <p class="eyebrow reveal">Kata Pelanggan</p>
+          <h2 class="testimonials__title reveal" id="testimonialTitle" style="transition-delay:60ms">
+            Dipercaya<br>ribuan pembeli
+          </h2>
+        </div>
+        <div class="testimonials__grid">
+          <blockquote class="testimonial reveal">
+            <p class="testimonial__quote">
+              "Beli HP second di sini, kondisinya seperti baru. Pelayanan ramah dan jujur."
+            </p>
+            <footer>
+              <cite class="testimonial__attr">— Budi, Banjarnegara</cite>
+            </footer>
+          </blockquote>
+          <blockquote class="testimonial reveal" style="transition-delay:60ms">
+            <p class="testimonial__quote">
+              "Servis layar pecah selesai dalam 2 jam. Murah dan hasilnya bagus!"
+            </p>
+            <footer>
+              <cite class="testimonial__attr">— Rina, Purbalingga</cite>
+            </footer>
+          </blockquote>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA BLOCK ───────────────────────────────────────── -->
+    <section class="cta-block" id="kontak" aria-labelledby="ctaTitle">
+      <div class="container">
+        <p class="eyebrow cta-block__eyebrow reveal">Hubungi Kami</p>
+        <h2 class="cta-block__title reveal" id="ctaTitle" style="transition-delay:60ms">
+          Mampir ke Konter<br>atau Chat Dulu
+        </h2>
+        <p class="cta-block__sub reveal" style="transition-delay:120ms">
+          Kami siap membantu kamu menemukan gadget yang tepat sesuai kebutuhan dan anggaran.
+        </p>
+        <div class="cta-block__actions reveal" style="transition-delay:180ms">
+          <a href="https://wa.me/6289674886141?text=Halo%20Alex%20Phone%2C%20saya%20mau%20tanya%20tentang%20produk." class="btn btn-wa" target="_blank" rel="noopener">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.122.553 4.107 1.523 5.83L.057 23.926a.5.5 0 0 0 .617.617l6.103-1.466A11.953 11.953 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.693-.5-5.24-1.377l-.377-.218-3.902.938.938-3.897-.23-.388A9.963 9.963 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+            </svg>
+            WhatsApp
+          </a>
+          <a href="https://shopee.co.id" class="btn btn-shopee" target="_blank" rel="noopener">
+            Lihat di Shopee
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ──────────────────────────────────────────────── -->
+  <footer class="footer" id="footer">
+    <div class="container">
+      <div class="footer__cols">
+        <div>
+          <span class="footer__logo">Alex Phone</span>
+          <p class="footer__blurb">
+            Toko gadget terpercaya di Banjarnegara sejak 2015. Menyediakan HP baru dan bekas berkualitas, layanan servis profesional, dan aksesoris lengkap dengan harga yang bersaing.
+          </p>
+        </div>
+        <div>
+          <p class="footer__col-title">Jam Operasional</p>
+          <div class="footer__hours">
+            <p>Senin – Jumat</p>
+            <p>08.00 – 20.00</p>
+            <br>
+            <p>Sabtu – Minggu</p>
+            <p>08.00 – 20.00</p>
+          </div>
+        </div>
+        <div>
+          <p class="footer__col-title">Lokasi</p>
+          <address class="footer__addr" style="font-style:normal">
+            Jl. Raya Banjarnegara<br>
+            Banjarnegara<br>
+            Jawa Tengah, 53415<br><br>
+            <a href="https://wa.me/6289674886141" style="color:var(--success)" target="_blank" rel="noopener">+62 896-7488-6141</a>
+          </address>
+        </div>
+      </div>
+      <div class="footer__bar">
+        <p class="footer__copy">© 2025 Alex Phone Banjarnegara. Harga Murah Pelayanan Ramah.</p>
+        <nav class="footer__socials" aria-label="Media sosial">
+          <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a>
+          <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
+          <a href="https://tiktok.com" target="_blank" rel="noopener">TikTok</a>
+          <a href="https://wa.me/6289674886141" target="_blank" rel="noopener">WhatsApp</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── TWEAKS PANEL ─────────────────────────────────────────── -->
+  <div class="tweaks" role="region" aria-label="Panel tampilan">
+    <div class="tweaks__panel" id="tweaksPanel" role="dialog" aria-label="Opsi tampilan">
+      <p class="tweaks__label">Mode</p>
+      <div class="tweaks__opts">
+        <button class="tweaks__opt active" data-mode="light">Terang</button>
+        <button class="tweaks__opt" data-mode="dark">Gelap</button>
+      </div>
+      <p class="tweaks__label">Warna</p>
+      <div class="tweaks__opts">
+        <button class="tweaks__opt active" data-palette="navy">Navy</button>
+        <button class="tweaks__opt" data-palette="indigo">Indigo</button>
+        <button class="tweaks__opt" data-palette="slate">Slate</button>
+        <button class="tweaks__opt" data-palette="warm">Warm</button>
+      </div>
+    </div>
+    <button class="tweaks__btn" id="tweaksToggle" aria-label="Buka opsi tampilan" aria-expanded="false" aria-controls="tweaksPanel">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ── SCRIPTS ──────────────────────────────────────────────── -->
+  <script>
+    // ── Theme persistence
+    (function () {
+      const mode    = localStorage.getItem('ap-mode')    || 'light';
+      const palette = localStorage.getItem('ap-palette') || 'navy';
+      document.documentElement.dataset.themeMode = mode;
+      document.documentElement.dataset.theme      = palette;
+    })();
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+      const html    = document.documentElement;
+      const sunIcon = document.getElementById('sunIcon');
+      const moonIcon = document.getElementById('moonIcon');
+
+      // ── Dark mode toggle (nav)
+      function syncThemeIcons () {
+        const dark = html.dataset.themeMode === 'dark';
+        sunIcon.style.display  = dark ? 'none' : '';
+        moonIcon.style.display = dark ? '' : 'none';
+      }
+
+      syncThemeIcons();
+
+      document.getElementById('themeToggle').addEventListener('click', function () {
+        const next = html.dataset.themeMode === 'dark' ? 'light' : 'dark';
+        html.dataset.themeMode = next;
+        localStorage.setItem('ap-mode', next);
+        syncThemeIcons();
+        syncTweakBtns();
+      });
+
+      // ── Tweaks panel
+      const tweaksPanel  = document.getElementById('tweaksPanel');
+      const tweaksToggle = document.getElementById('tweaksToggle');
+
+      tweaksToggle.addEventListener('click', function () {
+        const open = tweaksPanel.classList.toggle('open');
+        tweaksToggle.setAttribute('aria-expanded', open);
+      });
+
+      function syncTweakBtns () {
+        const mode    = html.dataset.themeMode;
+        const palette = html.dataset.theme;
+        document.querySelectorAll('[data-mode]').forEach(b => {
+          b.classList.toggle('active', b.dataset.mode === mode);
+        });
+        document.querySelectorAll('[data-palette]').forEach(b => {
+          b.classList.toggle('active', b.dataset.palette === palette);
+        });
+      }
+
+      syncTweakBtns();
+
+      document.querySelectorAll('[data-mode]').forEach(btn => {
+        btn.addEventListener('click', function () {
+          html.dataset.themeMode = this.dataset.mode;
+          localStorage.setItem('ap-mode', this.dataset.mode);
+          syncThemeIcons();
+          syncTweakBtns();
+        });
+      });
+
+      document.querySelectorAll('[data-palette]').forEach(btn => {
+        btn.addEventListener('click', function () {
+          html.dataset.theme = this.dataset.palette;
+          localStorage.setItem('ap-palette', this.dataset.palette);
+          syncTweakBtns();
+        });
+      });
+
+      // Close tweaks on outside click
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.tweaks')) {
+          tweaksPanel.classList.remove('open');
+          tweaksToggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      // ── Mobile menu
+      const mobileMenu = document.getElementById('mobileMenu');
+      const menuOpen   = document.getElementById('menuOpen');
+      const menuClose  = document.getElementById('menuClose');
+
+      menuOpen.addEventListener('click', function () {
+        mobileMenu.classList.add('open');
+        menuOpen.setAttribute('aria-expanded', 'true');
+        menuClose.focus();
+      });
+
+      menuClose.addEventListener('click', function () {
+        mobileMenu.classList.remove('open');
+        menuOpen.setAttribute('aria-expanded', 'false');
+        menuOpen.focus();
+      });
+
+      mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function () {
+          mobileMenu.classList.remove('open');
+          menuOpen.setAttribute('aria-expanded', 'false');
+        });
+      });
+
+      // ── Scroll reveal
+      const observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+      document.querySelectorAll('.reveal').forEach(function (el) {
+        observer.observe(el);
+      });
+
+    });
+  </script>
+
+</body>
+</html>
