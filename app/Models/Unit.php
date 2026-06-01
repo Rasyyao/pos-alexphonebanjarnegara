@@ -10,7 +10,7 @@ class Unit extends Model
 {
     protected $fillable = [
         'model_id', 'created_by', 'unit_type', 'grade', 'ram', 'rom', 'color',
-        'imei', 'serial_number', 'purchase_price', 'selling_price', 'photo_path', 'photo_path_2', 'photo_path_3',
+        'imei', 'serial_number', 'purchase_price', 'photo_path', 'photo_path_2', 'photo_path_3',
         'notes', 'status', 'purchase_date',
     ];
 
@@ -20,7 +20,6 @@ class Unit extends Model
             'status'         => UnitStatus::class,
             'unit_type'      => UnitType::class,
             'purchase_price' => 'decimal:2',
-            'selling_price'  => 'decimal:2',
             'purchase_date'  => 'date',
         ];
     }

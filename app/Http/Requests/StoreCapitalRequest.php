@@ -10,7 +10,7 @@ class StoreCapitalRequest extends FormRequest
         return [
             'description' => ['required','string','max:255'],
             'amount'      => ['required','numeric','min:1'],
-            'type'        => ['required','in:initial,addition,purchase'],
+            'type'        => ['required','in:initial,addition,purchase,withdrawal'],
             'entry_date'  => ['required','date'],
         ];
     }

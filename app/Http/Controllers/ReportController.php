@@ -99,7 +99,7 @@ class ReportController extends Controller
 
         $readyUnits  = $units->filter(fn($u) => $u->status->value === 'ready');
         $assetModal  = (float) $readyUnits->sum('purchase_price');
-        $assetJual   = (float) $readyUnits->sum(fn($u) => (float)($u->selling_price ?? 0));
+        $assetJual   = 0.0;
         $accModal    = (float) $accessories->sum(fn($a) => (float)$a->purchase_price * $a->stock_qty);
 
         $data = [
@@ -235,8 +235,8 @@ class ReportController extends Controller
         $brandDist   = $brandGroups->map(fn($g) => $g->count())->sortDesc();
 
         $assetModal  = (float) $readyUnits->sum(fn($u) => (float) $u->purchase_price);
-        $assetJual   = (float) $readyUnits->sum(fn($u) => (float) ($u->selling_price ?? 0));
-        $estLaba     = $assetJual - $assetModal;
+        $assetJual   = 0.0;
+        $estLaba     = 0.0;
         $avgModal    = $totalReady > 0 ? $assetModal / $totalReady : 0;
 
         $accCount = $accessories->count();
@@ -633,9 +633,9 @@ class ReportController extends Controller
             $no = 1;
             foreach ($brandUnits as $u) {
                 $modal  = (float) $u->purchase_price;
-                $jual   = (float) ($u->selling_price ?? 0);
-                $laba   = $jual - $modal;
-                $margin = $modal > 0 ? round(($laba / $modal) * 100, 1) : 0;
+                $jual   = 0.0;
+                $laba   = 0.0;
+                $margin = 0.0;
                 $days   = $u->purchase_date ? (int) now()->diffInDays($u->purchase_date) : 0;
                 $status = $u->status->value;
 

@@ -67,7 +67,6 @@
                         <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Tipe</th>
                         <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Spesifikasi</th>
                         <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Harga Beli</th>
-                        <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Harga Jual</th>
                         <th class="text-center px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Status</th>
                         <th class="w-40 px-5 py-3"></th>
                     </tr>
@@ -100,9 +99,6 @@
                         </td>
                         <td class="px-4 py-3.5 text-right font-semibold font-mono tabular-nums" style="color:var(--ink)">
                             Rp {{ number_format($unit->purchase_price, 0, ',', '.') }}
-                        </td>
-                        <td class="px-4 py-3.5 text-right font-semibold font-mono tabular-nums" style="color:{{ $unit->selling_price ? 'var(--success)' : 'var(--ink-mute)' }}">
-                            {{ $unit->selling_price ? 'Rp ' . number_format($unit->selling_price, 0, ',', '.') : '—' }}
                         </td>
                         <td class="px-4 py-3.5 text-center">
                             @if($unit->status->value === 'ready')
@@ -151,7 +147,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-5 py-14 text-center text-sm" style="color:var(--ink-mute)">
+                        <td colspan="6" class="px-5 py-14 text-center text-sm" style="color:var(--ink-mute)">
                             Tidak ada unit ditemukan.
                             <a href="{{ route('units.create') }}" style="color:var(--accent)" class="font-medium hover:underline ml-1">Tambah unit pertama</a>
                         </td>

@@ -27,13 +27,7 @@ class UnitController extends Controller
 
     public function store(StoreUnitRequest $request)
     {
-        $this->service->store(
-            $request->validated(), 
-            $request->user(), 
-            $request->file('photo'),
-            $request->file('photo_2'),
-            $request->file('photo_3')
-        );
+        $this->service->store($request->validated(), $request->user());
         return redirect()->route('units.index')->with('success', 'Unit berhasil ditambahkan.');
     }
 
@@ -51,13 +45,7 @@ class UnitController extends Controller
 
     public function update(UpdateUnitRequest $request, Unit $unit)
     {
-        $this->service->update(
-            $unit, 
-            $request->validated(), 
-            $request->file('photo'),
-            $request->file('photo_2'),
-            $request->file('photo_3')
-        );
+        $this->service->update($unit, $request->validated());
         return redirect()->route('units.index')->with('success', 'Unit berhasil diperbarui.');
     }
 

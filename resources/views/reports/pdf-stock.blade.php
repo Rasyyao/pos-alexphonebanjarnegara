@@ -122,8 +122,8 @@
       @forelse($units as $u)
         @php
           $modal = (float)$u->purchase_price;
-          $jual  = (float)($u->selling_price ?? 0);
-          $laba  = $jual - $modal;
+          $jual  = 0.0;
+          $laba  = 0.0;
           $totalModal += $modal;
           if ($jual > 0) { $totalJual += $jual; $totalLaba += $laba; }
           $status = $u->status->value;

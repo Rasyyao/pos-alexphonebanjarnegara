@@ -60,21 +60,14 @@
 
             {{-- Harga & Pembelian --}}
             <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
-                <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
+                <div class="px-5 py-3.5 flex items-center justify-between" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
                     <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Harga & Pembelian</span>
+                    <a href="{{ route('units.edit', $unit) }}" class="text-xs font-medium hover:underline" style="color:var(--accent)">Edit Modal</a>
                 </div>
                 <div class="divide-y">
                     <div class="flex items-center px-5 py-3" style="border-color:var(--line)">
                         <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Harga Beli</span>
                         <span class="text-sm font-semibold font-mono tabular-nums" style="color:var(--ink)">Rp {{ number_format($unit->purchase_price, 0, ',', '.') }}</span>
-                    </div>
-                    <div class="flex items-center px-5 py-3" style="border-color:var(--line)">
-                        <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Harga Jual</span>
-                        @if($unit->selling_price)
-                            <span class="text-sm font-semibold font-mono tabular-nums" style="color:var(--success)">Rp {{ number_format($unit->selling_price, 0, ',', '.') }}</span>
-                        @else
-                            <span class="text-sm font-mono" style="color:var(--ink-mute)">Belum diset</span>
-                        @endif
                     </div>
                     <div class="flex items-center px-5 py-3" style="border-color:var(--line)">
                         <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Tanggal Beli</span>
@@ -141,79 +134,36 @@
 
         </div>
 
-        {{-- Right sidebar: photo + status + harga --}}
+        {{-- Right sidebar --}}
         <div class="space-y-4">
 
-            {{-- Photo --}}
-            <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
-                <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
-                    <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Foto Unit</span>
-                </div>
-                <div class="p-5 space-y-3">
-                    @php
-                        $photos = collect([$unit->photo_path, $unit->photo_path_2, $unit->photo_path_3])->filter();
-                    @endphp
-
-                    @if($photos->isNotEmpty())
-                        {{-- Main Display --}}
-                        <div class="w-full rounded-xl overflow-hidden bg-black flex items-center justify-center" style="height:220px">
-                            <img id="main-photo-display" src="{{ Storage::url($photos->first()) }}" alt="Foto unit"
-                                 class="w-full h-full object-contain" />
-                        </div>
-
-                        {{-- Thumbnails --}}
-                        @if($photos->count() > 1)
-                        <div class="grid grid-cols-3 gap-2">
-                            @foreach($photos as $index => $path)
-                            <button type="button" onclick="swapMainPhoto('{{ Storage::url($path) }}', this)" 
-                                    class="aspect-square rounded-lg border-2 overflow-hidden transition-all" 
-                                    style="border-color: {{ $index === 0 ? 'var(--accent)' : 'var(--line)' }}">
-                                <img src="{{ Storage::url($path) }}" alt="" class="w-full h-full object-cover" />
-                            </button>
-                            @endforeach
-                        </div>
-                        @endif
-                    @else
-                        <div class="flex flex-col items-center justify-center gap-2 rounded-xl" style="min-height:140px;background:var(--bg-soft)">
-                            <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" style="color:var(--line)">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                            </svg>
-                            <span class="text-xs" style="color:var(--ink-mute)">Tidak ada foto</span>
-                        </div>
-                    @endif
-                </div>
-            </div>
-
-
-
-            {{-- Estimasi Margin (otomatis dari harga beli & jual) --}}
+            {{-- Estimasi Margin (manual input) --}}
             <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
                 <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
                     <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Estimasi Margin</span>
                 </div>
-                @php
-                    $buy    = (float) $unit->purchase_price;
-                    $sell   = (float) ($unit->selling_price ?? 0);
-                    $margin = $sell - $buy;
-                    $pct    = $sell > 0 ? round(($margin / $sell) * 100) : 0;
-                    $barW   = max(0, min(100, abs($pct)));
-                    $hasPrice = $sell > 0;
-                @endphp
                 <div class="p-5">
-                    <div class="text-2xl font-semibold font-mono tabular-nums"
-                         style="color:{{ $hasPrice ? ($margin >= 0 ? 'var(--success)' : 'var(--warn)') : 'var(--ink-mute)' }}">
-                        Rp {{ $hasPrice ? number_format($margin, 0, ',', '.') : '0' }}
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="field-label">Harga Beli (Modal)</label>
+                            <div class="money-wrap">
+                                <span class="rp-prefix">Rp</span>
+                                <input type="text" id="show-est-modal" class="field-input money-input"
+                                       value="{{ number_format($unit->purchase_price, 0, ',', '.') }}" inputmode="numeric" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Harga Jual (Estimasi)</label>
+                            <div class="money-wrap">
+                                <span class="rp-prefix">Rp</span>
+                                <input type="text" id="show-est-jual" class="field-input money-input" placeholder="0" inputmode="numeric" />
+                            </div>
+                        </div>
                     </div>
-                    <div class="text-xs mt-1"
-                         style="color:{{ $hasPrice ? ($margin >= 0 ? 'var(--success)' : 'var(--warn)') : 'var(--ink-mute)' }}">
-                        @if($hasPrice)
-                            {{ $margin >= 0 ? 'Untung' : 'Rugi' }} {{ abs($pct) }}% dari harga jual
-                        @else
-                            Harga jual belum diset
-                        @endif
-                    </div>
+                    <div class="text-2xl font-semibold font-mono tabular-nums" id="show-margin-amount" style="color:var(--ink-mute)">Rp 0</div>
+                    <div class="text-xs mt-1" id="show-margin-pct" style="color:var(--ink-mute)">Isi harga jual estimasi untuk lihat margin</div>
                     <div class="mt-3 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
-                        <div class="h-full rounded-full" style="width:{{ $barW }}%;background:{{ $hasPrice ? ($margin >= 0 ? 'var(--success)' : 'var(--warn)') : 'var(--bg-soft)' }}"></div>
+                        <div id="show-margin-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:var(--success)"></div>
                     </div>
                 </div>
             </div>
@@ -223,13 +173,41 @@
     </div>
 </div>
 
+@include('components.money-format')
 <script>
-function swapMainPhoto(src, btn) {
-    document.getElementById('main-photo-display').src = src;
-    btn.parentNode.querySelectorAll('button').forEach(b => {
-        b.style.borderColor = 'var(--line)';
+
+(function() {
+    function rawInt(id) {
+        return parseInt((document.getElementById(id)?.value || '').replace(/[^0-9]/g, ''), 10) || 0;
+    }
+    function calcShowMargin() {
+        var buy    = rawInt('show-est-modal');
+        var sell   = rawInt('show-est-jual');
+        var margin = sell - buy;
+        var amtEl  = document.getElementById('show-margin-amount');
+        var pctEl  = document.getElementById('show-margin-pct');
+        var bar    = document.getElementById('show-margin-bar');
+        if (buy > 0 && sell > 0) {
+            var pct   = Math.round((margin / sell) * 100);
+            var color = margin >= 0 ? 'var(--success)' : 'var(--warn)';
+            amtEl.textContent = 'Rp ' + margin.toLocaleString('id-ID');
+            amtEl.style.color = color;
+            pctEl.textContent = (margin >= 0 ? 'Untung ' : 'Rugi ') + Math.abs(pct) + '% dari harga jual';
+            pctEl.style.color = color;
+            bar.style.width = Math.max(0, Math.min(100, Math.abs(pct))) + '%';
+            bar.style.background = color;
+        } else {
+            amtEl.textContent = 'Rp 0';
+            amtEl.style.color = 'var(--ink-mute)';
+            pctEl.textContent = 'Isi harga jual estimasi untuk lihat margin';
+            pctEl.style.color = 'var(--ink-mute)';
+            bar.style.width = '0%';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('show-est-modal')?.addEventListener('input', calcShowMargin);
+        document.getElementById('show-est-jual')?.addEventListener('input', calcShowMargin);
     });
-    btn.style.borderColor = 'var(--accent)';
-}
+})();
 </script>
 @endsection

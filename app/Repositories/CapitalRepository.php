@@ -14,7 +14,9 @@ class CapitalRepository implements CapitalRepositoryInterface
 
     public function sumTotal(): float
     {
-        return (float) Capital::sum('amount');
+        $in  = (float) Capital::whereIn('type', ['initial', 'addition', 'purchase'])->sum('amount');
+        $out = (float) Capital::where('type', 'withdrawal')->sum('amount');
+        return $in - $out;
     }
 
     public function sumInitialAndAddition(): float

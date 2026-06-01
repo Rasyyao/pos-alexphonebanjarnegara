@@ -121,15 +121,26 @@
                         Rp {{ number_format($totalCapital, 0, ',', '.') }}
                     </span>
                 </div>
-                <button onclick="openModal('modal-tambah-modal')"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                        style="background:#EFF6FF;color:var(--accent)"
-                        onmouseenter="this.style.background='#DBEAFE'" onmouseleave="this.style.background='#EFF6FF'">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Tambah Modal
-                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="openModal('modal-kurangi-modal')"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                            style="background:#FFF5F5;color:var(--warn)"
+                            onmouseenter="this.style.background='#FEE2E2'" onmouseleave="this.style.background='#FFF5F5'">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
+                        </svg>
+                        Kurangi Modal
+                    </button>
+                    <button onclick="openModal('modal-tambah-modal')"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                            style="background:#EFF6FF;color:var(--accent)"
+                            onmouseenter="this.style.background='#DBEAFE'" onmouseleave="this.style.background='#EFF6FF'">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Tambah Modal
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 @forelse($capitals as $cap)
@@ -138,13 +149,25 @@
                      onmouseenter="this.style.background='var(--bg-soft)'" onmouseleave="this.style.background=''">
                     <div>
                         <div class="font-medium" style="color:var(--ink)">{{ $cap->description }}</div>
-                        <div class="text-xs font-mono mt-0.5" style="color:var(--ink-mute)">
+                        <div class="text-xs font-mono mt-0.5 flex items-center gap-1.5" style="color:var(--ink-mute)">
                             {{ $cap->entry_date->format('d/m/Y') }} ·
-                            <span class="capitalize">{{ $cap->type }}</span>
+                            @if($cap->type === 'withdrawal')
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:#FEF2F2;color:var(--warn)">Pengurangan</span>
+                            @elseif($cap->type === 'addition')
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:#EFF6FF;color:var(--accent)">Tambahan</span>
+                            @elseif($cap->type === 'initial')
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:#F0FDF4;color:var(--success)">Awal</span>
+                            @else
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:var(--bg-soft);color:var(--ink-mute)">{{ $cap->type }}</span>
+                            @endif
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <span class="font-medium font-mono tabular-nums" style="color:var(--ink)">Rp {{ number_format($cap->amount, 0, ',', '.') }}</span>
+                        @if($cap->type === 'withdrawal')
+                            <span class="font-medium font-mono tabular-nums" style="color:var(--warn)">− Rp {{ number_format($cap->amount, 0, ',', '.') }}</span>
+                        @else
+                            <span class="font-medium font-mono tabular-nums" style="color:var(--ink)">Rp {{ number_format($cap->amount, 0, ',', '.') }}</span>
+                        @endif
                         <form method="POST" action="{{ route('capitals.destroy', $cap) }}" onsubmit="return confirm('Hapus modal ini?')">
                             @csrf @method('DELETE')
                             <button class="text-xs px-2 py-1 rounded-md transition-colors"
@@ -297,6 +320,65 @@
                 <div class="flex gap-3 pt-1">
                     <button type="submit" class="btn-primary flex-1">Simpan Modal</button>
                     <button type="button" onclick="closeModal('modal-tambah-modal')" class="btn-secondary" style="padding:0 24px">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- ========== MODAL: Kurangi Modal ========== --}}
+<div id="modal-kurangi-modal" class="fixed inset-0 z-[100] hidden overflow-y-auto" onclick="closeModalOutside(event, 'modal-kurangi-modal')">
+    <div class="fixed inset-0" style="background:rgba(10,37,64,.5)"></div>
+    <div class="relative min-h-full flex items-start justify-center px-4 pt-12 pb-12">
+        <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden modal-pop" onclick="event.stopPropagation()">
+            <div class="flex items-start justify-between px-6 py-5" style="border-bottom:1px solid var(--line)">
+                <div class="flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#FFF5F5;color:var(--warn)">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+                    </span>
+                    <div>
+                        <h3 class="text-base font-semibold leading-none" style="color:var(--ink)">Kurangi Modal</h3>
+                        <p class="text-xs mt-1.5" style="color:var(--ink-mute)">Catat penarikan atau pengurangan modal usaha</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('modal-kurangi-modal')" class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors" style="color:var(--ink-mute);background:var(--bg-soft)" onmouseenter="this.style.background='var(--line)'" onmouseleave="this.style.background='var(--bg-soft)'">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <form method="POST" action="{{ route('capitals.store') }}" class="p-6 space-y-5">
+                @csrf
+                <input type="hidden" name="type" value="withdrawal" />
+                <div>
+                    <label class="field-label">Keterangan <span style="color:var(--warn)">*</span></label>
+                    <input type="text" name="description" placeholder="mis. Penarikan pemilik, pengambilan modal..." required class="field-input" />
+                </div>
+                <div>
+                    <label class="field-label">Jumlah yang Dikurangi <span style="color:var(--warn)">*</span></label>
+                    <div class="money-wrap">
+                        <span class="rp-prefix">Rp</span>
+                        <input type="text" name="amount" id="withdraw-amount" required placeholder="0"
+                               class="field-input money-input" inputmode="numeric" style="height:48px;font-size:16px" />
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-2.5">
+                        @foreach([500000=>'500rb', 1000000=>'1jt', 5000000=>'5jt', 10000000=>'10jt'] as $v => $lbl)
+                        <button type="button" onclick="setAmount('withdraw-amount',{{ $v }})"
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium font-mono transition-colors"
+                                style="background:var(--bg-soft);color:var(--ink-soft)"
+                                onmouseenter="this.style.background='var(--line)'" onmouseleave="this.style.background='var(--bg-soft)'">{{ $lbl }}</button>
+                        @endforeach
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label">Tanggal</label>
+                    <input type="date" name="entry_date" value="{{ today()->toDateString() }}" required class="field-input" />
+                </div>
+                <div class="flex gap-3 pt-1">
+                    <button type="submit" class="flex-1 inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-colors"
+                            style="height:44px;font-size:14px;background:var(--warn);color:#fff"
+                            onmouseenter="this.style.background='#dc2626'" onmouseleave="this.style.background='var(--warn)'">
+                        Kurangi Modal
+                    </button>
+                    <button type="button" onclick="closeModal('modal-kurangi-modal')" class="btn-secondary" style="padding:0 24px">Batal</button>
                 </div>
             </form>
         </div>

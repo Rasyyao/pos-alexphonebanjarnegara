@@ -18,12 +18,8 @@ class StoreUnitRequest extends FormRequest
             'imei'           => ['nullable','string','max:20','unique:units,imei'],
             'serial_number'  => ['nullable','string','max:50'],
             'purchase_price' => ['required','numeric','min:0'],
-            'selling_price'  => ['nullable','numeric','min:0'],
             'purchase_date'  => ['required','date'],
             'notes'          => ['nullable','string'],
-            'photo'          => ['nullable','file','mimes:jpeg,jpg,png,webp','max:2048'],
-            'photo_2'        => ['nullable','file','mimes:jpeg,jpg,png,webp','max:2048'],
-            'photo_3'        => ['nullable','file','mimes:jpeg,jpg,png,webp','max:2048'],
         ];
     }
 }

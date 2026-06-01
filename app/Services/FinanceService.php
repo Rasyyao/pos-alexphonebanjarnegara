@@ -84,7 +84,8 @@ class FinanceService
         $capital = (float) $capitalsQuery->sum('amount');
 
         // Modal Awal and Modal Sekarang (Lifetime)
-        $modalAwal = (float) \App\Models\Capital::whereIn('type', ['initial', 'addition'])->sum('amount');
+        $modalAwal = (float) \App\Models\Capital::whereIn('type', ['initial', 'addition'])->sum('amount')
+                  - (float) \App\Models\Capital::where('type', 'withdrawal')->sum('amount');
         $totalHPPurchases = $this->units->totalPurchaseValue();
         $lifetimeRevenue = (float) \App\Models\Sale::where('status', 'approved')->sum('total_price');
         $lifetimeExpenses = (float) \App\Models\Expense::sum('amount');
@@ -135,7 +136,7 @@ class FinanceService
         $expenses = $expensesQuery->latest('expense_date')->paginate(10, ['*'], 'page_expense')->appends(request()->query());
 
         // 3. Calculate capitals for the filtered date range
-        $capitalsQuery = \App\Models\Capital::with('creator')->whereIn('type', ['initial', 'addition']);
+        $capitalsQuery = \App\Models\Capital::with('creator')->whereIn('type', ['initial', 'addition', 'withdrawal']);
         if ($startDate) {
             $capitalsQuery->whereDate('entry_date', '>=', $startDate);
         }
@@ -143,15 +144,17 @@ class FinanceService
             $capitalsQuery->whereDate('entry_date', '<=', $endDate);
         }
         
-        $totalCapital = (float) $capitalsQuery->sum('amount');
+        $totalCapital = (float) $capitalsQuery->clone()->whereIn('type', ['initial', 'addition'])->sum('amount')
+                      - (float) $capitalsQuery->clone()->where('type', 'withdrawal')->sum('amount');
         $capitalsList = $capitalsQuery->latest('entry_date')->paginate(10, ['*'], 'page_capital')->appends(request()->query());
 
         // Modal Awal and Modal Sekarang (Lifetime basis to remain mathematically accurate liquid Cash)
         $modalAwal        = $this->capitals->sumInitialAndAddition();
+        $totalWithdrawal  = (float) \App\Models\Capital::where('type', 'withdrawal')->sum('amount');
         $totalHPPurchases = $this->units->totalPurchaseValue();
         $lifetimeRevenue  = (float) \App\Models\Sale::where('status', 'approved')->sum('total_price');
         $lifetimeExpenses = (float) \App\Models\Expense::sum('amount');
-        $modalSekarang    = $modalAwal + $lifetimeRevenue - $totalHPPurchases - $lifetimeExpenses;
+        $modalSekarang    = $modalAwal - $totalWithdrawal + $lifetimeRevenue - $totalHPPurchases - $lifetimeExpenses;
 
         $unpaidDebts = $this->debts->unpaidSum();
         $activeDebts = \App\Models\Debt::with(['sale.creator'])->where('status', '!=', 'paid')->latest()->get();

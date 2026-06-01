@@ -540,7 +540,6 @@
                     <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Merek &amp; Nama Handphone</th>
                     <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono hidden md:table-cell" style="color:var(--ink-mute)">Detail Fisik</th>
                     <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono hidden lg:table-cell" style="color:var(--ink-mute)">Harga Modal</th>
-                    <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono hidden lg:table-cell" style="color:var(--ink-mute)">Harga Jual</th>
                     <th class="text-right px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Kondisi</th>
                 </tr>
             </thead>
@@ -571,15 +570,6 @@
                         <span class="text-sm font-mono tabular-nums font-semibold" style="color:var(--ink)">
                             Rp {{ number_format($unit->purchase_price, 0, ',', '.') }}
                         </span>
-                    </td>
-                    <td class="px-5 py-3.5 hidden lg:table-cell">
-                        @if($unit->selling_price)
-                        <span class="text-sm font-mono tabular-nums font-semibold" style="color:var(--success)">
-                            Rp {{ number_format($unit->selling_price, 0, ',', '.') }}
-                        </span>
-                        @else
-                        <span class="text-sm font-mono" style="color:var(--ink-mute)">—</span>
-                        @endif
                     </td>
                     <td class="px-5 py-3.5 text-right">
                         @if($unit->grade)

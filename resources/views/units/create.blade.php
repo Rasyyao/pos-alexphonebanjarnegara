@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <form method="POST" action="{{ route('units.store') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('units.store') }}">
         @csrf
 
         <div class="grid lg:grid-cols-3 gap-5">
@@ -111,16 +111,6 @@
                                 @error('purchase_price')<p class="field-error">{{ $message }}</p>@enderror
                             </div>
                             <div>
-                                <label class="field-label">Harga Jual</label>
-                                <div class="money-wrap">
-                                    <span class="rp-prefix">Rp</span>
-                                    <input type="text" name="selling_price" value="{{ old('selling_price') }}"
-                                           class="field-input money-input @error('selling_price') error @enderror"
-                                           placeholder="0" inputmode="numeric" />
-                                </div>
-                                @error('selling_price')<p class="field-error">{{ $message }}</p>@enderror
-                            </div>
-                            <div>
                                 <label class="field-label">Tanggal Beli <span style="color:var(--warn)">*</span></label>
                                 <input type="date" name="purchase_date" value="{{ old('purchase_date', today()->toDateString()) }}" required
                                        class="field-input @error('purchase_date') error @enderror" />
@@ -144,77 +134,8 @@
 
             </div>
 
-            {{-- Right column: photo + notes + submit --}}
+            {{-- Right column: notes + submit --}}
             <div class="space-y-4">
-
-                {{-- Foto --}}
-                <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
-                    <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
-                        <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Foto Unit (Maks. 3)</span>
-                    </div>
-                    <div class="p-5 space-y-4">
-                        
-                        {{-- Grid of 3 uploads --}}
-                        <div class="grid grid-cols-3 gap-3">
-                            
-                            {{-- Foto 1 --}}
-                            <div>
-                                <label id="photo-label" for="photo-input"
-                                       class="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden relative"
-                                       style="border-color:var(--line);aspect-ratio:1/1;background:var(--bg-soft)"
-                                       onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--line)'">
-                                    <div id="photo-preview" class="hidden w-full h-full absolute inset-0">
-                                        <img id="photo-img" src="" alt="" class="w-full h-full object-cover" />
-                                    </div>
-                                    <div id="photo-placeholder" class="flex flex-col items-center text-center p-2">
-                                        <svg class="w-5 h-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--ink-mute)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                        <span class="text-[9px]" style="color:var(--ink-mute)">Foto 1</span>
-                                    </div>
-                                </label>
-                                <input type="file" id="photo-input" name="photo" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="previewPhoto(this, 'photo-img', 'photo-preview', 'photo-placeholder')" />
-                                @error('photo')<p class="field-error text-[10px] mt-1">{{ $message }}</p>@enderror
-                            </div>
-
-                            {{-- Foto 2 --}}
-                            <div>
-                                <label id="photo-label-2" for="photo-input-2"
-                                       class="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden relative"
-                                       style="border-color:var(--line);aspect-ratio:1/1;background:var(--bg-soft)"
-                                       onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--line)'">
-                                    <div id="photo-preview-2" class="hidden w-full h-full absolute inset-0">
-                                        <img id="photo-img-2" src="" alt="" class="w-full h-full object-cover" />
-                                    </div>
-                                    <div id="photo-placeholder-2" class="flex flex-col items-center text-center p-2">
-                                        <svg class="w-5 h-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--ink-mute)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                        <span class="text-[9px]" style="color:var(--ink-mute)">Foto 2</span>
-                                    </div>
-                                </label>
-                                <input type="file" id="photo-input-2" name="photo_2" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="previewPhoto(this, 'photo-img-2', 'photo-preview-2', 'photo-placeholder-2')" />
-                                @error('photo_2')<p class="field-error text-[10px] mt-1">{{ $message }}</p>@enderror
-                            </div>
-
-                            {{-- Foto 3 --}}
-                            <div>
-                                <label id="photo-label-3" for="photo-input-3"
-                                       class="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden relative"
-                                       style="border-color:var(--line);aspect-ratio:1/1;background:var(--bg-soft)"
-                                       onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--line)'">
-                                    <div id="photo-preview-3" class="hidden w-full h-full absolute inset-0">
-                                        <img id="photo-img-3" src="" alt="" class="w-full h-full object-cover" />
-                                    </div>
-                                    <div id="photo-placeholder-3" class="flex flex-col items-center text-center p-2">
-                                        <svg class="w-5 h-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--ink-mute)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                        <span class="text-[9px]" style="color:var(--ink-mute)">Foto 3</span>
-                                    </div>
-                                </label>
-                                <input type="file" id="photo-input-3" name="photo_3" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="previewPhoto(this, 'photo-img-3', 'photo-preview-3', 'photo-placeholder-3')" />
-                                @error('photo_3')<p class="field-error text-[10px] mt-1">{{ $message }}</p>@enderror
-                            </div>
-
-                        </div>
-                        <div class="text-[10px] text-center" style="color:var(--ink-mute)">Format didukung: JPG, PNG, WebP. Maks 2MB per file.</div>
-                    </div>
-                </div>
 
                 {{-- Catatan --}}
                 <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
@@ -232,8 +153,15 @@
                         <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Estimasi Margin</span>
                     </div>
                     <div class="p-5">
+                        <div class="mb-3">
+                            <label class="field-label">Harga Jual (Estimasi)</label>
+                            <div class="money-wrap">
+                                <span class="rp-prefix">Rp</span>
+                                <input type="text" id="create-est-jual" class="field-input money-input" placeholder="0" inputmode="numeric" />
+                            </div>
+                        </div>
                         <div class="text-2xl font-semibold font-mono tabular-nums" id="create-margin-amount" style="color:var(--ink-mute)">Rp 0</div>
-                        <div class="text-xs mt-1" id="create-margin-pct" style="color:var(--ink-mute)">Isi harga beli &amp; harga jual</div>
+                        <div class="text-xs mt-1" id="create-margin-pct" style="color:var(--ink-mute)">Isi harga beli &amp; harga jual estimasi</div>
                         <div class="mt-3 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
                             <div id="create-margin-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:var(--success)"></div>
                         </div>
@@ -255,22 +183,12 @@
 
 @include('components.money-format')
 <script>
-function previewPhoto(input, imgId, previewId, placeholderId) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            document.getElementById(imgId).src = e.target.result;
-            document.getElementById(previewId).classList.remove('hidden');
-            document.getElementById(placeholderId).classList.add('hidden');
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
 
 function calcCreateMargin() {
-    const rawVal = id => parseInt((document.querySelector(`[name="${id}"]`)?.value || '').replace(/[^0-9]/g, ''), 10) || 0;
-    const buy    = rawVal('purchase_price');
-    const sell   = rawVal('selling_price');
+    const rawName = id => parseInt((document.querySelector(`[name="${id}"]`)?.value || '').replace(/[^0-9]/g, ''), 10) || 0;
+    const rawId   = id => parseInt((document.getElementById(id)?.value || '').replace(/[^0-9]/g, ''), 10) || 0;
+    const buy    = rawName('purchase_price');
+    const sell   = rawId('create-est-jual');
     const margin = sell - buy;
     const amtEl  = document.getElementById('create-margin-amount');
     const pctEl  = document.getElementById('create-margin-pct');
@@ -288,15 +206,17 @@ function calcCreateMargin() {
     } else {
         amtEl.textContent = 'Rp 0';
         amtEl.style.color = 'var(--ink-mute)';
-        pctEl.textContent = 'Isi harga beli & harga jual';
+        pctEl.textContent = 'Isi harga beli & harga jual estimasi';
         pctEl.style.color = 'var(--ink-mute)';
         bar.style.width   = '0%';
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[name="purchase_price"], [name="selling_price"]')
-        .forEach(el => el.addEventListener('input', calcCreateMargin));
+    document.querySelector('[name="purchase_price"]')
+        ?.addEventListener('input', calcCreateMargin);
+    document.getElementById('create-est-jual')
+        ?.addEventListener('input', calcCreateMargin);
 });
 </script>
 @endsection
