@@ -9,11 +9,13 @@ use Livewire\Component;
 
 class SaleForm extends Component
 {
-    public array $items        = [];
-    public array $payments      = [];
-    public string $saleDate     = '';
-    public ?int $savedSaleId    = null;
-    public string $savedInvoice = '';
+    public array $items          = [];
+    public array $payments        = [];
+    public string $saleDate       = '';
+    public string $customerName   = '';
+    public string $description    = '';
+    public ?int $savedSaleId      = null;
+    public string $savedInvoice   = '';
 
     public function mount(): void
     {
@@ -115,9 +117,11 @@ class SaleForm extends Component
 
         try {
             $sale = $service->create([
-                'sale_date' => $this->saleDate,
-                'items'     => $items,
-                'payments'  => $this->payments,
+                'sale_date'     => $this->saleDate,
+                'customer_name' => trim($this->customerName) ?: null,
+                'description'   => trim($this->description) ?: null,
+                'items'         => $items,
+                'payments'      => $this->payments,
             ], auth()->user());
 
             // Show success modal with print option — no redirect

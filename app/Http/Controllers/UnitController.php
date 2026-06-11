@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreUnitRequest;
 use App\Http\Requests\UpdateUnitRequest;
 use App\Models\Unit;
+use App\Services\FinanceService;
 use App\Services\UnitService;
 use App\Repositories\Contracts\ProductBrandRepositoryInterface;
 
@@ -27,6 +28,15 @@ class UnitController extends Controller
 
     public function store(StoreUnitRequest $request)
     {
+        $kasLiquid     = FinanceService::kasLiquidNow();
+        $purchasePrice = (float) $request->validated()['purchase_price'];
+
+        if ($purchasePrice > $kasLiquid) {
+            return back()->withInput()->withErrors([
+                'purchase_price' => 'Kas liquid tidak cukup (Rp ' . number_format($kasLiquid, 0, ',', '.') . '). Tambah modal terlebih dahulu.',
+            ]);
+        }
+
         $this->service->store($request->validated(), $request->user());
         return redirect()->route('units.index')->with('success', 'Unit berhasil ditambahkan.');
     }

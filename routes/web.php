@@ -20,6 +20,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('accessories', AccessoryController::class);
     Route::get('reports/finance', [ReportController::class, 'finance'])->name('reports.finance');
     Route::get('reports/stock', [ReportController::class, 'stock'])->name('reports.stock');
+    Route::get('reports/stock/opname', [ReportController::class, 'stockOpname'])->name('reports.stock.opname');
 
     Route::get('debts', [DebtController::class, 'index'])->name('debts.index');
     Route::post('debts/{debt}/pay', [DebtController::class, 'pay'])->name('debts.pay');
@@ -28,6 +29,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('sales', SaleController::class)->except(['edit','update']);
     Route::post('sales/{sale}/approve', [SaleController::class, 'approve'])->name('sales.approve');
     Route::get('sales/{sale}/print', [SaleController::class, 'printReceipt'])->name('sales.print');
+    Route::get('sales/{sale}/edit', [SaleController::class, 'edit'])->middleware('role:superadmin')->name('sales.edit');
+    Route::put('sales/{sale}', [SaleController::class, 'update'])->middleware('role:superadmin')->name('sales.update');
 
     Route::middleware('role:superadmin')->group(function () {
         Route::resource('admin-users', AdminUserController::class);

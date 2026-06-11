@@ -8,7 +8,8 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
                 <h2 class="text-xl font-bold" style="color:var(--ink)">Arus Kas (Cashflow)</h2>
-                <p class="text-xs mt-0.5" style="color:var(--ink-mute)">Pantau ringkasan arus kas masuk, pengeluaran operasional, dan pengelolaan modal usaha</p>
+                <p class="text-xs mt-0.5" style="color:var(--ink-mute)">Pantau ringkasan arus kas masuk, pengeluaran
+                    operasional, dan pengelolaan modal usaha</p>
             </div>
         </div>
 
@@ -32,7 +33,8 @@
                                 style="border:none!important;outline:none!important;box-shadow:none!important;padding:0!important;background:transparent;color:var(--ink);width:115px;" />
                         </div>
                     </div>
-                    <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg text-xs font-semibold" style="height:36px;">
+                    <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg text-xs font-semibold"
+                        style="height:36px;">
                         @foreach (['today' => 'Hari Ini', 'week' => 'Minggu Ini', 'month' => 'Bulan Ini', 'all' => 'Semua'] as $p => $lbl)
                             @php $isActive = request('preset', 'all') === $p; @endphp
                             <button type="button" onclick="setPreset('{{ $p }}')"
@@ -55,7 +57,8 @@
                             class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center gap-1.5 border shadow-sm"
                             style="background:#F0FDF4;color:var(--success);border-color:#BBF7D0"
                             onmouseenter="this.style.background='#DCFCE7'" onmouseleave="this.style.background='#F0FDF4'">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                stroke-width="2.2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
@@ -66,204 +69,306 @@
             </form>
         </div>
 
+        {{-- Active Period Banner --}}
+        @php
+            $periodLabel = match (request('preset', 'all')) {
+                'today' => 'Hari Ini — ' . now()->isoFormat('D MMM Y'),
+                'week' => 'Minggu Ini',
+                'month' => 'Bulan Ini — ' . now()->isoFormat('MMMM Y'),
+                default => request('start_date') && request('end_date')
+                    ? request('start_date') . ' s/d ' . request('end_date')
+                    : 'Semua Periode',
+            };
+        @endphp
+        <div class="flex flex-wrap items-center justify-between gap-3 px-1">
+            <p class="text-sm font-semibold" style="color:var(--ink)">Ringkasan Keuangan</p>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold uppercase tracking-widest font-mono"
+                    style="color:var(--ink-mute)">Periode aktif:</span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold font-mono"
+                    style="background:#EFF6FF;color:var(--accent);border:1px solid #BFDBFE">
+                    <svg class="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {{ $periodLabel }}
+                </span>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono"
+                    style="background:#F0FDF4;color:var(--success);border:1px solid #BBF7D0">
+                    <span class="w-1.5 h-1.5 rounded-full bg-current inline-block"></span> ASET = Lifetime
+                </span>
+            </div>
+        </div>
+
         {{-- Summary Metric Cards --}}
-        @php $netCash = $cashflow['net']; @endphp
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        @php
+            $netCash = $cashflow['net'];
+            $totalAset = ($assetValue ?? 0) + ($accAssetValue ?? 0) + $modalSekarang;
+        @endphp
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
 
             {{-- Modal Disetor --}}
             <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style="background:rgba(59,130,246,0.08)">
-                    <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
+                    style="background:rgba(59,130,246,0.08)">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
                 </div>
-                <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Modal Disetor</p>
-                <p class="text-lg font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                <p class="text-[10px] font-bold uppercase tracking-widest font-mono text-blue-600">Modal Disetor</p>
+                <p class="text-base font-bold font-mono tabular-nums mt-0.5 text-blue-700">
                     Rp {{ number_format($modalAwal, 0, ',', '.') }}
                 </p>
-                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Total modal masuk (Awal & Tambahan)</p>
+                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Total modal masuk (lifetime)</p>
             </div>
 
             {{-- Kas Liquid --}}
             <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style="background:rgba(16,128,107,0.08)">
-                    <svg class="w-4 h-4" style="color:var(--success)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
+                    style="background:rgba(59,130,246,0.08)">
+                    <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Kas Liquid</p>
-                <p class="text-lg font-bold font-mono tabular-nums mt-0.5" style="{{ $modalSekarang >= 0 ? 'color:var(--success)' : 'color:var(--warn)' }}">
-                    {{ $modalSekarang < 0 ? '−' : '' }} Rp {{ number_format(abs($modalSekarang), 0, ',', '.') }}
+                <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Kas
+                    Liquid</p>
+                <p class="text-base font-bold font-mono tabular-nums mt-0.5"
+                    style="{{ $modalSekarang >= 0 ? 'color:var(--ink)' : 'color:var(--warn)' }}">
+                    {{ $modalSekarang < 0 ? '−' : '' }}Rp {{ number_format(abs($modalSekarang), 0, ',', '.') }}
                 </p>
-                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Modal + Omzet − Beli HP − Biaya</p>
+                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Uang tunai yang tersedia</p>
             </div>
 
-            {{-- Aset Stok HP --}}
+            {{-- Pengeluaran --}}
             <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style="background:rgba(124,58,237,0.08)">
-                    <svg class="w-4 h-4 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
+                    style="background:rgba(194,65,12,0.08)">
+                    <svg class="w-4 h-4" style="color:var(--warn)" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
                     </svg>
                 </div>
-                <p class="text-[10px] font-bold uppercase tracking-widest font-mono text-violet-500">Aset Stok HP</p>
-                <p class="text-lg font-bold font-mono tabular-nums mt-0.5 text-violet-600">
-                    Rp {{ number_format($assetValue ?? 0, 0, ',', '.') }}
+                <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--warn)">Pengeluaran
                 </p>
-                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Nilai beli HP ready di stok</p>
+                <p class="text-base font-bold font-mono tabular-nums mt-0.5" style="color:var(--warn)">
+                    Rp {{ number_format($cashflow['outflow'], 0, ',', '.') }}
+                </p>
+                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Total pengeluaran periode ini</p>
+            </div>
+
+            {{-- Omzet --}}
+            <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
+                    style="background:rgba(16,128,107,0.08)">
+                    <svg class="w-4 h-4" style="color:var(--success)" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                </div>
+                <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--success)">Omzet
+                </p>
+                <p class="text-base font-bold font-mono tabular-nums mt-0.5" style="color:var(--success)">
+                    Rp {{ number_format($cashflow['inflow'], 0, ',', '.') }}
+                </p>
+                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Total penjualan periode ini</p>
             </div>
 
             {{-- Piutang Aktif --}}
             <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
                 <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3 bg-amber-50">
-                    <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                 </div>
                 <p class="text-[10px] font-bold uppercase tracking-widest font-mono text-amber-600">Piutang Aktif</p>
-                <p class="text-lg font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                <p class="text-base font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
                     Rp {{ number_format($unpaidDebts, 0, ',', '.') }}
                 </p>
-                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Total piutang belum tertagih</p>
+                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Belum tertagih dari pembeli</p>
             </div>
 
         </div>
 
+        {{-- Persebaran Modal Pie Chart --}}
+        @php
+            $kasForChart = max(0, (float) $modalSekarang);
+            $hpForChart = max(0, (float) ($assetValue ?? 0));
+            $accForChart = max(0, (float) ($accAssetValue ?? 0));
+            $chartTotal = max(1, $kasForChart + $hpForChart + $accForChart);
+            $kasPct = round(($kasForChart / $chartTotal) * 100);
+            $hpPct = round(($hpForChart / $chartTotal) * 100);
+            $accPct = 100 - $kasPct - $hpPct;
+        @endphp
+        <div class="bg-white rounded-xl border shadow-sm overflow-hidden" style="border-color:var(--line)">
+            <div class="px-5 py-3.5 border-b" style="border-color:var(--line);background:var(--bg-soft)">
+                <h3 class="text-sm font-semibold" style="color:var(--ink)">Persebaran Modal Usaha</h3>
+                <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Proporsi kas liquid · stok HP · stok aksesoris
+                    (lifetime)</p>
+            </div>
+            <div class="px-5 py-5 flex flex-col sm:flex-row items-center gap-6">
+
+                {{-- Chart.js donut --}}
+                <div class="relative flex-shrink-0 flex items-center justify-center" style="width:180px;height:180px">
+                    <canvas id="cf-donut-chart"></canvas>
+                    <div
+                        style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+                        <div class="text-[10px] font-mono font-bold" style="color:var(--ink-mute)">Total</div>
+                        <div class="text-xs font-bold leading-tight font-mono" style="color:var(--ink)">
+                            Rp {{ number_format($chartTotal / 1000000, 1, ',', '.') }}jt
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Legend --}}
+                <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                    <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(16,128,107,0.06)">
+                        <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5" style="background:#10806B"></span>
+                        <div>
+                            <div class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:#10806B">
+                                Kas Liquid</div>
+                            <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                                Rp {{ number_format($kasForChart, 0, ',', '.') }}
+                            </div>
+                            <div class="text-[11px] font-semibold mt-0.5" style="color:#10806B">{{ $kasPct }}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(124,58,237,0.06)">
+                        <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-violet-600"></span>
+                        <div>
+                            <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-violet-600">Stok HP
+                            </div>
+                            <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                                Rp {{ number_format($hpForChart, 0, ',', '.') }}
+                            </div>
+                            <div class="text-[11px] font-semibold mt-0.5 text-violet-600">{{ $hpPct }}%</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(8,145,178,0.06)">
+                        <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-cyan-600"></span>
+                        <div>
+                            <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-cyan-700">Stok
+                                Aksesoris</div>
+                            <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                                Rp {{ number_format($accForChart, 0, ',', '.') }}
+                            </div>
+                            <div class="text-[11px] font-semibold mt-0.5 text-cyan-700">{{ $accPct }}%</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const ctx = document.getElementById('cf-donut-chart');
+                if (!ctx) return;
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Kas Liquid', 'Stok HP', 'Stok Aksesoris'],
+                        datasets: [{
+                            data: [{{ $kasForChart }}, {{ $hpForChart }}, {{ $accForChart }}],
+                            backgroundColor: ['#10806B', '#7C3AED', '#0891B2'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff',
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: '#1F2937',
+                                padding: 10,
+                                bodyFont: {
+                                    size: 11,
+                                    family: 'monospace'
+                                },
+                                titleFont: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                callbacks: {
+                                    label: function(context) {
+                                        const val = context.raw;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0) || 1;
+                                        const pct = ((val / total) * 100).toFixed(1);
+                                        return ' Rp ' + val.toLocaleString('id-ID') + ' (' + pct + '%)';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '72%'
+                    }
+                });
+            });
+        </script>
+
         {{-- Main Content: Cashflow + Modal --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {{-- Arus Kas (Cashflow Summary) --}}
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-xl border overflow-hidden shadow-sm h-full" style="border-color:var(--line)">
-                    <div class="px-5 py-4 border-b" style="border-color:var(--line)">
-                        <h3 class="text-sm font-semibold" style="color:var(--ink)">Arus Kas Periode Ini</h3>
-                        <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Pemasukan, pengeluaran & net cashflow</p>
-                    </div>
-                    <div class="p-5 space-y-3">
-
-                        {{-- Inflow --}}
-                        <div class="flex items-center justify-between p-3 rounded-lg" style="background:rgba(16,128,107,0.05)">
-                            <div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--success)">+ Pemasukan (Omzet)</div>
-                                <div class="text-base font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                    Rp {{ number_format($cashflow['inflow'], 0, ',', '.') }}
-                                </div>
-                            </div>
-                            <svg class="w-7 h-7 opacity-15" style="color:var(--success)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                            </svg>
-                        </div>
-
-                        {{-- Outflow --}}
-                        <div class="flex items-center justify-between p-3 rounded-lg" style="background:rgba(194,65,12,0.05)">
-                            <div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--warn)">− Pengeluaran</div>
-                                <div class="text-base font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                    Rp {{ number_format($cashflow['outflow'], 0, ',', '.') }}
-                                </div>
-                            </div>
-                            <svg class="w-7 h-7 opacity-15" style="color:var(--warn)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                            </svg>
-                        </div>
-
-                        {{-- Net Cashflow --}}
-                        <div class="flex items-center justify-between p-3 rounded-lg border"
-                            style="{{ $netCash >= 0 ? 'background:rgba(16,128,107,0.07);border-color:rgba(16,128,107,0.2)' : 'background:rgba(194,65,12,0.07);border-color:rgba(194,65,12,0.2)' }}">
-                            <div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--ink-soft)">= Net Cashflow</div>
-                                <div class="text-xl font-bold font-mono tabular-nums mt-0.5"
-                                    style="{{ $netCash >= 0 ? 'color:var(--success)' : 'color:var(--warn)' }}">
-                                    {{ $netCash < 0 ? '−' : '' }} Rp {{ number_format(abs($netCash), 0, ',', '.') }}
-                                </div>
-                            </div>
-                            <span class="text-xl font-bold" style="{{ $netCash >= 0 ? 'color:var(--success)' : 'color:var(--warn)' }}">
-                                {{ $netCash >= 0 ? '▲' : '▼' }}
-                            </span>
-                        </div>
-
-                        {{-- Total Aset Breakdown --}}
-                        <div class="pt-2 border-t" style="border-color:var(--line)">
-                            <p class="text-[10px] font-bold uppercase tracking-widest font-mono mb-2" style="color:var(--ink-mute)">Komposisi Total Aset</p>
-                            <div class="space-y-1.5">
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="flex items-center gap-1.5" style="color:var(--ink-soft)">
-                                        <span class="inline-block w-2 h-2 rounded-full" style="background:var(--success)"></span>
-                                        Kas Liquid
-                                    </span>
-                                    <span class="font-mono font-semibold tabular-nums" style="color:var(--ink)">
-                                        Rp {{ number_format($modalSekarang, 0, ',', '.') }}
-                                    </span>
-                                </div>
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="flex items-center gap-1.5" style="color:var(--ink-soft)">
-                                        <span class="inline-block w-2 h-2 rounded-full bg-violet-400"></span>
-                                        Aset Stok HP
-                                    </span>
-                                    <span class="font-mono font-semibold tabular-nums" style="color:var(--ink)">
-                                        Rp {{ number_format($assetValue ?? 0, 0, ',', '.') }}
-                                    </span>
-                                </div>
-                                <div class="flex items-center justify-between text-xs pt-1.5 border-t font-bold" style="border-color:var(--line);color:var(--ink)">
-                                    <span>Total Aset</span>
-                                    <span class="font-mono tabular-nums">
-                                        Rp {{ number_format(($assetValue ?? 0) + $modalSekarang, 0, ',', '.') }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
 
             {{-- Modal Usaha (Capitals) --}}
-            <div class="lg:col-span-2">
+            <div class="lg:col-span-10">
                 <div class="bg-white rounded-xl border overflow-hidden shadow-sm" style="border-color:var(--line)">
                     <div class="px-5 py-4 border-b flex items-center justify-between" style="border-color:var(--line)">
                         <div>
-                            <h3 class="text-sm font-semibold" style="color:var(--ink)">Modal Usaha (Capitals)</h3>
-                            <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Riwayat penyetoran modal dan status kas aktif</p>
+                            <h3 class="text-sm font-semibold" style="color:var(--ink)">Modal & Pengeluaran</h3>
+                            <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Riwayat pemasukan modal dan
+                                pengeluaran operasional</p>
                         </div>
-                        @if(auth()->user()->role->value === 'superadmin')
-                        <div class="flex items-center gap-2">
-                            <button onclick="openModal('modal-kurangi-modal')"
+                        @if (auth()->user()->role->value === 'superadmin')
+                            <div class="flex items-center gap-2">
+                                <button onclick="openExpenseModal()"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                                     style="background:#FFF5F5;color:var(--warn)"
-                                    onmouseenter="this.style.background='#FEE2E2'" onmouseleave="this.style.background='#FFF5F5'">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
-                                </svg>
-                                Kurangi Modal
-                            </button>
-                            <button onclick="openModal('modal-tambah-modal')"
+                                    onmouseenter="this.style.background='#FEE2E2'"
+                                    onmouseleave="this.style.background='#FFF5F5'">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                    Tambah Pengeluaran
+                                </button>
+                                <button onclick="openModal('modal-kurangi-modal')"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                                    style="background:#FEF3C7;color:#92400E"
+                                    onmouseenter="this.style.background='#FDE68A'"
+                                    onmouseleave="this.style.background='#FEF3C7'">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />
+                                    </svg>
+                                    Kurangi Modal
+                                </button>
+                                <button onclick="openModal('modal-tambah-modal')"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                                     style="background:#EFF6FF;color:var(--accent)"
-                                    onmouseenter="this.style.background='#DBEAFE'" onmouseleave="this.style.background='#EFF6FF'">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                                </svg>
-                                Tambah Modal
-                            </button>
-                        </div>
+                                    onmouseenter="this.style.background='#DBEAFE'"
+                                    onmouseleave="this.style.background='#EFF6FF'">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Tambah Modal
+                                </button>
+                            </div>
                         @endif
-                    </div>
-
-                    {{-- Modal Awal vs Modal Sekarang --}}
-                    <div class="grid grid-cols-2 divide-x" style="border-bottom:1px solid var(--line)">
-                        <div class="p-4 bg-gray-50/60">
-                            <p class="text-[9px] font-bold uppercase tracking-widest font-sans mb-1" style="color:var(--ink-mute)">Modal Disetor (Lifetime)</p>
-                            <p class="text-lg font-bold font-mono tabular-nums" style="color:var(--ink)">
-                                Rp {{ number_format($modalAwal, 0, ',', '.') }}
-                            </p>
-                            <p class="text-[10px] font-sans mt-0.5" style="color:var(--ink-mute)">Total modal masuk (Awal & Tambahan)</p>
-                        </div>
-                        <div class="p-4" style="{{ $modalSekarang >= 0 ? 'background:rgba(16,128,107,0.03)' : 'background:rgba(194,65,12,0.03)' }}">
-                            <p class="text-[9px] font-bold uppercase tracking-widest font-sans mb-1" style="color:var(--ink-mute)">Kas Liquid Sekarang</p>
-                            <p class="text-lg font-bold font-mono tabular-nums" style="{{ $modalSekarang >= 0 ? 'color:var(--success)' : 'color:var(--warn)' }}">
-                                {{ $modalSekarang < 0 ? '−' : '' }} Rp {{ number_format(abs($modalSekarang), 0, ',', '.') }}
-                            </p>
-                            <p class="text-[10px] font-sans mt-0.5" style="color:var(--ink-mute)">Modal + Omzet − Beli HP − Biaya</p>
-                        </div>
                     </div>
 
                     {{-- Capitals Log Table --}}
@@ -271,18 +376,24 @@
                         <table class="w-full text-xs">
                             <thead class="sticky top-0" style="z-index:1">
                                 <tr style="background:var(--bg-soft);border-bottom:1px solid var(--line)">
-                                    <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono whitespace-nowrap" style="color:var(--ink-mute)">Tanggal</th>
-                                    <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Keterangan</th>
-                                    <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Jenis</th>
-                                    <th class="text-right px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Jumlah</th>
-                                    @if(auth()->user()->role->value === 'superadmin')
-                                    <th class="text-center px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Aksi</th>
+                                    <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono whitespace-nowrap"
+                                        style="color:var(--ink-mute)">Tanggal</th>
+                                    <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono"
+                                        style="color:var(--ink-mute)">Keterangan</th>
+                                    <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono"
+                                        style="color:var(--ink-mute)">Jenis</th>
+                                    <th class="text-right px-5 py-2.5 font-bold uppercase tracking-wider font-mono"
+                                        style="color:var(--ink-mute)">Jumlah</th>
+                                    @if (auth()->user()->role->value === 'superadmin')
+                                        <th class="text-center px-5 py-2.5 font-bold uppercase tracking-wider font-mono"
+                                            style="color:var(--ink-mute)">Aksi</th>
                                     @endif
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($capitals as $capital)
-                                    <tr class="hover:bg-gray-50/60 transition-colors" style="border-bottom:1px solid var(--line)">
+                                    <tr class="hover:bg-gray-50/60 transition-colors"
+                                        style="border-bottom:1px solid var(--line)">
                                         <td class="px-5 py-2.5 font-mono whitespace-nowrap" style="color:var(--ink-soft)">
                                             {{ $capital->entry_date->format('d/m/Y') }}
                                         </td>
@@ -291,34 +402,52 @@
                                         </td>
                                         <td class="px-5 py-2.5">
                                             @if ($capital->type === 'initial')
-                                                <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold font-mono text-[9px]">Awal</span>
+                                                <span
+                                                    class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold font-mono text-[9px]">Awal</span>
                                             @elseif ($capital->type === 'addition')
-                                                <span class="px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-semibold font-mono text-[9px]">Tambahan</span>
+                                                <span
+                                                    class="px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-semibold font-mono text-[9px]">Tambahan</span>
                                             @elseif ($capital->type === 'withdrawal')
-                                                <span class="px-2 py-0.5 rounded-full bg-red-50 text-red-700 font-semibold font-mono text-[9px]">Pengurangan</span>
+                                                <span
+                                                    class="px-2 py-0.5 rounded-full bg-red-50 text-red-700 font-semibold font-mono text-[9px]">Pengurangan</span>
                                             @elseif ($capital->type === 'purchase')
-                                                <span class="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-semibold font-mono text-[9px]">Pembelian</span>
+                                                <span
+                                                    class="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-semibold font-mono text-[9px]">Pembelian</span>
                                             @else
-                                                <span class="px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 font-semibold font-mono text-[9px]">{{ $capital->type }}</span>
+                                                <span
+                                                    class="px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 font-semibold font-mono text-[9px]">{{ $capital->type }}</span>
                                             @endif
                                         </td>
-                                        <td class="px-5 py-2.5 text-right font-mono font-bold tabular-nums" style="{{ $capital->type === 'withdrawal' ? 'color:var(--warn)' : 'color:var(--ink)' }}">
-                                            {{ $capital->type === 'withdrawal' ? '−' : '' }} Rp {{ number_format($capital->amount, 0, ',', '.') }}
+                                        <td class="px-5 py-2.5 text-right font-mono font-bold tabular-nums"
+                                            style="{{ $capital->type === 'withdrawal' ? 'color:var(--warn)' : 'color:var(--ink)' }}">
+                                            {{ $capital->type === 'withdrawal' ? '−' : '' }} Rp
+                                            {{ number_format($capital->amount, 0, ',', '.') }}
                                         </td>
-                                        @if(auth()->user()->role->value === 'superadmin')
-                                        <td class="px-5 py-2.5 text-center">
-                                            <form method="POST" action="{{ route('capitals.destroy', $capital) }}" onsubmit="return confirm('Hapus modal ini?')">
-                                                @csrf @method('DELETE')
-                                                <button class="text-xs px-2 py-1 rounded-md transition-colors"
+                                        @if (auth()->user()->role->value === 'superadmin')
+                                            <td class="px-5 py-2.5 text-center">
+                                                <form method="POST" action="{{ route('capitals.destroy', $capital) }}"
+                                                    onsubmit="return confirm('Hapus entri ini?')">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" title="Hapus"
+                                                        class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
                                                         style="background:#FFF5F5;color:var(--warn)"
-                                                        onmouseenter="this.style.background='#FEE2E2'" onmouseleave="this.style.background='#FFF5F5'">Hapus</button>
-                                            </form>
-                                        </td>
+                                                        onmouseenter="this.style.background='#FEE2E2'"
+                                                        onmouseleave="this.style.background='#FFF5F5'">
+                                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                                                            stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            </td>
                                         @endif
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="{{ auth()->user()->role->value === 'superadmin' ? 5 : 4 }}" class="px-5 py-8 text-center text-xs" style="color:var(--ink-mute)">Belum ada data modal disetor</td>
+                                        <td colspan="{{ auth()->user()->role->value === 'superadmin' ? 5 : 4 }}"
+                                            class="px-5 py-8 text-center text-xs" style="color:var(--ink-mute)">Belum ada
+                                            data modal disetor</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -326,8 +455,10 @@
                     </div>
 
                     @if ($capitals->total() > 0)
-                        <div class="px-5 py-3 flex items-center justify-between" style="border-top:1px solid var(--line);background:var(--bg-soft)">
-                            <span class="text-xs font-mono" style="color:var(--ink-mute)">{{ $capitals->total() }} modal</span>
+                        <div class="px-5 py-3 flex items-center justify-between"
+                            style="border-top:1px solid var(--line);background:var(--bg-soft)">
+                            <span class="text-xs font-mono" style="color:var(--ink-mute)">{{ $capitals->total() }}
+                                modal</span>
                             {{ $capitals->links() }}
                         </div>
                     @endif
@@ -339,132 +470,279 @@
     </div>
 
     {{-- ========== MODAL: Tambah Modal ========== --}}
-    @if(auth()->user()->role->value === 'superadmin')
-    <div id="modal-tambah-modal" class="fixed inset-0 z-[100] hidden" onclick="closeModalOutside(event, 'modal-tambah-modal')">
-        <div class="fixed inset-0" style="background:rgba(10,37,64,.5)"></div>
-        <div class="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto">
-            <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden modal-pop" onclick="event.stopPropagation()">
-                <div class="flex items-start justify-between px-6 py-5" style="border-bottom:1px solid var(--line)">
-                    <div class="flex items-center gap-3">
-                        <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#EFF6FF;color:var(--accent)">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                        </span>
-                        <div>
-                            <h3 class="text-base font-semibold leading-none" style="color:var(--ink)">Tambah Modal</h3>
-                            <p class="text-xs mt-1.5" style="color:var(--ink-mute)">Catat modal yang masuk ke usaha</p>
+    @if (auth()->user()->role->value === 'superadmin')
+        <div id="modal-tambah-modal" class="fixed inset-0 z-[100] hidden"
+            onclick="closeModalOutside(event, 'modal-tambah-modal')">
+            <div class="fixed inset-0" style="background:rgba(10,37,64,.5)"></div>
+            <div class="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto">
+                <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden modal-pop"
+                    onclick="event.stopPropagation()">
+                    <div class="flex items-start justify-between px-6 py-5" style="border-bottom:1px solid var(--line)">
+                        <div class="flex items-center gap-3">
+                            <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                style="background:#EFF6FF;color:var(--accent)">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                </svg>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-semibold leading-none" style="color:var(--ink)">Tambah Modal
+                                </h3>
+                                <p class="text-xs mt-1.5" style="color:var(--ink-mute)">Catat modal yang masuk ke usaha
+                                </p>
+                            </div>
                         </div>
+                        <button onclick="closeModal('modal-tambah-modal')"
+                            class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                            style="color:var(--ink-mute);background:var(--bg-soft)"
+                            onmouseenter="this.style.background='var(--line)'"
+                            onmouseleave="this.style.background='var(--bg-soft)'">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
-                    <button onclick="closeModal('modal-tambah-modal')" class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors" style="color:var(--ink-mute);background:var(--bg-soft)" onmouseenter="this.style.background='var(--line)'" onmouseleave="this.style.background='var(--bg-soft)'">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
+                    <form method="POST" action="{{ route('capitals.store') }}" class="p-6 space-y-5">
+                        @csrf
+                        <div>
+                            <label class="field-label">Keterangan <span style="color:var(--warn)">*</span></label>
+                            <input type="text" name="description" placeholder="mis. Modal awal, tambahan modal..."
+                                required class="field-input" />
+                        </div>
+                        <div>
+                            <label class="field-label">Jumlah <span style="color:var(--warn)">*</span></label>
+                            <div class="money-wrap">
+                                <span class="rp-prefix">Rp</span>
+                                <input type="text" name="amount" id="cap-amount" required placeholder="0"
+                                    class="field-input money-input" inputmode="numeric"
+                                    style="height:48px;font-size:16px" />
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-2.5">
+                                @foreach ([500000 => '500rb', 1000000 => '1jt', 5000000 => '5jt', 10000000 => '10jt'] as $v => $lbl)
+                                    <button type="button" onclick="setAmount('cap-amount',{{ $v }})"
+                                        class="px-3 py-1.5 rounded-lg text-xs font-medium font-mono transition-colors"
+                                        style="background:var(--bg-soft);color:var(--ink-soft)"
+                                        onmouseenter="this.style.background='var(--line)'"
+                                        onmouseleave="this.style.background='var(--bg-soft)'">{{ $lbl }}</button>
+                                @endforeach
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="field-label">Jenis</label>
+                                <select name="type" required class="field-input">
+                                    <option value="initial">Modal Awal</option>
+                                    <option value="addition">Tambahan</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="field-label">Tanggal</label>
+                                <input type="date" name="entry_date" value="{{ today()->toDateString() }}" required
+                                    class="field-input" />
+                            </div>
+                        </div>
+                        <div class="flex gap-3 pt-1">
+                            <button type="submit" class="btn-primary flex-1">Simpan Modal</button>
+                            <button type="button" onclick="closeModal('modal-tambah-modal')" class="btn-secondary"
+                                style="padding:0 24px">Batal</button>
+                        </div>
+                    </form>
                 </div>
-                <form method="POST" action="{{ route('capitals.store') }}" class="p-6 space-y-5">
-                    @csrf
-                    <div>
-                        <label class="field-label">Keterangan <span style="color:var(--warn)">*</span></label>
-                        <input type="text" name="description" placeholder="mis. Modal awal, tambahan modal..." required class="field-input" />
-                    </div>
-                    <div>
-                        <label class="field-label">Jumlah <span style="color:var(--warn)">*</span></label>
-                        <div class="money-wrap">
-                            <span class="rp-prefix">Rp</span>
-                            <input type="text" name="amount" id="cap-amount" required placeholder="0"
-                                   class="field-input money-input" inputmode="numeric" style="height:48px;font-size:16px" />
+            </div>
+        </div>
+
+        {{-- ========== MODAL: Kurangi Modal ========== --}}
+        <div id="modal-kurangi-modal" class="fixed inset-0 z-[100] hidden"
+            onclick="closeModalOutside(event, 'modal-kurangi-modal')">
+            <div class="fixed inset-0" style="background:rgba(10,37,64,.5)"></div>
+            <div class="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto">
+                <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden modal-pop"
+                    onclick="event.stopPropagation()">
+                    <div class="flex items-start justify-between px-6 py-5" style="border-bottom:1px solid var(--line)">
+                        <div class="flex items-center gap-3">
+                            <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                style="background:#FFF5F5;color:var(--warn)">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />
+                                </svg>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-semibold leading-none" style="color:var(--ink)">Kurangi Modal
+                                </h3>
+                                <p class="text-xs mt-1.5" style="color:var(--ink-mute)">Catat penarikan atau pengurangan
+                                    modal usaha</p>
+                            </div>
                         </div>
-                        <div class="flex flex-wrap gap-2 mt-2.5">
-                            @foreach([500000=>'500rb', 1000000=>'1jt', 5000000=>'5jt', 10000000=>'10jt'] as $v => $lbl)
-                            <button type="button" onclick="setAmount('cap-amount',{{ $v }})"
-                                    class="px-3 py-1.5 rounded-lg text-xs font-medium font-mono transition-colors"
-                                    style="background:var(--bg-soft);color:var(--ink-soft)"
-                                    onmouseenter="this.style.background='var(--line)'" onmouseleave="this.style.background='var(--bg-soft)'">{{ $lbl }}</button>
-                            @endforeach
-                        </div>
+                        <button onclick="closeModal('modal-kurangi-modal')"
+                            class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                            style="color:var(--ink-mute);background:var(--bg-soft)"
+                            onmouseenter="this.style.background='var(--line)'"
+                            onmouseleave="this.style.background='var(--bg-soft)'">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <form method="POST" action="{{ route('capitals.store') }}" class="p-6 space-y-5">
+                        @csrf
+                        <input type="hidden" name="type" value="withdrawal" />
                         <div>
-                            <label class="field-label">Jenis</label>
-                            <select name="type" required class="field-input">
-                                <option value="initial">Modal Awal</option>
-                                <option value="addition">Tambahan</option>
-                            </select>
+                            <label class="field-label">Keterangan <span style="color:var(--warn)">*</span></label>
+                            <input type="text" name="description"
+                                placeholder="mis. Penarikan pemilik, pengambilan modal..." required class="field-input" />
+                        </div>
+                        <div>
+                            <label class="field-label">Jumlah yang Dikurangi <span
+                                    style="color:var(--warn)">*</span></label>
+                            <div class="money-wrap">
+                                <span class="rp-prefix">Rp</span>
+                                <input type="text" name="amount" id="withdraw-amount" required placeholder="0"
+                                    class="field-input money-input" inputmode="numeric"
+                                    style="height:48px;font-size:16px" />
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-2.5">
+                                @foreach ([500000 => '500rb', 1000000 => '1jt', 5000000 => '5jt', 10000000 => '10jt'] as $v => $lbl)
+                                    <button type="button" onclick="setAmount('withdraw-amount',{{ $v }})"
+                                        class="px-3 py-1.5 rounded-lg text-xs font-medium font-mono transition-colors"
+                                        style="background:var(--bg-soft);color:var(--ink-soft)"
+                                        onmouseenter="this.style.background='var(--line)'"
+                                        onmouseleave="this.style.background='var(--bg-soft)'">{{ $lbl }}</button>
+                                @endforeach
+                            </div>
                         </div>
                         <div>
                             <label class="field-label">Tanggal</label>
-                            <input type="date" name="entry_date" value="{{ today()->toDateString() }}" required class="field-input" />
+                            <input type="date" name="entry_date" value="{{ today()->toDateString() }}" required
+                                class="field-input" />
                         </div>
-                    </div>
-                    <div class="flex gap-3 pt-1">
-                        <button type="submit" class="btn-primary flex-1">Simpan Modal</button>
-                        <button type="button" onclick="closeModal('modal-tambah-modal')" class="btn-secondary" style="padding:0 24px">Batal</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    {{-- ========== MODAL: Kurangi Modal ========== --}}
-    <div id="modal-kurangi-modal" class="fixed inset-0 z-[100] hidden" onclick="closeModalOutside(event, 'modal-kurangi-modal')">
-        <div class="fixed inset-0" style="background:rgba(10,37,64,.5)"></div>
-        <div class="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto">
-            <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden modal-pop" onclick="event.stopPropagation()">
-                <div class="flex items-start justify-between px-6 py-5" style="border-bottom:1px solid var(--line)">
-                    <div class="flex items-center gap-3">
-                        <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#FFF5F5;color:var(--warn)">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
-                        </span>
-                        <div>
-                            <h3 class="text-base font-semibold leading-none" style="color:var(--ink)">Kurangi Modal</h3>
-                            <p class="text-xs mt-1.5" style="color:var(--ink-mute)">Catat penarikan atau pengurangan modal usaha</p>
-                        </div>
-                    </div>
-                    <button onclick="closeModal('modal-kurangi-modal')" class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors" style="color:var(--ink-mute);background:var(--bg-soft)" onmouseenter="this.style.background='var(--line)'" onmouseleave="this.style.background='var(--bg-soft)'">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <form method="POST" action="{{ route('capitals.store') }}" class="p-6 space-y-5">
-                    @csrf
-                    <input type="hidden" name="type" value="withdrawal" />
-                    <div>
-                        <label class="field-label">Keterangan <span style="color:var(--warn)">*</span></label>
-                        <input type="text" name="description" placeholder="mis. Penarikan pemilik, pengambilan modal..." required class="field-input" />
-                    </div>
-                    <div>
-                        <label class="field-label">Jumlah yang Dikurangi <span style="color:var(--warn)">*</span></label>
-                        <div class="money-wrap">
-                            <span class="rp-prefix">Rp</span>
-                            <input type="text" name="amount" id="withdraw-amount" required placeholder="0"
-                                   class="field-input money-input" inputmode="numeric" style="height:48px;font-size:16px" />
-                        </div>
-                        <div class="flex flex-wrap gap-2 mt-2.5">
-                            @foreach([500000=>'500rb', 1000000=>'1jt', 5000000=>'5jt', 10000000=>'10jt'] as $v => $lbl)
-                            <button type="button" onclick="setAmount('withdraw-amount',{{ $v }})"
-                                    class="px-3 py-1.5 rounded-lg text-xs font-medium font-mono transition-colors"
-                                    style="background:var(--bg-soft);color:var(--ink-soft)"
-                                    onmouseenter="this.style.background='var(--line)'" onmouseleave="this.style.background='var(--bg-soft)'">{{ $lbl }}</button>
-                            @endforeach
-                        </div>
-                    </div>
-                    <div>
-                        <label class="field-label">Tanggal</label>
-                        <input type="date" name="entry_date" value="{{ today()->toDateString() }}" required class="field-input" />
-                    </div>
-                    <div class="flex gap-3 pt-1">
-                        <button type="submit" class="flex-1 inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-colors"
+                        <div class="flex gap-3 pt-1">
+                            <button type="submit"
+                                class="flex-1 inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-colors"
                                 style="height:44px;font-size:14px;background:var(--warn);color:#fff"
-                                onmouseenter="this.style.background='#dc2626'" onmouseleave="this.style.background='var(--warn)'">
-                            Kurangi Modal
-                        </button>
-                        <button type="button" onclick="closeModal('modal-kurangi-modal')" class="btn-secondary" style="padding:0 24px">Batal</button>
-                    </div>
-                </form>
+                                onmouseenter="this.style.background='#dc2626'"
+                                onmouseleave="this.style.background='var(--warn)'">
+                                Kurangi Modal
+                            </button>
+                            <button type="button" onclick="closeModal('modal-kurangi-modal')" class="btn-secondary"
+                                style="padding:0 24px">Batal</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
-    @include('components.money-format')
-    <style>
-    @keyframes modalPop { from { opacity:0; transform:translateY(-12px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
-    .modal-pop { animation: modalPop 200ms cubic-bezier(.16,1,.3,1); }
-    </style>
+        {{-- ========== MODAL: Tambah Pengeluaran ========== --}}
+        <div id="modal-pengeluaran" class="fixed inset-0 z-[100] hidden" onclick="closePengeluaranOutside(event)">
+            <div class="fixed inset-0" style="background:rgba(10,37,64,.5)"></div>
+            <div class="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto">
+                <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden modal-pop"
+                    onclick="event.stopPropagation()">
+                    <div class="flex items-start justify-between px-6 py-5" style="border-bottom:1px solid var(--line)">
+                        <div class="flex items-center gap-3">
+                            <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                style="background:#FFF5F5;color:var(--warn)">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-semibold leading-none" style="color:var(--ink)">Tambah
+                                    Pengeluaran</h3>
+                                <p class="text-xs mt-1.5" style="color:var(--ink-mute)">Catat biaya operasional toko</p>
+                            </div>
+                        </div>
+                        <button onclick="closePengeluaran()"
+                            class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                            style="color:var(--ink-mute);background:var(--bg-soft)"
+                            onmouseenter="this.style.background='var(--line)'"
+                            onmouseleave="this.style.background='var(--bg-soft)'">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <form method="POST" action="{{ route('expenses.store') }}" class="p-6 space-y-5">
+                        @csrf
+                        <div>
+                            <label class="field-label">Keterangan <span style="color:var(--warn)">*</span></label>
+                            <input type="text" name="description" placeholder="mis. Bayar listrik, gaji, sewa..."
+                                required class="field-input" />
+                        </div>
+                        <div>
+                            <label class="field-label">Jumlah <span style="color:var(--warn)">*</span></label>
+                            <div class="money-wrap">
+                                <span class="rp-prefix">Rp</span>
+                                <input type="text" name="amount" id="exp-amount-cf" required placeholder="0"
+                                    class="field-input money-input" inputmode="numeric"
+                                    style="height:48px;font-size:16px" />
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-2.5">
+                                @foreach ([20000 => '20rb', 50000 => '50rb', 100000 => '100rb', 500000 => '500rb'] as $v => $lbl)
+                                    <button type="button" onclick="setCfExpAmount({{ $v }})"
+                                        class="px-3 py-1.5 rounded-lg text-xs font-medium font-mono transition-colors"
+                                        style="background:var(--bg-soft);color:var(--ink-soft)"
+                                        onmouseenter="this.style.background='var(--line)'"
+                                        onmouseleave="this.style.background='var(--bg-soft)'">{{ $lbl }}</button>
+                                @endforeach
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="field-label">Kategori</label>
+                                <select name="category" required class="field-input">
+                                    <option value="operasional">Operasional</option>
+                                    <option value="listrik">Listrik & Gas</option>
+                                    <option value="gaji">Gaji</option>
+                                    <option value="sewa">Sewa</option>
+                                    <option value="lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="field-label">Tanggal</label>
+                                <input type="date" name="expense_date" value="{{ today()->toDateString() }}" required
+                                    class="field-input" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Catatan</label>
+                            <textarea name="notes" rows="2" class="field-input" placeholder="Detail tambahan (opsional)"></textarea>
+                        </div>
+                        <div class="flex gap-3 pt-1">
+                            <button type="submit" class="flex-1 btn-primary" style="background:var(--warn)">Simpan
+                                Pengeluaran</button>
+                            <button type="button" onclick="closePengeluaran()" class="btn-secondary"
+                                style="padding:0 24px">Batal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        @include('components.money-format')
+        <style>
+            @keyframes modalPop {
+                from {
+                    opacity: 0;
+                    transform: translateY(-12px) scale(.98);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+
+            .modal-pop {
+                animation: modalPop 200ms cubic-bezier(.16, 1, .3, 1);
+            }
+        </style>
     @endif
 
     <style>
@@ -488,21 +766,54 @@
             const first = el.querySelector('input[name="description"]');
             if (first) setTimeout(() => first.focus(), 50);
         }
+
         function closeModal(id) {
             const el = document.getElementById(id);
             if (el) el.classList.add('hidden');
             document.body.style.overflow = '';
         }
+
         function closeModalOutside(e, id) {
             if (e.target === document.getElementById(id)) closeModal(id);
         }
+
         function setAmount(id, val) {
             const el = document.getElementById(id);
-            if (el) { el.value = val.toLocaleString('id-ID'); }
+            if (el) {
+                el.value = val.toLocaleString('id-ID');
+            }
+        }
+
+        function openExpenseModal() {
+            const el = document.getElementById('modal-pengeluaran');
+            if (el) {
+                el.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+            const first = el?.querySelector('input[name="description"]');
+            if (first) setTimeout(() => first.focus(), 50);
+        }
+
+        function closePengeluaran() {
+            const el = document.getElementById('modal-pengeluaran');
+            if (el) {
+                el.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function closePengeluaranOutside(e) {
+            if (e.target === document.getElementById('modal-pengeluaran')) closePengeluaran();
+        }
+
+        function setCfExpAmount(val) {
+            const el = document.getElementById('exp-amount-cf');
+            if (el) el.value = val.toLocaleString('id-ID');
         }
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') {
                 ['modal-tambah-modal', 'modal-kurangi-modal'].forEach(closeModal);
+                closePengeluaran();
             }
         });
 

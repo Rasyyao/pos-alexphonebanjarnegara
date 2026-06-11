@@ -76,22 +76,12 @@
                         <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Harga</span>
                     </div>
                     <div class="p-5">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="field-label">Harga Beli <span style="color:var(--warn)">*</span></label>
-                                <div class="money-wrap">
-                                    <span class="rp-prefix">Rp</span>
-                                    <input type="text" name="purchase_price" id="acc-buy" value="{{ old('purchase_price', $accessory->purchase_price) }}" required
-                                           class="field-input money-input" placeholder="0" inputmode="numeric" oninput="calcMargin()" onblur="calcMargin()" />
-                                </div>
-                            </div>
-                            <div>
-                                <label class="field-label">Harga Jual <span style="color:var(--warn)">*</span></label>
-                                <div class="money-wrap">
-                                    <span class="rp-prefix">Rp</span>
-                                    <input type="text" name="selling_price" id="acc-sell" value="{{ old('selling_price', $accessory->selling_price) }}" required
-                                           class="field-input money-input" placeholder="0" inputmode="numeric" oninput="calcMargin()" onblur="calcMargin()" />
-                                </div>
+                        <div>
+                            <label class="field-label">Harga Beli <span style="color:var(--warn)">*</span></label>
+                            <div class="money-wrap">
+                                <span class="rp-prefix">Rp</span>
+                                <input type="text" name="purchase_price" id="acc-buy" value="{{ old('purchase_price', $accessory->purchase_price) }}" required
+                                       class="field-input money-input" placeholder="0" inputmode="numeric" />
                             </div>
                         </div>
                     </div>
@@ -105,9 +95,16 @@
                         <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Estimasi Margin</span>
                     </div>
                     <div class="p-5">
-                        <div class="text-3xl font-semibold font-mono tabular-nums" id="margin-amount" style="color:var(--ink-mute)">Rp 0</div>
-                        <div class="text-xs mt-1" id="margin-pct" style="color:var(--ink-mute)">Laba per unit terjual</div>
-                        <div class="mt-4 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
+                        <div class="mb-3">
+                            <label class="field-label">Harga Jual (Estimasi)</label>
+                            <div class="money-wrap">
+                                <span class="rp-prefix">Rp</span>
+                                <input type="text" id="acc-est-jual" class="field-input money-input" placeholder="0" inputmode="numeric" />
+                            </div>
+                        </div>
+                        <div class="text-2xl font-semibold font-mono tabular-nums" id="margin-amount" style="color:var(--ink-mute)">Rp 0</div>
+                        <div class="text-xs mt-1" id="margin-pct" style="color:var(--ink-mute)">Isi harga jual estimasi</div>
+                        <div class="mt-3 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
                             <div id="margin-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:var(--success)"></div>
                         </div>
                     </div>
@@ -125,32 +122,35 @@
 
 @include('components.money-format')
 <script>
-function rawNum(id) {
-    var el = document.getElementById(id);
-    return el ? parseInt((el.value || '').replace(/[^0-9]/g, ''), 10) || 0 : 0;
-}
 function calcMargin() {
-    var buy = rawNum('acc-buy'), sell = rawNum('acc-sell');
-    var margin = sell - buy;
-    var amtEl = document.getElementById('margin-amount');
-    var pctEl = document.getElementById('margin-pct');
-    var bar   = document.getElementById('margin-bar');
-    amtEl.textContent = 'Rp ' + margin.toLocaleString('id-ID');
-    if (sell > 0 && buy > 0) {
-        var pct = Math.round((margin / sell) * 100);
-        var color = margin >= 0 ? 'var(--success)' : 'var(--warn)';
+    const rawId   = id => parseInt((document.getElementById(id)?.value || '').replace(/[^0-9]/g, ''), 10) || 0;
+    const rawName = n  => parseInt((document.querySelector(`[name="${n}"]`)?.value || '').replace(/[^0-9]/g, ''), 10) || 0;
+    const buy    = rawName('purchase_price');
+    const sell   = rawId('acc-est-jual');
+    const margin = sell - buy;
+    const amtEl  = document.getElementById('margin-amount');
+    const pctEl  = document.getElementById('margin-pct');
+    const bar    = document.getElementById('margin-bar');
+    if (buy > 0 && sell > 0) {
+        const pct   = Math.round((margin / sell) * 100);
+        const color = margin >= 0 ? 'var(--success)' : 'var(--warn)';
+        amtEl.textContent = 'Rp ' + margin.toLocaleString('id-ID');
         amtEl.style.color = color;
-        bar.style.background = color;
-        bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
         pctEl.textContent = (margin >= 0 ? 'Untung ' : 'Rugi ') + Math.abs(pct) + '% dari harga jual';
         pctEl.style.color = color;
+        bar.style.width = Math.max(0, Math.min(100, Math.abs(pct))) + '%';
+        bar.style.background = color;
     } else {
+        amtEl.textContent = 'Rp 0';
         amtEl.style.color = 'var(--ink-mute)';
-        pctEl.textContent = 'Laba per unit terjual';
+        pctEl.textContent = 'Isi harga jual estimasi';
         pctEl.style.color = 'var(--ink-mute)';
         bar.style.width = '0%';
     }
 }
-document.addEventListener('DOMContentLoaded', calcMargin);
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('acc-buy')?.addEventListener('input', calcMargin);
+    document.getElementById('acc-est-jual')?.addEventListener('input', calcMargin);
+});
 </script>
 @endsection

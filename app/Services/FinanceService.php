@@ -18,6 +18,21 @@ class FinanceService
         private readonly ExpenseRepositoryInterface $expenses,
     ) {}
 
+    /** Current liquid cash — used for purchase validation in controllers. */
+    public static function kasLiquidNow(): float
+    {
+        $modalAwal  = (float)\App\Models\Capital::whereIn('type', ['initial', 'addition'])->sum('amount');
+        $withdrawal = (float)\App\Models\Capital::where('type', 'withdrawal')->sum('amount');
+        $revenue    = (float)\App\Models\Sale::where('status', 'approved')->sum('total_price');
+        $hpCost     = (float)\App\Models\Unit::sum('purchase_price');
+        $accStock   = (float)\App\Models\Accessory::selectRaw('COALESCE(SUM(purchase_price * stock_qty),0) as v')->value('v');
+        $accSold    = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
+                         ->selectRaw('COALESCE(SUM(purchase_price * quantity),0) as v')->value('v');
+        $expenses   = (float)\App\Models\Expense::sum('amount');
+
+        return $modalAwal - $withdrawal + $revenue - $hpCost - $accStock - $accSold - $expenses;
+    }
+
     /** Aggregate data for the Finance index page. */
     public function summary(): array
     {
@@ -86,10 +101,13 @@ class FinanceService
         // Modal Awal and Modal Sekarang (Lifetime)
         $modalAwal = (float) \App\Models\Capital::whereIn('type', ['initial', 'addition'])->sum('amount')
                   - (float) \App\Models\Capital::where('type', 'withdrawal')->sum('amount');
-        $totalHPPurchases = $this->units->totalPurchaseValue();
-        $lifetimeRevenue = (float) \App\Models\Sale::where('status', 'approved')->sum('total_price');
-        $lifetimeExpenses = (float) \App\Models\Expense::sum('amount');
-        $modalSekarang = $modalAwal + $lifetimeRevenue - $totalHPPurchases - $lifetimeExpenses;
+        $totalHPPurchases        = $this->units->totalPurchaseValue();
+        $lifetimeRevenue         = (float) \App\Models\Sale::where('status', 'approved')->sum('total_price');
+        $lifetimeExpenses        = (float) \App\Models\Expense::sum('amount');
+        $accStock                = (float) \App\Models\Accessory::selectRaw('COALESCE(SUM(purchase_price * stock_qty),0) as v')->value('v');
+        $accSold                 = (float) \App\Models\SaleItem::whereNotNull('accessory_id')->selectRaw('COALESCE(SUM(purchase_price * quantity),0) as v')->value('v');
+        $totalAccessoryPurchases = $accStock + $accSold;
+        $modalSekarang           = $modalAwal + $lifetimeRevenue - $totalHPPurchases - $totalAccessoryPurchases - $lifetimeExpenses;
 
         return [
             'revenue'      => $revenue,
@@ -154,10 +172,16 @@ class FinanceService
         $totalHPPurchases = $this->units->totalPurchaseValue();
         $lifetimeRevenue  = (float) \App\Models\Sale::where('status', 'approved')->sum('total_price');
         $lifetimeExpenses = (float) \App\Models\Expense::sum('amount');
-        $modalSekarang    = $modalAwal - $totalWithdrawal + $lifetimeRevenue - $totalHPPurchases - $lifetimeExpenses;
+        $unpaidDebts   = $this->debts->unpaidSum();
+        $activeDebts   = \App\Models\Debt::with(['sale.creator'])->where('status', '!=', 'paid')->latest()->get();
+        $accAssetValue = \App\Models\Accessory::all()->sum(fn($a) => (float)$a->purchase_price * $a->stock_qty);
 
-        $unpaidDebts = $this->debts->unpaidSum();
-        $activeDebts = \App\Models\Debt::with(['sale.creator'])->where('status', '!=', 'paid')->latest()->get();
+        // Total ever spent on accessories = current stock cost + cost of accessories already sold
+        $accSoldCost             = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
+                                       ->selectRaw('COALESCE(SUM(purchase_price * quantity), 0) as total')
+                                       ->value('total');
+        $totalAccessoryPurchases = $accAssetValue + $accSoldCost;
+        $modalSekarang           = $modalAwal - $totalWithdrawal + $lifetimeRevenue - $totalHPPurchases - $totalAccessoryPurchases - $lifetimeExpenses;
 
         return [
             'today'            => $today,
@@ -168,9 +192,10 @@ class FinanceService
                 'profit'  => $totalProfit,
             ],
             'cashflow'         => [
-                'inflow'  => $totalRevenue,
-                'outflow' => $totalExpenses,
-                'net'     => $totalRevenue - $totalExpenses,
+                'inflow'      => $totalRevenue,
+                'outflow'     => $totalExpenses,
+                'hpPurchases' => $totalHPPurchases,
+                'net'         => $totalRevenue - $totalExpenses,
             ],
             'expenses'         => $expenses,
             'capitals'         => $capitalsList,
@@ -181,6 +206,7 @@ class FinanceService
             'unpaidDebts'      => $unpaidDebts,
             'activeDebts'      => $activeDebts,
             'assetValue'       => $this->units->assetValue(),
+            'accAssetValue'    => $accAssetValue,
         ];
     }
 }

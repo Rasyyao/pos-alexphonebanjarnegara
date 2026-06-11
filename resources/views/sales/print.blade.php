@@ -26,6 +26,12 @@ body { font-family: 'Courier New', monospace; font-size: 12px; color: #000; back
 <div class="row"><span>No.</span><span class="bold">{{ $sale->invoice_number }}</span></div>
 <div class="row"><span>Tgl</span><span>{{ $sale->sale_date->format('d/m/Y') }}</span></div>
 <div class="row"><span>Kasir</span><span>{{ $sale->creator->name ?? '—' }}</span></div>
+@if($sale->customer_name)
+<div class="row"><span>Pembeli</span><span class="bold">{{ $sale->customer_name }}</span></div>
+@endif
+@if($sale->description)
+<div style="margin-top:4px;font-size:10px;color:#333;">Ket: {{ $sale->description }}</div>
+@endif
 
 <div class="divider"></div>
 

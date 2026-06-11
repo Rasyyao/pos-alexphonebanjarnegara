@@ -12,13 +12,29 @@
         </div>
         @enderror
 
-        {{-- Tanggal --}}
+        {{-- Tanggal + Nama Pembeli --}}
         <div class="bg-white rounded-xl border p-5" style="border-color:var(--line)">
-            <label class="field-label">Tanggal Transaksi</label>
-            <input type="date" wire:model.live="saleDate"
-                   class="field-input @error('saleDate') error @enderror"
-                   style="width:auto;min-width:180px" />
-            @error('saleDate')<p class="field-error">{{ $message }}</p>@enderror
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="field-label">Tanggal Transaksi</label>
+                    <input type="date" wire:model.live="saleDate"
+                           class="field-input @error('saleDate') error @enderror"
+                           style="width:100%" />
+                    @error('saleDate')<p class="field-error">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="field-label">Nama Pembeli <span class="text-[10px] font-normal" style="color:var(--ink-mute)">(opsional)</span></label>
+                    <input type="text" wire:model.live="customerName"
+                           placeholder="Nama pelanggan..."
+                           class="field-input" style="width:100%" />
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="field-label">Keterangan <span class="text-[10px] font-normal" style="color:var(--ink-mute)">(opsional)</span></label>
+                <textarea wire:model.live="description" rows="2"
+                          placeholder="Catatan atau keterangan tambahan transaksi..."
+                          class="field-input" style="width:100%;resize:none"></textarea>
+            </div>
         </div>
 
         {{-- Items --}}
@@ -198,6 +214,28 @@
                         @endif
 
                     </div>
+
+                    {{-- Utang: debtor name — full width below the payment row --}}
+                    @if(($payment['method'] ?? 'cash') === 'utang')
+                    <div class="mt-3 pt-3" style="border-top:1px dashed var(--line)">
+                        <div class="flex items-center gap-3 px-4 py-3 rounded-lg" style="background:#FFF5F5;border:1px solid #FEE2E2">
+                            <svg class="w-4 h-4 flex-shrink-0" style="color:var(--warn)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            <label class="text-xs font-semibold whitespace-nowrap flex-shrink-0" style="color:var(--warn)">Nama Pengutang</label>
+                            <input type="text" wire:model.live="customerName"
+                                   placeholder="Isi nama pelanggan yang berutang..."
+                                   class="field-input flex-1"
+                                   style="font-size:13px;height:36px" />
+                            @if(trim($customerName))
+                            <span class="text-xs font-semibold whitespace-nowrap flex-shrink-0" style="color:var(--success)">✓ {{ $customerName }}</span>
+                            @else
+                            <span class="text-[11px] whitespace-nowrap flex-shrink-0" style="color:var(--warn)">Wajib diisi</span>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
                 </div>
                 @endforeach
             </div>

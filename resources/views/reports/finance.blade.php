@@ -211,6 +211,61 @@
         @endif
 
     </div>
+    {{-- Asset Overview (Superadmin) --}}
+    @if(auth()->user()->role->value === 'superadmin')
+    @php $totalAset = ($assetValue ?? 0) + ($accAssetValue ?? 0); @endphp
+    <div class="bg-white rounded-xl border shadow-sm overflow-hidden" style="border-color:var(--line)">
+        <div class="px-5 py-4 border-b" style="border-color:var(--line);background:var(--bg-soft)">
+            <h3 class="text-sm font-semibold" style="color:var(--ink)">Ringkasan Aset Stok</h3>
+            <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Nilai modal yang tertanam di stok HP dan aksesoris saat ini</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x" style="border-color:var(--line)">
+            <div class="px-6 py-5">
+                <div class="flex items-center gap-2.5 mb-2">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(124,58,237,0.08)">
+                        <svg class="w-3.5 h-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                    </span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest font-mono text-violet-500">Stok HP</span>
+                </div>
+                <p class="text-xl font-bold font-mono tabular-nums text-violet-600">
+                    Rp {{ number_format($assetValue ?? 0, 0, ',', '.') }}
+                </p>
+                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Nilai beli HP ready di stok</p>
+            </div>
+            <div class="px-6 py-5">
+                <div class="flex items-center gap-2.5 mb-2">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(14,116,144,0.08)">
+                        <svg class="w-3.5 h-3.5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                    </span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest font-mono text-cyan-600">Stok Aksesoris</span>
+                </div>
+                <p class="text-xl font-bold font-mono tabular-nums text-cyan-700">
+                    Rp {{ number_format($accAssetValue ?? 0, 0, ',', '.') }}
+                </p>
+                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Nilai modal aksesoris di stok</p>
+            </div>
+            <div class="px-6 py-5" style="background:var(--bg-soft)">
+                <div class="flex items-center gap-2.5 mb-2">
+                    <span class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(16,128,107,0.1)">
+                        <svg class="w-3.5 h-3.5" style="color:var(--success)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--success)">Total Aset Stok</span>
+                </div>
+                <p class="text-xl font-bold font-mono tabular-nums" style="color:var(--success)">
+                    Rp {{ number_format($totalAset, 0, ',', '.') }}
+                </p>
+                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">HP + Aksesoris gabungan</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Capitals and Expenses for Superadmin --}}
     @if(auth()->user()->role->value === 'superadmin')
     <div class="space-y-6 mt-6">

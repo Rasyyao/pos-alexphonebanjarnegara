@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 use App\Models\Sale;
 use App\Repositories\Contracts\SaleRepositoryInterface;
 use App\Services\SaleService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SaleController extends Controller
 {
@@ -45,6 +47,46 @@ class SaleController extends Controller
         return view('sales.show', compact('sale'));
     }
 
+    public function edit(Sale $sale)
+    {
+        abort_unless(auth()->user()->role->value === 'superadmin', 403);
+        $sale->load(['creator', 'items.unit.model.brand', 'items.accessory', 'payments']);
+        return view('sales.edit', compact('sale'));
+    }
+
+    public function update(Request $request, Sale $sale)
+    {
+        abort_unless(auth()->user()->role->value === 'superadmin', 403);
+        $request->validate([
+            'sale_date'             => ['required', 'date'],
+            'description'           => ['nullable', 'string', 'max:1000'],
+            'items'                 => ['required', 'array'],
+            'items.*.selling_price' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        DB::transaction(function () use ($request, $sale) {
+            foreach ($request->input('items') as $itemId => $data) {
+                $item = $sale->items()->findOrFail($itemId);
+                $price = (float) $data['selling_price'];
+                $item->update([
+                    'selling_price' => $price,
+                    'subtotal'      => $price * $item->quantity,
+                ]);
+            }
+            $sale->load('items');
+            $total  = $sale->items->sum('subtotal');
+            $profit = $sale->items->sum(fn($i) => ($i->selling_price - $i->purchase_price) * $i->quantity);
+            $sale->update([
+                'sale_date'   => $request->sale_date,
+                'description' => $request->description ?: null,
+                'total_price' => $total,
+                'profit'      => $profit,
+            ]);
+        });
+
+        return redirect()->route('sales.show', $sale)->with('success', 'Transaksi berhasil diperbarui.');
+    }
+
     public function approve(Sale $sale)
     {
         abort_unless(auth()->user()->role->value === 'superadmin', 403);
@@ -59,13 +101,22 @@ class SaleController extends Controller
     public function destroy(Sale $sale)
     {
         abort_unless(auth()->user()->role->value === 'superadmin', 403);
-        if ($sale->status->value !== 'pending') {
-            return back()->with('error', 'Hanya transaksi pending yang dapat dihapus.');
-        }
-        $sale->items()->delete();
-        $sale->payments()->delete();
-        $sale->delete();
-        return back()->with('success', 'Transaksi ' . $sale->invoice_number . ' berhasil dihapus.');
+        $invoice = $sale->invoice_number;
+
+        DB::transaction(function () use ($sale) {
+            if ($sale->status->value === 'approved') {
+                foreach ($sale->items()->with(['unit', 'accessory'])->get() as $item) {
+                    if ($item->unit_id) $item->unit->update(['status' => 'ready']);
+                    if ($item->accessory_id) $item->accessory->increment('stock_qty', $item->quantity);
+                }
+            }
+            $sale->debt?->delete();
+            $sale->items()->delete();
+            $sale->payments()->delete();
+            $sale->delete();
+        });
+
+        return redirect()->route('sales.index')->with('success', 'Transaksi ' . $invoice . ' berhasil dihapus.');
     }
 
     public function printReceipt(Sale $sale)

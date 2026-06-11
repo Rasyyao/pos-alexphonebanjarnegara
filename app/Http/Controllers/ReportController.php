@@ -79,6 +79,28 @@ class ReportController extends Controller
         return view('reports.stock', compact('units', 'accessories', 'assetValue', 'totalStockQty', 'brandDist', 'typeDist', 'statusDist'));
     }
 
+    public function stockOpname()
+    {
+        $units       = \App\Models\Unit::with('model.brand')->orderBy('status')->orderBy('created_at')->get();
+        $accessories = \App\Models\Accessory::orderBy('category')->orderBy('name')->get();
+
+        $readyUnits = $units->filter(fn($u) => $u->status->value === 'ready');
+        $assetModal = (float) $readyUnits->sum('purchase_price');
+        $accModal   = (float) $accessories->sum(fn($a) => (float)$a->purchase_price * $a->stock_qty);
+        $accQty     = (int) $accessories->sum('stock_qty');
+
+        return view('reports.opname-stock', [
+            'units'       => $units,
+            'accessories' => $accessories,
+            'readyCount'  => $readyUnits->count(),
+            'soldCount'   => $units->filter(fn($u) => $u->status->value === 'sold')->count(),
+            'assetModal'  => $assetModal,
+            'accModal'    => $accModal,
+            'accQty'      => $accQty,
+            'printedAt'   => now()->isoFormat('D MMMM YYYY, HH:mm') . ' WIB',
+        ]);
+    }
+
     public function pdf(Request $request, string $type)
     {
         $pdf = match ($type) {

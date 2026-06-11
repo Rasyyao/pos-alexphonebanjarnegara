@@ -43,7 +43,6 @@
                         <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Kategori</th>
                         <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Stok</th>
                         <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Harga Beli</th>
-                        <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Harga Jual</th>
                         <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Aksi</th>
                     </tr>
                 </thead>
@@ -58,9 +57,18 @@
                         <td class="px-4 py-3.5 text-right font-mono font-medium tabular-nums"
                             style="color:{{ $acc->stock_qty <= 3 ? 'var(--warn)' : 'var(--ink)' }}">{{ $acc->stock_qty }}</td>
                         <td class="px-4 py-3.5 text-right font-mono tabular-nums" style="color:var(--ink-soft)">Rp {{ number_format($acc->purchase_price, 0, ',', '.') }}</td>
-                        <td class="px-4 py-3.5 text-right font-mono font-medium tabular-nums" style="color:var(--ink)">Rp {{ number_format($acc->selling_price, 0, ',', '.') }}</td>
                         <td class="px-4 py-3.5">
                             <div class="flex items-center justify-end gap-1.5">
+                                <a href="{{ route('accessories.show', $acc) }}"
+                                   title="Lihat Detail"
+                                   class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                                   style="background:var(--bg-soft);color:var(--ink-soft)"
+                                   onmouseenter="this.style.background='#E4E9F2'" onmouseleave="this.style.background='var(--bg-soft)'">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </a>
                                 <a href="{{ route('accessories.edit', $acc) }}"
                                    title="Edit"
                                    class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
@@ -87,7 +95,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-14 text-center text-sm" style="color:var(--ink-mute)">
+                        <td colspan="5" class="px-4 py-14 text-center text-sm" style="color:var(--ink-mute)">
                             Tidak ada aksesoris ditemukan.
                             <a href="{{ route('accessories.create') }}" class="font-medium hover:underline ml-1" style="color:var(--accent)">Tambah sekarang</a>
                         </td>

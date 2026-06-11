@@ -78,11 +78,85 @@
                         <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Harga Beli</span>
                         <span class="text-sm font-mono tabular-nums" style="color:var(--ink-soft)">Rp {{ number_format($accessory->purchase_price, 0, ',', '.') }}</span>
                     </div>
-                    <div class="flex items-center px-5 py-3" style="border-color:var(--line)">
-                        <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Harga Jual</span>
-                        <span class="text-sm font-semibold font-mono tabular-nums" style="color:var(--ink)">Rp {{ number_format($accessory->selling_price, 0, ',', '.') }}</span>
-                    </div>
                 </div>
+            </div>
+
+            {{-- Rekap Pembayaran Penjualan --}}
+            <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
+                <div class="px-5 py-3.5 flex items-center justify-between" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" style="color:var(--ink-mute)">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Rekap Pembayaran Penjualan</span>
+                    </div>
+                    @if($saleHistory->count() > 0)
+                    @php
+                        $totalQtySold = $saleHistory->sum('quantity');
+                        $totalRevenue = $saleHistory->sum('subtotal');
+                    @endphp
+                    <div class="flex items-center gap-3">
+                        <span class="text-[11px] font-mono" style="color:var(--ink-mute)">{{ $totalQtySold }} terjual</span>
+                        <span class="text-[11px] font-bold font-mono tabular-nums" style="color:var(--success)">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</span>
+                    </div>
+                    @endif
+                </div>
+
+                @if($saleHistory->isEmpty())
+                <div class="px-5 py-8 text-center">
+                    <p class="text-xs" style="color:var(--ink-mute)">Belum ada penjualan untuk aksesoris ini.</p>
+                </div>
+                @else
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr style="background:var(--bg-soft);border-bottom:1px solid var(--line)">
+                                <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Invoice</th>
+                                <th class="text-left px-4 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Tanggal</th>
+                                <th class="text-left px-4 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Pembeli</th>
+                                <th class="text-center px-4 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Qty</th>
+                                <th class="text-right px-4 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Subtotal</th>
+                                <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Pembayaran</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($saleHistory as $item)
+                            <tr style="border-bottom:1px solid var(--line)"
+                                onmouseenter="this.style.background='var(--bg-soft)'" onmouseleave="this.style.background=''">
+                                <td class="px-5 py-3 font-mono font-medium" style="color:var(--ink)">
+                                    <a href="{{ route('sales.show', $item->sale) }}" style="color:var(--accent)" class="hover:underline">
+                                        {{ $item->sale->invoice_number }}
+                                    </a>
+                                </td>
+                                <td class="px-4 py-3 font-mono" style="color:var(--ink-soft)">{{ $item->sale->sale_date->format('d/m/Y') }}</td>
+                                <td class="px-4 py-3" style="color:var(--ink-soft)">
+                                    {{ $item->sale->customer_name ?? $item->sale->creator->name ?? '—' }}
+                                </td>
+                                <td class="px-4 py-3 text-center font-mono font-semibold" style="color:var(--ink)">{{ $item->quantity }}</td>
+                                <td class="px-4 py-3 text-right font-mono font-semibold tabular-nums" style="color:var(--ink)">
+                                    Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+                                </td>
+                                <td class="px-5 py-3">
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($item->sale->payments as $payment)
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono"
+                                              style="{{ $payment->method->value === 'utang'
+                                                  ? 'background:#FFF5F5;color:var(--warn)'
+                                                  : ($payment->method->value === 'transfer'
+                                                      ? 'background:#EFF6FF;color:var(--accent)'
+                                                      : 'background:#F0FDF4;color:var(--success)') }}">
+                                            {{ strtoupper($payment->method->value) }}
+                                            Rp {{ number_format($payment->amount, 0, ',', '.') }}
+                                        </span>
+                                        @endforeach
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @endif
             </div>
 
         </div>
@@ -90,26 +164,24 @@
         {{-- Right sidebar: margin + actions --}}
         <div class="space-y-5">
 
-            {{-- Estimasi Margin --}}
-            @php
-                $margin = $accessory->selling_price - $accessory->purchase_price;
-                $marginPct = $accessory->selling_price > 0 ? round(($margin / $accessory->selling_price) * 100) : 0;
-                $marginColor = $margin >= 0 ? 'var(--success)' : 'var(--warn)';
-                $barWidth = max(0, min(100, $marginPct));
-            @endphp
+            {{-- Harga Jual --}}
             <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
                 <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
-                    <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Estimasi Margin</span>
+                    <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Harga Jual</span>
                 </div>
                 <div class="p-5">
-                    <div class="text-3xl font-semibold font-mono tabular-nums" style="color:{{ $marginColor }}">
-                        Rp {{ number_format($margin, 0, ',', '.') }}
+                    <label class="field-label">Harga Jual</label>
+                    <div class="money-wrap">
+                        <span class="rp-prefix">Rp</span>
+                        <input type="text" id="show-est-jual" class="field-input money-input" placeholder="0" inputmode="numeric" />
                     </div>
-                    <div class="text-xs mt-1" style="color:{{ $marginColor }}">
-                        {{ $margin >= 0 ? 'Untung' : 'Rugi' }} {{ abs($marginPct) }}% dari harga jual
-                    </div>
-                    <div class="mt-4 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
-                        <div class="h-full rounded-full" style="width:{{ $barWidth }}%;background:{{ $marginColor }}"></div>
+                    <div class="mt-3 pt-3 border-t" style="border-color:var(--line)">
+                        <div class="text-[10px] font-bold uppercase tracking-widest font-mono mb-1" style="color:var(--ink-mute)">Estimasi Margin</div>
+                        <div class="text-xl font-bold font-mono tabular-nums" id="show-margin-amount" style="color:var(--ink-mute)">Rp 0</div>
+                        <div class="text-xs mt-0.5" id="show-margin-pct" style="color:var(--ink-mute)">Isi harga jual untuk lihat margin</div>
+                        <div class="mt-2 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
+                            <div id="show-margin-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:var(--success)"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -128,4 +200,40 @@
 
     </div>
 </div>
+
+@include('components.money-format')
+<script>
+(function() {
+    function rawInt(id) {
+        return parseInt((document.getElementById(id)?.value || '').replace(/[^0-9]/g, ''), 10) || 0;
+    }
+    var BUY = {{ (int)$accessory->purchase_price }};
+    function calcShowMargin() {
+        var sell   = rawInt('show-est-jual');
+        var margin = sell - BUY;
+        var amtEl  = document.getElementById('show-margin-amount');
+        var pctEl  = document.getElementById('show-margin-pct');
+        var bar    = document.getElementById('show-margin-bar');
+        if (sell > 0) {
+            var pct   = Math.round((margin / sell) * 100);
+            var color = margin >= 0 ? 'var(--success)' : 'var(--warn)';
+            amtEl.textContent = 'Rp ' + margin.toLocaleString('id-ID');
+            amtEl.style.color = color;
+            pctEl.textContent = (margin >= 0 ? 'Untung ' : 'Rugi ') + Math.abs(pct) + '% dari harga jual';
+            pctEl.style.color = color;
+            bar.style.width = Math.max(0, Math.min(100, Math.abs(pct))) + '%';
+            bar.style.background = color;
+        } else {
+            amtEl.textContent = 'Rp 0';
+            amtEl.style.color = 'var(--ink-mute)';
+            pctEl.textContent = 'Isi harga jual untuk lihat margin';
+            pctEl.style.color = 'var(--ink-mute)';
+            bar.style.width = '0%';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('show-est-jual')?.addEventListener('input', calcShowMargin);
+    });
+})();
+</script>
 @endsection

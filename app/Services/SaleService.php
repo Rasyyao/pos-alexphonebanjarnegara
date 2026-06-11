@@ -30,6 +30,8 @@ class SaleService
             $sale = $this->sales->create([
                 'created_by'     => $actor->id,
                 'invoice_number' => $this->generateInvoice(),
+                'customer_name'  => $data['customer_name'] ?? null,
+                'description'    => $data['description'] ?? null,
                 'sale_date'      => $data['sale_date'],
                 'total_price'    => $total,
                 'total_paid'     => $paid,
