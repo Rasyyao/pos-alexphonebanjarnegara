@@ -196,80 +196,195 @@
 
         </div>
 
-        {{-- Persebaran Modal Pie Chart --}}
-        @php
-            $kasForChart = max(0, (float) $modalSekarang);
-            $hpForChart = max(0, (float) ($assetValue ?? 0));
-            $accForChart = max(0, (float) ($accAssetValue ?? 0));
-            $chartTotal = max(1, $kasForChart + $hpForChart + $accForChart);
-            $kasPct = round(($kasForChart / $chartTotal) * 100);
-            $hpPct = round(($hpForChart / $chartTotal) * 100);
-            $accPct = 100 - $kasPct - $hpPct;
-        @endphp
-        <div class="bg-white rounded-xl border shadow-sm overflow-hidden" style="border-color:var(--line)">
-            <div class="px-5 py-3.5 border-b" style="border-color:var(--line);background:var(--bg-soft)">
-                <h3 class="text-sm font-semibold" style="color:var(--ink)">Persebaran Modal Usaha</h3>
-                <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Proporsi kas liquid · stok HP · stok aksesoris
-                    (lifetime)</p>
-            </div>
-            <div class="px-5 py-5 flex flex-col sm:flex-row items-center gap-6">
+        {{-- Persebaran Modal + Saldo ATM --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                {{-- Chart.js donut --}}
-                <div class="relative flex-shrink-0 flex items-center justify-center" style="width:180px;height:180px">
-                    <canvas id="cf-donut-chart"></canvas>
-                    <div
-                        style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
-                        <div class="text-[10px] font-mono font-bold" style="color:var(--ink-mute)">Total</div>
-                        <div class="text-xs font-bold leading-tight font-mono" style="color:var(--ink)">
-                            Rp {{ number_format($chartTotal / 1000000, 1, ',', '.') }}jt
-                        </div>
-                    </div>
+            {{-- Persebaran Modal Pie Chart --}}
+            @php
+                $kasForChart = max(0, (float) $modalSekarang);
+                $hpForChart = max(0, (float) ($assetValue ?? 0));
+                $accForChart = max(0, (float) ($accAssetValue ?? 0));
+                $chartTotal = max(1, $kasForChart + $hpForChart + $accForChart);
+                $kasPct = round(($kasForChart / $chartTotal) * 100);
+                $hpPct = round(($hpForChart / $chartTotal) * 100);
+                $accPct = 100 - $kasPct - $hpPct;
+            @endphp
+            <div class="bg-white rounded-xl border shadow-sm overflow-hidden"
+                style="border-color:var(--line)">
+                <div class="px-5 py-3.5 border-b" style="border-color:var(--line);background:var(--bg-soft)">
+                    <h3 class="text-sm font-semibold" style="color:var(--ink)">Persebaran Modal Usaha</h3>
+                    <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Proporsi kas liquid · stok HP · stok
+                        aksesoris
+                        (lifetime)</p>
                 </div>
+                <div class="px-5 py-5 flex flex-col sm:flex-row items-center gap-6">
 
-                {{-- Legend --}}
-                <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
-                    <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(16,128,107,0.06)">
-                        <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5" style="background:#10806B"></span>
-                        <div>
-                            <div class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:#10806B">
-                                Kas Liquid</div>
-                            <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                Rp {{ number_format($kasForChart, 0, ',', '.') }}
-                            </div>
-                            <div class="text-[11px] font-semibold mt-0.5" style="color:#10806B">{{ $kasPct }}%
+                    {{-- Chart.js donut --}}
+                    <div class="relative flex-shrink-0 flex items-center justify-center" style="width:180px;height:180px">
+                        <canvas id="cf-donut-chart"></canvas>
+                        <div
+                            style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+                            <div class="text-[10px] font-mono font-bold" style="color:var(--ink-mute)">Total</div>
+                            <div class="text-xs font-bold leading-tight font-mono" style="color:var(--ink)">
+                                Rp {{ number_format($chartTotal / 1000000, 1, ',', '.') }}jt
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(124,58,237,0.06)">
-                        <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-violet-600"></span>
-                        <div>
-                            <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-violet-600">Stok HP
+
+                    {{-- Legend --}}
+                    <div class="flex-1 grid grid-cols-1 gap-3 w-full">
+                        <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(16,128,107,0.06)">
+                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5" style="background:#10806B"></span>
+                            <div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono"
+                                    style="color:#10806B">
+                                    Kas Liquid</div>
+                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                                    Rp {{ number_format($kasForChart, 0, ',', '.') }}
+                                </div>
+                                <div class="text-[11px] font-semibold mt-0.5" style="color:#10806B">{{ $kasPct }}%
+                                </div>
                             </div>
-                            <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                Rp {{ number_format($hpForChart, 0, ',', '.') }}
+                        </div>
+                        <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(124,58,237,0.06)">
+                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-violet-600"></span>
+                            <div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-violet-600">Stok
+                                    HP
+                                </div>
+                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                                    Rp {{ number_format($hpForChart, 0, ',', '.') }}
+                                </div>
+                                <div class="text-[11px] font-semibold mt-0.5 text-violet-600">{{ $hpPct }}%</div>
                             </div>
-                            <div class="text-[11px] font-semibold mt-0.5 text-violet-600">{{ $hpPct }}%</div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(8,145,178,0.06)">
+                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-cyan-600"></span>
+                            <div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-cyan-700">Stok
+                                    Aksesoris</div>
+                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                                    Rp {{ number_format($accForChart, 0, ',', '.') }}
+                                </div>
+                                <div class="text-[11px] font-semibold mt-0.5 text-cyan-700">{{ $accPct }}%</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(8,145,178,0.06)">
-                        <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-cyan-600"></span>
-                        <div>
-                            <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-cyan-700">Stok
-                                Aksesoris</div>
-                            <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                Rp {{ number_format($accForChart, 0, ',', '.') }}
-                            </div>
-                            <div class="text-[11px] font-semibold mt-0.5 text-cyan-700">{{ $accPct }}%</div>
-                        </div>
-                    </div>
+
                 </div>
-
             </div>
-        </div>
+
+            {{-- Persebaran Penerimaan Dana --}}
+            @php
+                $atmForChart2   = max(0, (float) $saldoAtmLifetime);
+                $kasForChart2   = max(0, (float) $saldoKas);
+                $utangForChart2 = max(0, (float) $unpaidDebts);
+                $chartTotal2    = max(1, $atmForChart2 + $kasForChart2 + $utangForChart2);
+                $atmPct2   = round(($atmForChart2 / $chartTotal2) * 100);
+                $kasPct2   = round(($kasForChart2 / $chartTotal2) * 100);
+                $utangPct2 = 100 - $atmPct2 - $kasPct2;
+            @endphp
+            <div class="bg-white rounded-xl border shadow-sm overflow-hidden" style="border-color:var(--line)">
+                <div class="px-5 py-3.5 border-b" style="border-color:var(--line);background:var(--bg-soft)">
+                    <h3 class="text-sm font-semibold" style="color:var(--ink)">Persebaran Penerimaan Dana</h3>
+                    <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Proporsi saldo ATM · kas tunai · piutang (lifetime)</p>
+                </div>
+                <div class="px-5 py-5 flex flex-col sm:flex-row items-center gap-6">
+
+                    {{-- Donut chart --}}
+                    <div class="relative flex-shrink-0 flex items-center justify-center" style="width:180px;height:180px">
+                        <canvas id="cf-penerimaan-chart"></canvas>
+                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+                            <div class="text-[10px] font-mono font-bold" style="color:var(--ink-mute)">Total</div>
+                            <div class="text-xs font-bold leading-tight font-mono" style="color:var(--ink)">
+                                Rp {{ number_format($chartTotal2 / 1000000, 1, ',', '.') }}jt
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Legend --}}
+                    <div class="flex-1 grid grid-cols-1 gap-3 w-full">
+                        <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(37,99,235,0.06)">
+                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-blue-600"></span>
+                            <div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-blue-600">Saldo ATM</div>
+                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                                    Rp {{ number_format($atmForChart2, 0, ',', '.') }}
+                                </div>
+                                <div class="text-[11px] font-semibold mt-0.5 text-blue-600">{{ $atmPct2 }}%</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(16,128,107,0.06)">
+                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5" style="background:#10806B"></span>
+                            <div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:#10806B">Kas Tunai</div>
+                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                                    Rp {{ number_format($kasForChart2, 0, ',', '.') }}
+                                </div>
+                                <div class="text-[11px] font-semibold mt-0.5" style="color:#10806B">{{ $kasPct2 }}%</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 rounded-lg bg-amber-50">
+                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-amber-500"></span>
+                            <div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-amber-600">Utang Piutang</div>
+                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                                    Rp {{ number_format($utangForChart2, 0, ',', '.') }}
+                                </div>
+                                <div class="text-[11px] font-semibold mt-0.5 text-amber-600">{{ $utangPct2 }}%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>{{-- end grid: persebaran + saldo ATM --}}
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                // Persebaran Penerimaan Dana donut
+                const ctx2 = document.getElementById('cf-penerimaan-chart');
+                if (ctx2) {
+                    new Chart(ctx2, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Saldo ATM', 'Kas Tunai', 'Utang Piutang'],
+                            datasets: [{
+                                data: [{{ $atmForChart2 }}, {{ $kasForChart2 }}, {{ $utangForChart2 }}],
+                                backgroundColor: ['#2563EB', '#10806B', '#F59E0B'],
+                                borderWidth: 2,
+                                borderColor: '#ffffff',
+                                hoverOffset: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: '#1F2937',
+                                    padding: 10,
+                                    bodyFont: { size: 11, family: 'monospace' },
+                                    titleFont: { size: 12, weight: 'bold' },
+                                    callbacks: {
+                                        label: function(context) {
+                                            const val = context.raw;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0) || 1;
+                                            const pct = ((val / total) * 100).toFixed(1);
+                                            return ' Rp ' + val.toLocaleString('id-ID') + ' (' + pct + '%)';
+                                        }
+                                    }
+                                }
+                            },
+                            cutout: '72%'
+                        }
+                    });
+                }
+
+                // Persebaran Modal Usaha donut
                 const ctx = document.getElementById('cf-donut-chart');
                 if (!ctx) return;
                 new Chart(ctx, {
@@ -317,6 +432,7 @@
                 });
             });
         </script>
+
 
         {{-- Main Content: Cashflow + Modal --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

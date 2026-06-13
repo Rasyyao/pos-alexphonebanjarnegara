@@ -183,6 +183,21 @@ class FinanceService
         $totalAccessoryPurchases = $accAssetValue + $accSoldCost;
         $modalSekarang           = $modalAwal - $totalWithdrawal + $lifetimeRevenue - $totalHPPurchases - $totalAccessoryPurchases - $lifetimeExpenses;
 
+        $saldoAtm = (float) \App\Models\SalePayment::where('method', 'transfer')
+            ->whereHas('sale', function ($q) use ($startDate, $endDate) {
+                $q->where('status', 'approved');
+                if ($startDate) $q->whereDate('sale_date', '>=', $startDate);
+                if ($endDate)   $q->whereDate('sale_date', '<=', $endDate);
+            })->sum('amount');
+
+        // Lifetime totals for the Aliran Modal diagram (always all-time, not period-filtered)
+        $saldoKas = (float) \App\Models\SalePayment::where('method', 'cash')
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
+            ->sum('amount');
+        $saldoAtmLifetime = (float) \App\Models\SalePayment::where('method', 'transfer')
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
+            ->sum('amount');
+
         return [
             'today'            => $today,
             'week'             => $week,
@@ -205,8 +220,12 @@ class FinanceService
             'modalSekarang'    => $modalSekarang,
             'unpaidDebts'      => $unpaidDebts,
             'activeDebts'      => $activeDebts,
-            'assetValue'       => $this->units->assetValue(),
-            'accAssetValue'    => $accAssetValue,
+            'assetValue'        => $this->units->assetValue(),
+            'accAssetValue'     => $accAssetValue,
+            'saldoAtm'          => $saldoAtm,
+            'saldoKas'          => $saldoKas,
+            'saldoAtmLifetime'  => $saldoAtmLifetime,
+            'lifetimeRevenue'   => $lifetimeRevenue,
         ];
     }
 }

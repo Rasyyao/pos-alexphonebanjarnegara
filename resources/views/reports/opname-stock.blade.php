@@ -85,6 +85,14 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
 /* ── FOOTER ── */
 .footer { margin-top: 14px; border-top: 1px solid #E4E9F2; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7pt; color: #9CA3AF; font-style: italic; }
 
+/* ── CHECKLIST COLUMN ── */
+.cb-cell { text-align: center; width: 20px; padding: 4px 3px !important; }
+.cb-box {
+    display: inline-block; width: 13px; height: 13px;
+    border: 1.5px solid #374151; border-radius: 2px; vertical-align: middle;
+    background: #fff;
+}
+
 /* ── PRINT-ONLY BUTTON ── */
 .no-print-bar {
     background: #1E3A5F; color: #fff; padding: 10px 28px;
@@ -174,6 +182,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
   <table>
     <thead>
       <tr>
+        <th class="c" style="width:20px;background:#065F46">✓</th>
         <th style="width:20px">No</th>
         <th>Brand / Model</th>
         <th>Spesifikasi</th>
@@ -190,6 +199,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
       @php $no = 1; @endphp
       @forelse($units as $u)
       <tr>
+        <td class="cb-cell"><span class="cb-box"></span></td>
         <td class="c muted">{{ $no++ }}</td>
         <td>
           <strong>{{ $u->model->brand->name ?? '—' }} {{ $u->model->name ?? '' }}</strong>
@@ -217,9 +227,10 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
         <td class="fill-cell-wide">&nbsp;</td>
       </tr>
       @empty
-      <tr><td colspan="10" style="text-align:center;padding:16px;color:#7A8AA8">Tidak ada data unit</td></tr>
+      <tr><td colspan="11" style="text-align:center;padding:16px;color:#7A8AA8">Tidak ada data unit</td></tr>
       @endforelse
       <tr class="total-row">
+        <td class="cb-cell">&nbsp;</td>
         <td colspan="6" style="text-align:right">TOTAL UNIT</td>
         <td class="c">{{ $units->count() }}</td>
         <td class="c fill-cell" style="background:#FEF3C7 !important">&nbsp;</td>
@@ -238,6 +249,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
   <table>
     <thead>
       <tr>
+        <th class="c" style="width:20px;background:#065F46">✓</th>
         <th style="width:20px">No</th>
         <th>Nama Aksesoris</th>
         <th>Kategori</th>
@@ -255,6 +267,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
       @foreach($accessories as $a)
       @php $aModal = (float)$a->purchase_price; $accTotalModal += $aModal * $a->stock_qty; @endphp
       <tr>
+        <td class="cb-cell"><span class="cb-box"></span></td>
         <td class="c muted">{{ $ano++ }}</td>
         <td><strong>{{ $a->name }}</strong></td>
         <td class="muted">{{ $a->category ?: 'Lain-lain' }}</td>
@@ -276,6 +289,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
       </tr>
       @endforeach
       <tr class="total-row">
+        <td class="cb-cell">&nbsp;</td>
         <td colspan="6" style="text-align:right">TOTAL AKSESORIS</td>
         <td class="c">{{ number_format($accQty, 0, ',', '.') }} pcs</td>
         <td class="c fill-cell" style="background:#FEF3C7 !important">&nbsp;</td>

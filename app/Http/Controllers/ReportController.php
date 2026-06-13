@@ -572,7 +572,7 @@ class ReportController extends Controller
         $cBorder  = 'E2E8F0'; // light gray border (matches finance)
 
         // ─── TITLE HEADER ─────────────────────────────────────────
-        $sheet->mergeCells('A1:Q3');
+        $sheet->mergeCells('A1:N3');
         $sheet->setCellValue('A1', "DATA INVENTARIS UNIT HANDPHONE (HP)\nALEX PHONE BANJARNEGARA");
         $sheet->getStyle('A1')->getAlignment()->setWrapText(true);
         $sheet->getStyle('A1')->applyFromArray([
@@ -584,7 +584,7 @@ class ReportController extends Controller
         $sheet->getRowDimension(2)->setRowHeight(26);
 
         // ─── SUBTITLE BAR ─────────────────────────────────────────
-        $sheet->mergeCells('A4:Q4');
+        $sheet->mergeCells('A4:N4');
         $dateStr = now()->format('d F Y H:i');
         $sheet->setCellValue('A4', "Dicetak: {$dateStr}  |  Total Unit: {$grandCount}  |  Status unit ditampilkan di kolom Status (diberi warna)");
         $sheet->getStyle('A4')->applyFromArray([
@@ -603,16 +603,16 @@ class ReportController extends Controller
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1FAE5']],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
-        $sheet->mergeCells('F5:K5');
+        $sheet->mergeCells('F5:J5');
         $sheet->setCellValue('F5', '  ■  TERJUAL — Sudah Laku');
         $sheet->getStyle('F5')->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => '334155']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
-        $sheet->mergeCells('L5:Q5');
-        $sheet->setCellValue('L5', '  ■  RETUR / LAINNYA');
-        $sheet->getStyle('L5')->applyFromArray([
+        $sheet->mergeCells('K5:N5');
+        $sheet->setCellValue('K5', '  ■  RETUR / LAINNYA');
+        $sheet->getStyle('K5')->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => 'B91C1C']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEE2E2']],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
@@ -629,7 +629,7 @@ class ReportController extends Controller
             $brandReady = 0;
 
             // BRAND SECTION HEADER
-            $sheet->mergeCells("A{$row}:Q{$row}");
+            $sheet->mergeCells("A{$row}:N{$row}");
             $sheet->setCellValue("A{$row}", "  ◆  BRAND: " . strtoupper($brandName) . "  (" . $brandUnits->count() . " unit)");
             $sheet->getStyle("A{$row}")->applyFromArray([
                 'font'      => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
@@ -640,9 +640,9 @@ class ReportController extends Controller
             $row++;
 
             // COLUMN HEADERS
-            $headers = ['No', 'Model', 'RAM', 'ROM', 'Warna', 'Tipe', 'Grade', 'IMEI', 'No. Seri', 'Harga Modal', 'Harga Jual', 'Est. Laba', 'Margin %', 'Status', 'Tgl. Beli', 'Hari di Stok', 'Entri Oleh'];
+            $headers = ['No', 'Model', 'RAM', 'ROM', 'Warna', 'Tipe', 'Grade', 'IMEI', 'No. Seri', 'Harga Modal', 'Status', 'Tgl. Beli', 'Hari di Stok', 'Entri Oleh'];
             $sheet->fromArray($headers, null, "A{$row}");
-            $sheet->getStyle("A{$row}:Q{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:N{$row}")->applyFromArray([
                 'font'      => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
                 'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $cColBg]],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
@@ -689,32 +689,28 @@ class ReportController extends Controller
                 $sheet->getCell("H{$row}")->setValueExplicit(' ' . ($u->imei ?: '—'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                 $sheet->getCell("I{$row}")->setValueExplicit(' ' . ($u->serial_number ?: '—'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                 $sheet->setCellValue("J{$row}", $modal);
-                $sheet->setCellValue("K{$row}", $jual > 0 ? $jual : null);
-                $sheet->setCellValue("L{$row}", $jual > 0 ? $laba : null);
-                $sheet->setCellValue("M{$row}", $jual > 0 ? $margin : null);
-                $sheet->setCellValue("N{$row}", $statusLabel);
-                $sheet->setCellValue("O{$row}", $u->purchase_date ? $u->purchase_date->format('d/m/Y') : '—');
-                $sheet->setCellValue("P{$row}", $days . ' hari');
-                $sheet->setCellValue("Q{$row}", $u->creator->name ?? '—');
+                $sheet->setCellValue("K{$row}", $statusLabel);
+                $sheet->setCellValue("L{$row}", $u->purchase_date ? $u->purchase_date->format('d/m/Y') : '—');
+                $sheet->setCellValue("M{$row}", $days . ' hari');
+                $sheet->setCellValue("N{$row}", $u->creator->name ?? '—');
 
                 // Standard zebra row (matches finance readability)
-                $sheet->getStyle("A{$row}:Q{$row}")->applyFromArray([
+                $sheet->getStyle("A{$row}:N{$row}")->applyFromArray([
                     'font'    => ['name' => 'Segoe UI', 'size' => 9, 'color' => ['rgb' => '1E293B']],
                     'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $rowBg]],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $cBorder]]],
                 ]);
                 // Status badge — only the status cell gets color, keeps rows clean
-                $sheet->getStyle("N{$row}")->applyFromArray([
+                $sheet->getStyle("K{$row}")->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => $statusFg]],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $statusBadgeBg]],
                 ]);
-                $sheet->getStyle("J{$row}:L{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
-                $sheet->getStyle("M{$row}")->getNumberFormat()->setFormatCode('0.0"%"');
+                $sheet->getStyle("J{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
                 $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle("C{$row}:D{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle("F{$row}:G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle("M{$row}:N{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle("O{$row}:P{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("K{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("L{$row}:M{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getRowDimension($row)->setRowHeight(20);
 
                 $brandModal += $modal;
@@ -730,15 +726,13 @@ class ReportController extends Controller
             $sheet->setCellValue("C{$row}", $brandUnits->count() . ' unit');
             $sheet->setCellValue("D{$row}", "Ready: {$brandReady}");
             $sheet->setCellValue("J{$row}", $brandModal);
-            $sheet->setCellValue("K{$row}", $brandJual > 0 ? $brandJual : null);
-            $sheet->setCellValue("L{$row}", $brandJual > 0 ? $brandLaba : null);
-            $sheet->getStyle("A{$row}:Q{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:N{$row}")->applyFromArray([
                 'font'      => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
                 'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $cSubtot]],
                 'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '0D9488']]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ]);
-            $sheet->getStyle("J{$row}:L{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+            $sheet->getStyle("J{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
             $sheet->getRowDimension($row)->setRowHeight(22);
             $row++;
             $row++; // gap
@@ -753,10 +747,8 @@ class ReportController extends Controller
         $sheet->mergeCells("A{$row}:I{$row}");
         $sheet->setCellValue("A{$row}", 'GRAND TOTAL KESELURUHAN');
         $sheet->setCellValue("J{$row}", $grandTotalModal);
-        $sheet->setCellValue("K{$row}", $grandTotalJual > 0 ? $grandTotalJual : null);
-        $sheet->setCellValue("L{$row}", $grandTotalJual > 0 ? $grandTotalLaba : null);
-        $sheet->setCellValue("N{$row}", $grandCount . ' unit');
-        $sheet->getStyle("A{$row}:Q{$row}")->applyFromArray([
+        $sheet->setCellValue("K{$row}", $grandCount . ' unit');
+        $sheet->getStyle("A{$row}:N{$row}")->applyFromArray([
             'font'      => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $cGrandT]],
             'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '0D9488']]],
@@ -764,11 +756,11 @@ class ReportController extends Controller
         ]);
         $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
         $sheet->getStyle("A{$row}")->getAlignment()->setIndent(1);
-        $sheet->getStyle("J{$row}:L{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+        $sheet->getStyle("J{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
         $sheet->getRowDimension($row)->setRowHeight(24);
 
         // ─── COLUMN WIDTHS ────────────────────────────────────────
-        foreach (range('A', 'Q') as $col) $sheet->getColumnDimension($col)->setAutoSize(true);
+        foreach (range('A', 'N') as $col) $sheet->getColumnDimension($col)->setAutoSize(true);
         $sheet->getColumnDimension('A')->setWidth(5);
         $sheet->getColumnDimension('H')->setWidth(18);
         $sheet->getColumnDimension('I')->setWidth(16);
@@ -795,7 +787,7 @@ class ReportController extends Controller
         $cBorder = 'E2E8F0'; // light gray border (matches finance)
 
         // ─── TITLE HEADER ─────────────────────────────────────────
-        $sheet->mergeCells('A1:L3');
+        $sheet->mergeCells('A1:G3');
         $sheet->setCellValue('A1', "LAPORAN STOCK OPNAME — AKSESORIS\nALEX PHONE BANJARNEGARA");
         $sheet->getStyle('A1')->getAlignment()->setWrapText(true);
         $sheet->getStyle('A1')->applyFromArray([
@@ -807,7 +799,7 @@ class ReportController extends Controller
         $sheet->getRowDimension(2)->setRowHeight(26);
 
         // ─── SUBTITLE BAR ─────────────────────────────────────────
-        $sheet->mergeCells('A4:L4');
+        $sheet->mergeCells('A4:G4');
         $dateStr    = now()->format('d F Y H:i');
         $grandQtyFmt = number_format($grandQty, 0, ',', '.');
         $grandMFmt  = 'Rp ' . number_format($grandModal, 0, ',', '.');
@@ -821,15 +813,15 @@ class ReportController extends Controller
         $sheet->getRowDimension(4)->setRowHeight(20);
 
         // ─── LEGEND ROW ───────────────────────────────────────────
-        $sheet->mergeCells('A5:F5');
+        $sheet->mergeCells('A5:C5');
         $sheet->setCellValue('A5', '  ■  AMAN — Stok cukup (> 5 pcs)');
         $sheet->getStyle('A5')->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => '14532D']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1FAE5']],
         ]);
-        $sheet->mergeCells('G5:L5');
-        $sheet->setCellValue('G5', '  ■  MENIPIS (≤ 5 pcs) — Status kolom E ditandai merah, perlu restock');
-        $sheet->getStyle('G5')->applyFromArray([
+        $sheet->mergeCells('D5:G5');
+        $sheet->setCellValue('D5', '  ■  MENIPIS (≤ 5 pcs) — Status kolom E ditandai merah, perlu restock');
+        $sheet->getStyle('D5')->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => 'B91C1C']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEE2E2']],
         ]);
@@ -843,7 +835,7 @@ class ReportController extends Controller
             $catQty   = 0; $catModal = 0.0; $catJual = 0.0;
 
             // CATEGORY SECTION HEADER
-            $sheet->mergeCells("A{$row}:L{$row}");
+            $sheet->mergeCells("A{$row}:G{$row}");
             $sheet->setCellValue("A{$row}", "  ◆  KATEGORI: " . strtoupper($catName) . "  (" . $catItems->count() . " jenis)");
             $sheet->getStyle("A{$row}")->applyFromArray([
                 'font'      => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
@@ -853,10 +845,10 @@ class ReportController extends Controller
             $sheet->getRowDimension($row)->setRowHeight(26);
             $row++;
 
-            // COLUMN HEADERS (12 cols: A:L)
-            $headers = ['No', 'Nama Aksesoris', 'Kategori', 'Stok Qty', 'Status Stok', 'Harga Modal', 'Harga Jual', 'Laba / Pcs', 'Margin %', 'Total Modal', 'Total Jual', 'Total Laba'];
+            // COLUMN HEADERS (7 cols: A:G)
+            $headers = ['No', 'Nama Aksesoris', 'Kategori', 'Stok Qty', 'Status Stok', 'Harga Modal', 'Total Modal'];
             $sheet->fromArray($headers, null, "A{$row}");
-            $sheet->getStyle("A{$row}:L{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
                 'font'      => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
                 'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $cColBg]],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
@@ -889,15 +881,10 @@ class ReportController extends Controller
                 $sheet->setCellValue("D{$row}", $qty);
                 $sheet->setCellValue("E{$row}", $statusStok);
                 $sheet->setCellValue("F{$row}", $modal);
-                $sheet->setCellValue("G{$row}", $jual);
-                $sheet->setCellValue("H{$row}", $laba);
-                $sheet->setCellValue("I{$row}", $margin);
-                $sheet->setCellValue("J{$row}", $totModal);
-                $sheet->setCellValue("K{$row}", $totJual);
-                $sheet->setCellValue("L{$row}", $totLaba);
+                $sheet->setCellValue("G{$row}", $totModal);
 
                 // Standard zebra rows — clean, readable (same as finance)
-                $sheet->getStyle("A{$row}:L{$row}")->applyFromArray([
+                $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
                     'font'    => ['name' => 'Segoe UI', 'size' => 9, 'color' => ['rgb' => '1E293B']],
                     'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $rowBg]],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $cBorder]]],
@@ -913,12 +900,10 @@ class ReportController extends Controller
                         'font' => ['bold' => true, 'color' => ['rgb' => 'B91C1C']],
                     ]);
                 }
-                $sheet->getStyle("F{$row}:H{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
-                $sheet->getStyle("I{$row}")->getNumberFormat()->setFormatCode('0.0"%"');
-                $sheet->getStyle("J{$row}:L{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+                $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+                $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
                 $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle("C{$row}:E{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle("I{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getRowDimension($row)->setRowHeight(20);
 
                 $catQty   += $qty;
@@ -933,16 +918,14 @@ class ReportController extends Controller
             $sheet->setCellValue("B{$row}", "Subtotal: " . strtoupper($catName));
             $sheet->setCellValue("C{$row}", $catItems->count() . ' jenis');
             $sheet->setCellValue("D{$row}", $catQty . ' pcs');
-            $sheet->setCellValue("J{$row}", $catModal);
-            $sheet->setCellValue("K{$row}", $catJual);
-            $sheet->setCellValue("L{$row}", $catLaba);
-            $sheet->getStyle("A{$row}:L{$row}")->applyFromArray([
+            $sheet->setCellValue("G{$row}", $catModal);
+            $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
                 'font'      => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
                 'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $cSubtot]],
                 'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '4338CA']]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ]);
-            $sheet->getStyle("J{$row}:L{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+            $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
             $sheet->getRowDimension($row)->setRowHeight(22);
             $row++;
             $row++; // gap
@@ -953,10 +936,8 @@ class ReportController extends Controller
         $sheet->mergeCells("A{$row}:C{$row}");
         $sheet->setCellValue("A{$row}", 'GRAND TOTAL SEMUA AKSESORIS');
         $sheet->setCellValue("D{$row}", $grandQty . ' pcs');
-        $sheet->setCellValue("J{$row}", $grandModal);
-        $sheet->setCellValue("K{$row}", $grandJual);
-        $sheet->setCellValue("L{$row}", $grandLaba);
-        $sheet->getStyle("A{$row}:L{$row}")->applyFromArray([
+        $sheet->setCellValue("G{$row}", $grandModal);
+        $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
             'font'      => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $cGrand]],
             'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '6D28D9']]],
@@ -965,11 +946,11 @@ class ReportController extends Controller
         $sheet->getStyle("A{$row}")->applyFromArray([
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'indent' => 1],
         ]);
-        $sheet->getStyle("J{$row}:L{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+        $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
         $sheet->getRowDimension($row)->setRowHeight(24);
 
         // ─── COLUMN WIDTHS ────────────────────────────────────────
-        foreach (range('A', 'L') as $col) $sheet->getColumnDimension($col)->setAutoSize(true);
+        foreach (range('A', 'G') as $col) $sheet->getColumnDimension($col)->setAutoSize(true);
         $sheet->getColumnDimension('A')->setWidth(5);
     }
 
