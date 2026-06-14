@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Capital extends Model
 {
-    protected $fillable = ['created_by', 'description', 'amount', 'type', 'entry_date'];
+    protected $fillable = ['created_by', 'description', 'amount', 'type', 'entry_date', 'payment_method', 'sale_id'];
 
     protected function casts(): array
     {

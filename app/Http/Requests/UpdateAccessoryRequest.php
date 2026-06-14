@@ -8,10 +8,11 @@ class UpdateAccessoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'           => ['required','string','max:100'],
-            'category'       => ['nullable','string','max:80'],
-            'stock_qty'      => ['required','integer','min:0'],
-            'purchase_price' => ['required','numeric','min:0'],
+            'name'                    => ['required','string','max:100'],
+            'category'                => ['nullable','string','max:80'],
+            'stock_qty'               => ['required','integer','min:0'],
+            'purchase_price'          => ['required','numeric','min:0'],
+            'purchase_payment_method' => ['nullable','in:cash,transfer'],
         ];
     }
 }

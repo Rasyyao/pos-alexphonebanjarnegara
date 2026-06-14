@@ -17,9 +17,10 @@ class StoreUnitRequest extends FormRequest
             'color'          => ['nullable','string','max:50'],
             'imei'           => ['nullable','string','max:20','unique:units,imei'],
             'serial_number'  => ['nullable','string','max:50'],
-            'purchase_price' => ['required','numeric','min:0'],
-            'purchase_date'  => ['required','date'],
-            'notes'          => ['nullable','string'],
+            'purchase_price'          => ['required','numeric','min:0'],
+            'purchase_date'           => ['required','date'],
+            'purchase_payment_method' => ['nullable','in:cash,transfer'],
+            'notes'                   => ['nullable','string'],
         ];
     }
 }

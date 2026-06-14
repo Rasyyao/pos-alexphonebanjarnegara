@@ -80,6 +80,27 @@ class SaleService
                 if ($item->accessory_id) $item->accessory->decrement('stock_qty', $item->quantity);
             }
             $sale->update(['approved_by' => $actor->id, 'status' => 'approved']);
+
+            $sale->loadMissing('payments');
+
+            foreach ($sale->payments as $payment) {
+                $methodStr = $payment->method instanceof \App\Enums\PaymentMethod
+                    ? $payment->method->value
+                    : $payment->method;
+
+                if (in_array($methodStr, ['cash', 'transfer'])) {
+                    \App\Models\Capital::create([
+                        'created_by'     => $actor->id,
+                        'description'    => 'Penjualan: ' . $sale->invoice_number,
+                        'amount'         => $payment->amount,
+                        'type'           => 'addition',
+                        'entry_date'     => $sale->sale_date ?? now()->toDateString(),
+                        'payment_method' => $methodStr,
+                        'sale_id'        => $sale->id,
+                    ]);
+                }
+            }
+
             Log::info('Sale approved', ['sale_id' => $sale->id, 'approved_by' => $actor->id]);
             return $sale->fresh();
         });

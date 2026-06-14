@@ -73,6 +73,12 @@
                         <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Tanggal Beli</span>
                         <span class="text-sm font-mono" style="color:var(--ink)">{{ $unit->purchase_date->format('d/m/Y') }}</span>
                     </div>
+                    <div class="flex items-center px-5 py-3" style="border-color:var(--line)">
+                        <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Bayar Dari</span>
+                        <span class="text-sm font-semibold" style="color:var(--ink)">
+                            {{ $unit->purchase_payment_method === 'transfer' ? 'Transfer / ATM' : 'Kas Tunai' }}
+                        </span>
+                    </div>
                 </div>
             </div>
 

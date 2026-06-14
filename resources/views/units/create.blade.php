@@ -141,6 +141,33 @@
                                     @enderror
                                 </div>
                             </div>
+
+                            {{-- Payment Method --}}
+                            <div>
+                                <label class="field-label">Bayar Dari <span style="color:var(--warn)">*</span></label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                           style="{{ old('purchase_payment_method', 'cash') === 'cash' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)' }}">
+                                        <input type="radio" name="purchase_payment_method" value="cash"
+                                               class="accent-blue-600"
+                                               {{ old('purchase_payment_method', 'cash') === 'cash' ? 'checked' : '' }} />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
+                                            <div class="text-[10px]" style="color:var(--ink-mute)">Bayar pakai uang tunai</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                           style="{{ old('purchase_payment_method') === 'transfer' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)' }}">
+                                        <input type="radio" name="purchase_payment_method" value="transfer"
+                                               class="accent-blue-600"
+                                               {{ old('purchase_payment_method') === 'transfer' ? 'checked' : '' }} />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
+                                            <div class="text-[10px]" style="color:var(--ink-mute)">Bayar via rekening bank</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="field-label">IMEI</label>

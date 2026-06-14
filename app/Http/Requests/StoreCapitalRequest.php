@@ -8,10 +8,11 @@ class StoreCapitalRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'description' => ['required','string','max:255'],
-            'amount'      => ['required','numeric','min:1'],
-            'type'        => ['required','in:initial,addition,purchase,withdrawal'],
-            'entry_date'  => ['required','date'],
+            'description'    => ['required','string','max:255'],
+            'amount'         => ['required','numeric','min:1'],
+            'type'           => ['required','in:initial,addition,purchase,withdrawal'],
+            'entry_date'     => ['required','date'],
+            'payment_method' => ['nullable','in:cash,transfer'],
         ];
     }
 }

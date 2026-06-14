@@ -22,7 +22,8 @@ class AccessoryController extends Controller
 
     public function create()
     {
-        return view('accessories.create');
+        $categories = $this->accessories->categories();
+        return view('accessories.create', compact('categories'));
     }
 
     public function store(StoreAccessoryRequest $request)
@@ -54,7 +55,8 @@ class AccessoryController extends Controller
 
     public function edit(Accessory $accessory)
     {
-        return view('accessories.edit', compact('accessory'));
+        $categories = $this->accessories->categories();
+        return view('accessories.edit', compact('accessory', 'categories'));
     }
 
     public function update(UpdateAccessoryRequest $request, Accessory $accessory)

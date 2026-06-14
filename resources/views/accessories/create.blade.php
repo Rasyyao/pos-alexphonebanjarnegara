@@ -52,16 +52,21 @@
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="field-label">Kategori</label>
-                                    <input type="text" name="category" value="{{ old('category') }}"
-                                        placeholder="mis. Case, Charger, TWS" list="cat-suggest" class="field-input" />
-                                    <datalist id="cat-suggest">
-                                        <option value="Case"></option>
-                                        <option value="Charger"></option>
-                                        <option value="Kabel"></option>
-                                        <option value="TWS"></option>
-                                        <option value="Anti Gores"></option>
-                                        <option value="Powerbank"></option>
-                                    </datalist>
+                                    <select name="category" class="field-input @error('category') error @enderror">
+                                        <option value="">Pilih Kategori (Optional)</option>
+                                        @php
+                                            $defaultCategories = ['Case', 'Charger', 'Kabel', 'TWS', 'Anti Gores', 'Powerbank'];
+                                            $allCategories = collect($defaultCategories)->merge($categories ?? [])->unique()->values();
+                                        @endphp
+                                        @foreach($allCategories as $cat)
+                                            <option value="{{ $cat }}" {{ old('category') === $cat ? 'selected' : '' }}>
+                                                {{ $cat }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('category')
+                                        <p class="field-error">{{ $message }}</p>
+                                    @enderror
                                 </div>
                                 <div>
                                     <label class="field-label">Stok Awal <span style="color:var(--warn)">*</span></label>
@@ -86,7 +91,7 @@
                             <span class="text-[11px] font-medium uppercase tracking-widest font-mono"
                                 style="color:var(--ink-mute)">Harga</span>
                         </div>
-                        <div class="p-5">
+                        <div class="p-5 space-y-4">
                             <div>
                                 <label class="field-label">Harga Beli <span style="color:var(--warn)">*</span></label>
                                 <div class="money-wrap">
@@ -100,12 +105,59 @@
                                     <p class="field-error">{{ $message }}</p>
                                 @enderror
                             </div>
+
+                            {{-- Payment Method --}}
+                            <div>
+                                <label class="field-label">Bayar Dari <span style="color:var(--warn)">*</span></label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                           style="{{ old('purchase_payment_method', 'cash') === 'cash' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)' }}">
+                                        <input type="radio" name="purchase_payment_method" value="cash"
+                                               class="accent-blue-600"
+                                               {{ old('purchase_payment_method', 'cash') === 'cash' ? 'checked' : '' }} />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
+                                            <div class="text-[10px]" style="color:var(--ink-mute)">Bayar pakai uang tunai</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                           style="{{ old('purchase_payment_method') === 'transfer' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)' }}">
+                                        <input type="radio" name="purchase_payment_method" value="transfer"
+                                               class="accent-blue-600"
+                                               {{ old('purchase_payment_method') === 'transfer' ? 'checked' : '' }} />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
+                                            <div class="text-[10px]" style="color:var(--ink-mute)">Bayar via rekening bank</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {{-- Right: live margin + actions --}}
                 <div class="space-y-5">
+                    <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
+                        <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
+                            <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Estimasi Margin</span>
+                        </div>
+                        <div class="p-5">
+                            <div class="mb-3">
+                                <label class="field-label">Harga Jual (Estimasi)</label>
+                                <div class="money-wrap">
+                                    <span class="rp-prefix">Rp</span>
+                                    <input type="text" id="acc-est-jual" class="field-input money-input" placeholder="0" inputmode="numeric" />
+                                </div>
+                            </div>
+                            <div class="text-2xl font-semibold font-mono tabular-nums" id="margin-amount" style="color:var(--ink-mute)">Rp 0</div>
+                            <div class="text-xs mt-1" id="margin-pct" style="color:var(--ink-mute)">Isi harga jual estimasi</div>
+                            <div class="mt-3 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
+                                <div id="margin-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:var(--success)"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-white rounded-xl border p-4 space-y-2.5" style="border-color:var(--line)">
                         <button type="submit" class="btn-primary w-full" style="height:44px;font-size:14px">Simpan
                             Aksesoris</button>

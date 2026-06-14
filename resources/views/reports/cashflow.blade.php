@@ -101,302 +101,378 @@
             </div>
         </div>
 
-        {{-- Summary Metric Cards --}}
+        {{-- Summary Metric Cards — ordered by financial relevance, consistent with dashboard --}}
         @php
             $netCash = $cashflow['net'];
             $totalAset = ($assetValue ?? 0) + ($accAssetValue ?? 0) + $modalSekarang;
         @endphp
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
 
-            {{-- Modal Disetor --}}
-            <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
-                    style="background:rgba(59,130,246,0.08)">
-                    <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
+            {{-- 1. Omzet (Revenue) --}}
+            <div class="bg-white rounded-xl border p-5 card-lift" style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Omzet</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(16,128,107,0.08)">
+                        <svg class="w-4 h-4" style="color:var(--success)" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                    </div>
                 </div>
-                <p class="text-[10px] font-bold uppercase tracking-widest font-mono text-blue-600">Modal Disetor</p>
-                <p class="text-base font-bold font-mono tabular-nums mt-0.5 text-blue-700">
-                    Rp {{ number_format($modalAwal, 0, ',', '.') }}
-                </p>
-                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Total modal masuk (lifetime)</p>
-            </div>
-
-            {{-- Kas Liquid --}}
-            <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
-                    style="background:rgba(59,130,246,0.08)">
-                    <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Kas
-                    Liquid</p>
-                <p class="text-base font-bold font-mono tabular-nums mt-0.5"
-                    style="{{ $modalSekarang >= 0 ? 'color:var(--ink)' : 'color:var(--warn)' }}">
-                    {{ $modalSekarang < 0 ? '−' : '' }}Rp {{ number_format(abs($modalSekarang), 0, ',', '.') }}
-                </p>
-                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Uang tunai yang tersedia</p>
-            </div>
-
-            {{-- Pengeluaran --}}
-            <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
-                    style="background:rgba(194,65,12,0.08)">
-                    <svg class="w-4 h-4" style="color:var(--warn)" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                    </svg>
-                </div>
-                <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--warn)">Pengeluaran
-                </p>
-                <p class="text-base font-bold font-mono tabular-nums mt-0.5" style="color:var(--warn)">
-                    Rp {{ number_format($cashflow['outflow'], 0, ',', '.') }}
-                </p>
-                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Total pengeluaran periode ini</p>
-            </div>
-
-            {{-- Omzet --}}
-            <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
-                    style="background:rgba(16,128,107,0.08)">
-                    <svg class="w-4 h-4" style="color:var(--success)" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                </div>
-                <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--success)">Omzet
-                </p>
-                <p class="text-base font-bold font-mono tabular-nums mt-0.5" style="color:var(--success)">
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-emerald-600" style="color:var(--success)">
                     Rp {{ number_format($cashflow['inflow'], 0, ',', '.') }}
-                </p>
-                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Total penjualan periode ini</p>
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Total penjualan periode ini</div>
             </div>
 
-            {{-- Piutang Aktif --}}
-            <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3 bg-amber-50">
-                    <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+            {{-- 2. Kas Liquid --}}
+            <div class="bg-white rounded-xl border p-5 card-lift" style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Kas Liquid</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(37,99,235,0.08)">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
                 </div>
-                <p class="text-[10px] font-bold uppercase tracking-widest font-mono text-amber-600">Piutang Aktif</p>
-                <p class="text-base font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-blue-600"
+                    style="{{ $modalSekarang >= 0 ? 'color:#2563EB' : 'color:var(--warn)' }}">
+                    {{ $modalSekarang < 0 ? '−' : '' }}Rp {{ number_format(abs($modalSekarang), 0, ',', '.') }}
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Uang tunai yang tersedia</div>
+            </div>
+
+            {{-- 3. Modal Disetor --}}
+            <div class="bg-white rounded-xl border p-5 card-lift" style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Modal Disetor</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(99,102,241,0.08)">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-indigo-600" style="color:#6366F1">
+                    Rp {{ number_format($modalAwalNonSales, 0, ',', '.') }}
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Total modal masuk (lifetime)</div>
+            </div>
+
+            {{-- 4. Pengeluaran --}}
+            <div class="bg-white rounded-xl border p-5 card-lift" style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Pengeluaran</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(194,65,12,0.08)">
+                        <svg class="w-4 h-4" style="color:var(--warn)" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-orange-600" style="color:var(--warn)">
+                    Rp {{ number_format($cashflow['outflow'], 0, ',', '.') }}
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Total pengeluaran periode ini</div>
+            </div>
+
+            {{-- 5. Piutang Aktif --}}
+            <div class="bg-white rounded-xl border p-5 card-lift" style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Piutang Aktif</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-50 flex-shrink-0">
+                        <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-amber-600" style="color:#F59E0B">
                     Rp {{ number_format($unpaidDebts, 0, ',', '.') }}
-                </p>
-                <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Belum tertagih dari pembeli</p>
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Belum tertagih dari pembeli</div>
             </div>
 
         </div>
 
-        {{-- Persebaran Modal + Saldo ATM --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {{-- ===== CAPITAL DISTRIBUTION TRACKER ===== --}}
+        @php
+            // Total Modal = Modal Disetor (all-time) + Total Omzet (revenue)
+            $totalModal = $modalAwalNonSales + $lifetimeRevenue;
 
-            {{-- Persebaran Modal Pie Chart --}}
-            @php
-                $kasForChart = max(0, (float) $modalSekarang);
-                $hpForChart = max(0, (float) ($assetValue ?? 0));
-                $accForChart = max(0, (float) ($accAssetValue ?? 0));
-                $chartTotal = max(1, $kasForChart + $hpForChart + $accForChart);
-                $kasPct = round(($kasForChart / $chartTotal) * 100);
-                $hpPct = round(($hpForChart / $chartTotal) * 100);
-                $accPct = 100 - $kasPct - $hpPct;
-            @endphp
-            <div class="bg-white rounded-xl border shadow-sm overflow-hidden"
-                style="border-color:var(--line)">
-                <div class="px-5 py-3.5 border-b" style="border-color:var(--line);background:var(--bg-soft)">
-                    <h3 class="text-sm font-semibold" style="color:var(--ink)">Persebaran Modal Usaha</h3>
-                    <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Proporsi kas liquid · stok HP · stok
-                        aksesoris
-                        (lifetime)</p>
+            // Where the money currently sits
+            $distHP = max(0, (float) ($assetValue ?? 0)); // Stok HP (ready units, at cost)
+            $distAcc = max(0, (float) ($accAssetValue ?? 0)); // Stok Aksesoris (at cost × qty)
+            $distPiu = max(0, (float) $unpaidDebts); // Piutang Aktif
+            $distAtm = max(0, (float) $saldoAtmLifetime); // Saldo ATM = modal_transfer + rev_transfer − hp_transfer
+            $distKas = max(0, (float) $saldoKas); // Kas Tunai = modal_cash − withdrawals + rev_cash − hp_cash − acc − expenses
+
+            $distTotal = max(1, $distHP + $distAcc + $distPiu + $distAtm + $distKas);
+
+            $pctHP = round(($distHP / $distTotal) * 100, 1);
+            $pctAcc = round(($distAcc / $distTotal) * 100, 1);
+            $pctPiu = round(($distPiu / $distTotal) * 100, 1);
+            $pctAtm = round(($distAtm / $distTotal) * 100, 1);
+            $pctKas = max(0, round(100 - $pctHP - $pctAcc - $pctPiu - $pctAtm, 1));
+
+            // Penerimaan Dana breakdown (how revenue was received)
+            $penerimaan = [
+                [
+                    'label' => 'Tunai (Cash)',
+                    'value' => max(0, (float) $saldoKas),
+                    'color' => '#10806B',
+                    'bg' => 'rgba(16,128,107,0.07)',
+                ],
+                [
+                    'label' => 'Transfer (ATM)',
+                    'value' => max(0, (float) $saldoAtmLifetime),
+                    'color' => '#2563EB',
+                    'bg' => 'rgba(37,99,235,0.07)',
+                ],
+                [
+                    'label' => 'Piutang',
+                    'value' => max(0, (float) $unpaidDebts),
+                    'color' => '#F59E0B',
+                    'bg' => 'rgba(245,158,11,0.07)',
+                ],
+            ];
+            $penTotal = max(1, collect($penerimaan)->sum('value'));
+
+            $lifetimeExpenses = (float) \App\Models\Expense::sum('amount');
+            $saldoRill = $totalModal - $lifetimeExpenses;
+
+            $distCategories = [
+                [
+                    'label' => 'Stok HP',
+                    'value' => $distHP,
+                    'pct' => $pctHP,
+                    'color' => '#7C3AED',
+                    'bg' => 'rgba(124,58,237,0.07)',
+                ],
+                [
+                    'label' => 'Stok Aksesoris',
+                    'value' => $distAcc,
+                    'pct' => $pctAcc,
+                    'color' => '#0891B2',
+                    'bg' => 'rgba(8,145,178,0.07)',
+                ],
+                [
+                    'label' => 'Piutang Aktif',
+                    'value' => $distPiu,
+                    'pct' => $pctPiu,
+                    'color' => '#F59E0B',
+                    'bg' => 'rgba(245,158,11,0.07)',
+                ],
+                [
+                    'label' => 'Saldo ATM',
+                    'value' => $distAtm,
+                    'pct' => $pctAtm,
+                    'color' => '#2563EB',
+                    'bg' => 'rgba(37,99,235,0.07)',
+                ],
+                [
+                    'label' => 'Kas Liquid',
+                    'value' => $distKas,
+                    'pct' => $pctKas,
+                    'color' => '#10806B',
+                    'bg' => 'rgba(16,128,107,0.07)',
+                ],
+            ];
+        @endphp
+
+        <div class="bg-white rounded-xl border shadow-sm overflow-hidden" style="border-color:var(--line)">
+
+            {{-- Tracker Header --}}
+            <div class="px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                style="border-color:var(--line);background:var(--bg-soft)">
+                <div>
+                    <h3 class="text-sm font-bold" style="color:var(--ink)">Persebaran Modal Usaha</h3>
+                    <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Distribusi modal ke seluruh kategori aset
+                        bisnis · data lifetime</p>
                 </div>
-                <div class="px-5 py-5 flex flex-col sm:flex-row items-center gap-6">
+            </div>
 
-                    {{-- Chart.js donut --}}
-                    <div class="relative flex-shrink-0 flex items-center justify-center" style="width:180px;height:180px">
-                        <canvas id="cf-donut-chart"></canvas>
-                        <div
-                            style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
-                            <div class="text-[10px] font-mono font-bold" style="color:var(--ink-mute)">Total</div>
-                            <div class="text-xs font-bold leading-tight font-mono" style="color:var(--ink)">
-                                Rp {{ number_format($chartTotal / 1000000, 1, ',', '.') }}jt
+            <div class="p-6 space-y-6">
+
+                {{-- Distribution Category Cards --}}
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    @foreach ($distCategories as $cat)
+                        <div class="rounded-xl border p-3.5 flex flex-col gap-2"
+                            style="border-color:var(--line);background:{{ $cat['bg'] }}">
+                            <div class="text-[9px] font-bold uppercase tracking-widest font-mono"
+                                style="color:{{ $cat['color'] }}">{{ $cat['label'] }}</div>
+                            <div class="text-sm font-bold font-mono tabular-nums leading-tight" style="color:var(--ink)">
+                                Rp {{ number_format($cat['value'], 0, ',', '.') }}
                             </div>
+                            <div class="mt-auto">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-[10px] font-bold font-mono"
+                                        style="color:{{ $cat['color'] }}">{{ $cat['pct'] }}%</span>
+                                </div>
+                                <div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(0,0,0,0.08)">
+                                    <div
+                                        style="height:100%;width:{{ $cat['pct'] }}%;background:{{ $cat['color'] }};transition:width 0.4s ease">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Bottom row: Donut + Penerimaan Dana + Saldo Rill --}}
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+
+                    {{-- Donut Chart --}}
+                    <div class="flex flex-col items-center justify-center gap-4">
+                        <div class="relative flex-shrink-0" style="width:160px;height:160px">
+                            <canvas id="capital-dist-donut"></canvas>
+                            <div
+                                style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+                                <div class="text-[9px] font-mono font-bold" style="color:var(--ink-mute)">Aset</div>
+                                <div class="text-[10px] font-bold font-mono leading-tight" style="color:var(--ink)">
+                                    Rp {{ number_format($distTotal, 0, ',', '.') }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-1 w-full">
+                            @foreach ($distCategories as $cat)
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full flex-shrink-0"
+                                        style="background:{{ $cat['color'] }}"></span>
+                                    <span class="text-[9px] font-mono truncate"
+                                        style="color:var(--ink-soft)">{{ $cat['label'] }}</span>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
 
-                    {{-- Legend --}}
-                    <div class="flex-1 grid grid-cols-1 gap-3 w-full">
-                        <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(16,128,107,0.06)">
-                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5" style="background:#10806B"></span>
+                    {{-- Penerimaan Dana --}}
+                    <div class="border rounded-xl overflow-hidden" style="border-color:var(--line)">
+                        <div class="px-4 py-3 border-b flex items-center gap-2"
+                            style="border-color:var(--line);background:var(--bg-soft)">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
                             <div>
                                 <div class="text-[10px] font-bold uppercase tracking-widest font-mono"
-                                    style="color:#10806B">
-                                    Kas Liquid</div>
-                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                    Rp {{ number_format($kasForChart, 0, ',', '.') }}
-                                </div>
-                                <div class="text-[11px] font-semibold mt-0.5" style="color:#10806B">{{ $kasPct }}%
+                                    style="color:var(--ink-mute)">Penerimaan Dana</div>
+                                <div class="text-[9px]" style="color:var(--ink-mute)">Komposisi omzet masuk (lifetime)
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(124,58,237,0.06)">
-                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-violet-600"></span>
-                            <div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-violet-600">Stok
-                                    HP
+                        <div class="p-4 space-y-3">
+                            @foreach ($penerimaan as $p)
+                                @php $pPct = round(($p['value'] / $penTotal) * 100, 1); @endphp
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] font-bold font-mono"
+                                            style="color:{{ $p['color'] }}">{{ $p['label'] }}</span>
+                                        <span class="text-[10px] font-mono tabular-nums" style="color:var(--ink-soft)">
+                                            Rp {{ number_format($p['value'], 0, ',', '.') }}
+                                            <span class="font-bold" style="color:{{ $p['color'] }}"> ·
+                                                {{ $pPct }}%</span>
+                                        </span>
+                                    </div>
+                                    <div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(0,0,0,0.07)">
+                                        <div
+                                            style="height:100%;width:{{ $pPct }}%;background:{{ $p['color'] }}">
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                    Rp {{ number_format($hpForChart, 0, ',', '.') }}
+                            @endforeach
+                            <div class="border-t pt-3 mt-2" style="border-color:var(--line)">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[10px] font-bold font-mono uppercase tracking-wider"
+                                        style="color:var(--ink-soft)">Total Omzet</span>
+                                    <span class="text-xs font-bold font-mono tabular-nums" style="color:var(--success)">
+                                        Rp {{ number_format($lifetimeRevenue, 0, ',', '.') }}
+                                    </span>
                                 </div>
-                                <div class="text-[11px] font-semibold mt-0.5 text-violet-600">{{ $hpPct }}%</div>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(8,145,178,0.06)">
-                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-cyan-600"></span>
-                            <div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-cyan-700">Stok
-                                    Aksesoris</div>
-                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                    Rp {{ number_format($accForChart, 0, ',', '.') }}
-                                </div>
-                                <div class="text-[11px] font-semibold mt-0.5 text-cyan-700">{{ $accPct }}%</div>
                             </div>
                         </div>
                     </div>
 
-                </div>
+                    {{-- Saldo Rill --}}
+                    <div class="border rounded-xl overflow-hidden" style="border-color:var(--line)">
+                        <div class="px-4 py-3 border-b flex items-center gap-2"
+                            style="border-color:var(--line);background:var(--bg-soft)">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--ink-mute)" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono"
+                                    style="color:var(--ink-mute)">Saldo Rill</div>
+                                <div class="text-[9px]" style="color:var(--ink-mute)">Net modal setelah pengeluaran</div>
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-2.5">
+                            <div class="flex items-center justify-between text-xs py-1.5 border-b"
+                                style="border-color:var(--line)">
+                                <span style="color:var(--ink-soft)">Modal Disetor</span>
+                                <span class="font-bold font-mono text-blue-600">+ Rp
+                                    {{ number_format($modalAwalNonSales, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs py-1.5 border-b"
+                                style="border-color:var(--line)">
+                                <span style="color:var(--ink-soft)">Total Omzet</span>
+                                <span class="font-bold font-mono" style="color:var(--success)">+ Rp
+                                    {{ number_format($lifetimeRevenue, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs py-1.5 border-b"
+                                style="border-color:var(--line)">
+                                <span style="color:var(--ink-soft)">Total Pengeluaran</span>
+                                <span class="font-bold font-mono" style="color:var(--warn)">− Rp
+                                    {{ number_format($lifetimeExpenses, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex items-center justify-between rounded-xl px-3 py-3 mt-1"
+                                style="background:{{ $saldoRill >= 0 ? 'rgba(16,128,107,0.08)' : 'rgba(220,38,38,0.08)' }}">
+                                <span class="text-xs font-bold"
+                                    style="color:{{ $saldoRill >= 0 ? 'var(--success)' : 'var(--warn)' }}">Saldo
+                                    Rill</span>
+                                <span class="text-sm font-bold font-mono tabular-nums"
+                                    style="color:{{ $saldoRill >= 0 ? 'var(--success)' : 'var(--warn)' }}">
+                                    {{ $saldoRill < 0 ? '−' : '' }}Rp {{ number_format(abs($saldoRill), 0, ',', '.') }}
+                                </span>
+                            </div>
+                            <p class="text-[9px] font-mono text-center pt-1" style="color:var(--ink-mute)">
+                                = Total Modal − Total Pengeluaran
+                            </p>
+                        </div>
+                    </div>
+
+                </div>{{-- end bottom row --}}
+
             </div>
-
-            {{-- Persebaran Penerimaan Dana --}}
-            @php
-                $atmForChart2   = max(0, (float) $saldoAtmLifetime);
-                $kasForChart2   = max(0, (float) $saldoKas);
-                $utangForChart2 = max(0, (float) $unpaidDebts);
-                $chartTotal2    = max(1, $atmForChart2 + $kasForChart2 + $utangForChart2);
-                $atmPct2   = round(($atmForChart2 / $chartTotal2) * 100);
-                $kasPct2   = round(($kasForChart2 / $chartTotal2) * 100);
-                $utangPct2 = 100 - $atmPct2 - $kasPct2;
-            @endphp
-            <div class="bg-white rounded-xl border shadow-sm overflow-hidden" style="border-color:var(--line)">
-                <div class="px-5 py-3.5 border-b" style="border-color:var(--line);background:var(--bg-soft)">
-                    <h3 class="text-sm font-semibold" style="color:var(--ink)">Persebaran Penerimaan Dana</h3>
-                    <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Proporsi saldo ATM · kas tunai · piutang (lifetime)</p>
-                </div>
-                <div class="px-5 py-5 flex flex-col sm:flex-row items-center gap-6">
-
-                    {{-- Donut chart --}}
-                    <div class="relative flex-shrink-0 flex items-center justify-center" style="width:180px;height:180px">
-                        <canvas id="cf-penerimaan-chart"></canvas>
-                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
-                            <div class="text-[10px] font-mono font-bold" style="color:var(--ink-mute)">Total</div>
-                            <div class="text-xs font-bold leading-tight font-mono" style="color:var(--ink)">
-                                Rp {{ number_format($chartTotal2 / 1000000, 1, ',', '.') }}jt
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Legend --}}
-                    <div class="flex-1 grid grid-cols-1 gap-3 w-full">
-                        <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(37,99,235,0.06)">
-                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-blue-600"></span>
-                            <div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-blue-600">Saldo ATM</div>
-                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                    Rp {{ number_format($atmForChart2, 0, ',', '.') }}
-                                </div>
-                                <div class="text-[11px] font-semibold mt-0.5 text-blue-600">{{ $atmPct2 }}%</div>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3 p-3 rounded-lg" style="background:rgba(16,128,107,0.06)">
-                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5" style="background:#10806B"></span>
-                            <div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:#10806B">Kas Tunai</div>
-                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                    Rp {{ number_format($kasForChart2, 0, ',', '.') }}
-                                </div>
-                                <div class="text-[11px] font-semibold mt-0.5" style="color:#10806B">{{ $kasPct2 }}%</div>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3 p-3 rounded-lg bg-amber-50">
-                            <span class="w-3 h-3 rounded-full flex-shrink-0 mt-0.5 bg-amber-500"></span>
-                            <div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest font-mono text-amber-600">Utang Piutang</div>
-                                <div class="text-sm font-bold font-mono tabular-nums mt-0.5" style="color:var(--ink)">
-                                    Rp {{ number_format($utangForChart2, 0, ',', '.') }}
-                                </div>
-                                <div class="text-[11px] font-semibold mt-0.5 text-amber-600">{{ $utangPct2 }}%</div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-        </div>{{-- end grid: persebaran + saldo ATM --}}
+        </div>{{-- end capital distribution tracker --}}
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // Persebaran Penerimaan Dana donut
-                const ctx2 = document.getElementById('cf-penerimaan-chart');
-                if (ctx2) {
-                    new Chart(ctx2, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Saldo ATM', 'Kas Tunai', 'Utang Piutang'],
-                            datasets: [{
-                                data: [{{ $atmForChart2 }}, {{ $kasForChart2 }}, {{ $utangForChart2 }}],
-                                backgroundColor: ['#2563EB', '#10806B', '#F59E0B'],
-                                borderWidth: 2,
-                                borderColor: '#ffffff',
-                                hoverOffset: 6
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    backgroundColor: '#1F2937',
-                                    padding: 10,
-                                    bodyFont: { size: 11, family: 'monospace' },
-                                    titleFont: { size: 12, weight: 'bold' },
-                                    callbacks: {
-                                        label: function(context) {
-                                            const val = context.raw;
-                                            const total = context.dataset.data.reduce((a, b) => a + b, 0) || 1;
-                                            const pct = ((val / total) * 100).toFixed(1);
-                                            return ' Rp ' + val.toLocaleString('id-ID') + ' (' + pct + '%)';
-                                        }
-                                    }
-                                }
-                            },
-                            cutout: '72%'
-                        }
-                    });
-                }
-
-                // Persebaran Modal Usaha donut
-                const ctx = document.getElementById('cf-donut-chart');
+                const ctx = document.getElementById('capital-dist-donut');
                 if (!ctx) return;
                 new Chart(ctx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Kas Liquid', 'Stok HP', 'Stok Aksesoris'],
+                        labels: ['Stok HP', 'Stok Aksesoris', 'Piutang Aktif', 'Saldo ATM', 'Kas Liquid'],
                         datasets: [{
-                            data: [{{ $kasForChart }}, {{ $hpForChart }}, {{ $accForChart }}],
-                            backgroundColor: ['#10806B', '#7C3AED', '#0891B2'],
-                            borderWidth: 2,
+                            data: [{{ $distHP }}, {{ $distAcc }}, {{ $distPiu }},
+                                {{ $distAtm }}, {{ $distKas }}
+                            ],
+                            backgroundColor: ['#7C3AED', '#0891B2', '#F59E0B', '#2563EB', '#10806B'],
+                            borderWidth: 3,
                             borderColor: '#ffffff',
-                            hoverOffset: 6
+                            hoverOffset: 8
                         }]
                     },
                     options: {
@@ -418,16 +494,16 @@
                                     weight: 'bold'
                                 },
                                 callbacks: {
-                                    label: function(context) {
-                                        const val = context.raw;
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0) || 1;
+                                    label: function(ctx) {
+                                        const val = ctx.raw;
+                                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0) || 1;
                                         const pct = ((val / total) * 100).toFixed(1);
-                                        return ' Rp ' + val.toLocaleString('id-ID') + ' (' + pct + '%)';
+                                        return '  Rp ' + val.toLocaleString('id-ID') + '  (' + pct + '%)';
                                     }
                                 }
                             }
                         },
-                        cutout: '72%'
+                        cutout: '70%'
                     }
                 });
             });
@@ -449,7 +525,7 @@
                         </div>
                         @if (auth()->user()->role->value === 'superadmin')
                             <div class="flex items-center gap-2">
-                                <button onclick="openExpenseModal()"
+                                {{-- <button onclick="openExpenseModal()"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                                     style="background:#FFF5F5;color:var(--warn)"
                                     onmouseenter="this.style.background='#FEE2E2'"
@@ -460,7 +536,7 @@
                                             d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                     </svg>
                                     Tambah Pengeluaran
-                                </button>
+                                </button> --}}
                                 <button onclick="openModal('modal-kurangi-modal')"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                                     style="background:#FEF3C7;color:#92400E"
@@ -658,6 +734,31 @@
                                 <label class="field-label">Tanggal</label>
                                 <input type="date" name="entry_date" value="{{ today()->toDateString() }}" required
                                     class="field-input" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Metode Penyimpanan <span style="color:var(--warn)">*</span></label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label
+                                    class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                    style="border-color:var(--line)" id="cap-cash-label">
+                                    <input type="radio" name="payment_method" value="cash" required
+                                        class="accent-blue-600" checked onchange="highlightCapMethod()" />
+                                    <div>
+                                        <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
+                                        <div class="text-[10px]" style="color:var(--ink-mute)">Uang fisik / tunai</div>
+                                    </div>
+                                </label>
+                                <label
+                                    class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                    style="border-color:var(--line)" id="cap-transfer-label">
+                                    <input type="radio" name="payment_method" value="transfer" class="accent-blue-600"
+                                        onchange="highlightCapMethod()" />
+                                    <div>
+                                        <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
+                                        <div class="text-[10px]" style="color:var(--ink-mute)">Via rekening bank</div>
+                                    </div>
+                                </label>
                             </div>
                         </div>
                         <div class="flex gap-3 pt-1">
@@ -932,6 +1033,17 @@
                 closePengeluaran();
             }
         });
+
+        function highlightCapMethod() {
+            const cash = document.getElementById('cap-cash-label');
+            const transfer = document.getElementById('cap-transfer-label');
+            const isCash = document.querySelector('input[name="payment_method"][value="cash"]')?.checked;
+            if (!cash || !transfer) return;
+            const activeStyle = 'border-color:var(--accent);background:rgba(37,99,235,0.03)';
+            const inactiveStyle = 'border-color:var(--line)';
+            cash.style.cssText += ';' + (isCash ? activeStyle : inactiveStyle);
+            transfer.style.cssText += ';' + (isCash ? inactiveStyle : activeStyle);
+        }
 
         function setPreset(preset) {
             const startInput = document.getElementById('start_date');

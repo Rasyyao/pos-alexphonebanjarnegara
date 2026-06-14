@@ -21,7 +21,7 @@ class FinanceService
     /** Current liquid cash — used for purchase validation in controllers. */
     public static function kasLiquidNow(): float
     {
-        $modalAwal  = (float)\App\Models\Capital::whereIn('type', ['initial', 'addition'])->sum('amount');
+        $modalAwal  = (float)\App\Models\Capital::whereIn('type', ['initial', 'addition'])->whereNull('sale_id')->sum('amount');
         $withdrawal = (float)\App\Models\Capital::where('type', 'withdrawal')->sum('amount');
         $revenue    = (float)\App\Models\Sale::where('status', 'approved')->sum('total_price');
         $hpCost     = (float)\App\Models\Unit::sum('purchase_price');
@@ -167,7 +167,8 @@ class FinanceService
         $capitalsList = $capitalsQuery->latest('entry_date')->paginate(10, ['*'], 'page_capital')->appends(request()->query());
 
         // Modal Awal and Modal Sekarang (Lifetime basis to remain mathematically accurate liquid Cash)
-        $modalAwal        = $this->capitals->sumInitialAndAddition();
+        $modalAwalNonSales = (float) \App\Models\Capital::whereIn('type', ['initial', 'addition'])->whereNull('sale_id')->sum('amount');
+        $modalAwal         = $this->capitals->sumInitialAndAddition(); // Total including sales
         $totalWithdrawal  = (float) \App\Models\Capital::where('type', 'withdrawal')->sum('amount');
         $totalHPPurchases = $this->units->totalPurchaseValue();
         $lifetimeRevenue  = (float) \App\Models\Sale::where('status', 'approved')->sum('total_price');
@@ -181,7 +182,7 @@ class FinanceService
                                        ->selectRaw('COALESCE(SUM(purchase_price * quantity), 0) as total')
                                        ->value('total');
         $totalAccessoryPurchases = $accAssetValue + $accSoldCost;
-        $modalSekarang           = $modalAwal - $totalWithdrawal + $lifetimeRevenue - $totalHPPurchases - $totalAccessoryPurchases - $lifetimeExpenses;
+        $modalSekarang           = $modalAwalNonSales - $totalWithdrawal + $lifetimeRevenue - $totalHPPurchases - $totalAccessoryPurchases - $lifetimeExpenses;
 
         $saldoAtm = (float) \App\Models\SalePayment::where('method', 'transfer')
             ->whereHas('sale', function ($q) use ($startDate, $endDate) {
@@ -190,13 +191,39 @@ class FinanceService
                 if ($endDate)   $q->whereDate('sale_date', '<=', $endDate);
             })->sum('amount');
 
-        // Lifetime totals for the Aliran Modal diagram (always all-time, not period-filtered)
-        $saldoKas = (float) \App\Models\SalePayment::where('method', 'cash')
-            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
-            ->sum('amount');
-        $saldoAtmLifetime = (float) \App\Models\SalePayment::where('method', 'transfer')
-            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
-            ->sum('amount');
+        // ── Lifetime real balances split by payment method ──────────────────
+        // Capital deposited: split by payment_method (exclude sale-based capitals to prevent double-counting with revenueCash/revenueTransfer)
+        $modalCash     = (float)\App\Models\Capital::whereIn('type', ['initial','addition'])->where('payment_method','cash')->whereNull('sale_id')->sum('amount');
+        $modalTransfer = (float)\App\Models\Capital::whereIn('type', ['initial','addition'])->where('payment_method','transfer')->whereNull('sale_id')->sum('amount');
+
+        // Revenue received: split by SalePayment method
+        $revenueCash     = (float)\App\Models\SalePayment::where('method','cash')->whereHas('sale', fn($q) => $q->where('status','approved'))->sum('amount');
+        $revenueTransfer = (float)\App\Models\SalePayment::where('method','transfer')->whereHas('sale', fn($q) => $q->where('status','approved'))->sum('amount');
+
+        // HP purchases: split by purchase_payment_method
+        $hpCash     = (float)\App\Models\Unit::where('purchase_payment_method','cash')->sum('purchase_price');
+        $hpTransfer = (float)\App\Models\Unit::where('purchase_payment_method','transfer')->sum('purchase_price');
+
+        // Accessories purchases: split by purchase_payment_method
+        $accAssetCash = \App\Models\Accessory::where('purchase_payment_method','cash')->get()->sum(fn($a) => (float)$a->purchase_price * $a->stock_qty);
+        $accSoldCash  = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
+                            ->whereHas('accessory', fn($q) => $q->where('purchase_payment_method','cash'))
+                            ->selectRaw('COALESCE(SUM(purchase_price * quantity),0) as total')
+                            ->value('total');
+        $totalAccessoryCash = $accAssetCash + $accSoldCash;
+
+        $accAssetTransfer = \App\Models\Accessory::where('purchase_payment_method','transfer')->get()->sum(fn($a) => (float)$a->purchase_price * $a->stock_qty);
+        $accSoldTransfer  = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
+                            ->whereHas('accessory', fn($q) => $q->where('purchase_payment_method','transfer'))
+                            ->selectRaw('COALESCE(SUM(purchase_price * quantity),0) as total')
+                            ->value('total');
+        $totalAccessoryTransfer = $accAssetTransfer + $accSoldTransfer;
+
+        // Saldo ATM  = modal via transfer + revenue via transfer − HP bought via transfer − accessories bought via transfer
+        $saldoAtmLifetime = $modalTransfer + $revenueTransfer - $hpTransfer - $totalAccessoryTransfer;
+
+        // Saldo Kas  = modal via cash − withdrawals + revenue via cash − HP bought via cash − accessories bought via cash − expenses
+        $saldoKas = $modalCash - $totalWithdrawal + $revenueCash - $hpCash - $totalAccessoryCash - $lifetimeExpenses;
 
         return [
             'today'            => $today,
@@ -216,6 +243,7 @@ class FinanceService
             'capitals'         => $capitalsList,
             'totalCapital'     => $totalCapital,
             'modalAwal'        => $modalAwal,
+            'modalAwalNonSales'=> $modalAwalNonSales,
             'totalHPPurchases' => $totalHPPurchases,
             'modalSekarang'    => $modalSekarang,
             'unpaidDebts'      => $unpaidDebts,

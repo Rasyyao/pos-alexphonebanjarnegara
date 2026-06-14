@@ -18,10 +18,11 @@ class UpdateUnitRequest extends FormRequest
             'color'          => ['nullable','string','max:50'],
             'imei'           => ['nullable','string','max:20',"unique:units,imei,{$unitId}"],
             'serial_number'  => ['nullable','string','max:50'],
-            'purchase_price' => ['required','numeric','min:0'],
-            'purchase_date'  => ['required','date'],
-            'notes'          => ['nullable','string'],
-            'status'         => ['nullable','in:ready,sold,returned'],
+            'purchase_price'          => ['required','numeric','min:0'],
+            'purchase_date'           => ['required','date'],
+            'purchase_payment_method' => ['nullable','in:cash,transfer'],
+            'notes'                   => ['nullable','string'],
+            'status'                  => ['nullable','in:ready,sold,returned'],
         ];
     }
 }

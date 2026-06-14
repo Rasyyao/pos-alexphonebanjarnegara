@@ -78,6 +78,12 @@
                         <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Harga Beli</span>
                         <span class="text-sm font-mono tabular-nums" style="color:var(--ink-soft)">Rp {{ number_format($accessory->purchase_price, 0, ',', '.') }}</span>
                     </div>
+                    <div class="flex items-center px-5 py-3" style="border-color:var(--line)">
+                        <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Bayar Dari</span>
+                        <span class="text-sm font-semibold font-mono" style="color:var(--ink-soft)">
+                            {{ $accessory->purchase_payment_method === 'transfer' ? 'Transfer / ATM' : 'Kas Tunai' }}
+                        </span>
+                    </div>
                 </div>
             </div>
 

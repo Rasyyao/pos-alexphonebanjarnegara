@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Accessory extends Model
 {
-    protected $fillable = ['name', 'category', 'stock_qty', 'purchase_price'];
+    protected $fillable = ['name', 'category', 'stock_qty', 'purchase_price', 'purchase_payment_method'];
 
     protected function casts(): array
     {

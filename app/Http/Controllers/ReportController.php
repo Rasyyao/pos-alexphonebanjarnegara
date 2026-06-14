@@ -1383,7 +1383,7 @@ class ReportController extends Controller
         }
         $expensesList = $expensesQuery->latest('expense_date')->get();
 
-        $capitalsQuery = \App\Models\Capital::with('creator')->whereIn('type', ['initial', 'addition']);
+        $capitalsQuery = \App\Models\Capital::with('creator')->whereIn('type', ['initial', 'addition', 'withdrawal']);
         if ($startDate) {
             $capitalsQuery->whereDate('entry_date', '>=', $startDate);
         }
@@ -1392,8 +1392,71 @@ class ReportController extends Controller
         }
         $capitalsList = $capitalsQuery->latest('entry_date')->get();
 
+        // Fetch approved sales payments for Omzet breakdown
+        $salesQuery = \App\Models\Sale::where('status', 'approved');
+        if ($startDate) {
+            $salesQuery->whereDate('sale_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $salesQuery->whereDate('sale_date', '<=', $endDate);
+        }
+        $salesList = $salesQuery->get();
+        $txCount = $salesList->count();
+        
+        $penerimaanCash = 0;
+        $penerimaanTransfer = 0;
+        $piutang = 0;
+        foreach ($salesList as $sale) {
+            foreach ($sale->payments as $payment) {
+                $method = $payment->method->value ?? $payment->method;
+                if ($method === 'cash') {
+                    $penerimaanCash += $payment->amount;
+                } elseif ($method === 'transfer') {
+                    $penerimaanTransfer += $payment->amount;
+                } elseif ($method === 'utang') {
+                    $piutang += $payment->amount;
+                }
+            }
+        }
+        $avgPerTx = $txCount > 0 ? $data['revenue'] / $txCount : 0;
+
+        // Fetch ASET BARANG values
+        $unitVal = (float) $data['assetValue'];
+        $cashVal = (float) $this->finance->reportSummary($startDate, $endDate)['saldoKas'];
+        $bankVal = (float) $this->finance->reportSummary($startDate, $endDate)['saldoAtmLifetime'];
+        
+        // Fetch other values from Capitals
+        $orderanVal = (float) \App\Models\Capital::where('description', 'like', '%orderan%')->sum('amount');
+        $tempoVal   = (float) \App\Models\Capital::where('description', 'like', '%tempo%')->sum('amount');
+        $mamaVal    = (float) \App\Models\Capital::where('description', 'like', '%mama%')->sum('amount');
+        $rielHpVal  = (float) \App\Models\Capital::where('description', 'like', '%riel%')->sum('amount');
+        $holdVal    = (float) \App\Models\Capital::where('description', 'like', '%hold%')->sum('amount');
+        $asetBulanLaluVal = (float) \App\Models\Capital::where('description', 'like', '%bulan lalu%')->sum('amount');
+        
+        // HUTANG top
+        $hutangTopVal = (float) \App\Models\Capital::where('description', 'like', '%hutang%')
+            ->where(fn($q) => $q->where('description', 'not like', '%suplier%')->where('description', 'not like', '%toko%'))
+            ->whereIn('type', ['initial', 'addition'])
+            ->sum('amount');
+        if ($hutangTopVal == 0) {
+            $hutangTopVal = abs((float) \App\Models\Capital::where('description', 'like', '%hutang%')
+                ->where('type', 'withdrawal')
+                ->where(fn($q) => $q->where('description', 'not like', '%suplier%')->where('description', 'not like', '%toko%'))
+                ->sum('amount'));
+        }
+
+        // HUTANG bottom
+        $hutangBottomVal = (float) \App\Models\Capital::where('description', 'like', '%hutang%')
+            ->where(fn($q) => $q->where('description', 'like', '%suplier%')->orWhere('description', 'like', '%toko%')->orWhere('type', 'withdrawal'))
+            ->sum('amount');
+        if ($hutangBottomVal == 0) {
+            $hutangBottomVal = abs((float) \App\Models\Capital::where('description', 'like', '%hutang%')
+                ->where('type', 'withdrawal')
+                ->sum('amount'));
+        }
+
         // 1. HEADER TITLE BANNER
-        $sheet->mergeCells('A1:G3');
+        $sheet->mergeCells('A1:K3');
         $sheet->setCellValue('A1', "LAPORAN RINGKASAN KEUANGAN & LABA RUGI\nALEX PHONE BANJARNEGARA");
         $sheet->getStyle('A1')->getAlignment()->setWrapText(true);
         $sheet->getStyle('A1')->applyFromArray([
@@ -1414,7 +1477,7 @@ class ReportController extends Controller
         ]);
         
         // Subtitle card with Date range info
-        $sheet->mergeCells('A4:G4');
+        $sheet->mergeCells('A4:K4');
         $dateStr = now()->format('d F Y H:i');
         $periodStr = ($startDate || $endDate) 
             ? ($startDate ? \Carbon\Carbon::parse($startDate)->format('d/m/Y') : 'Awal') . ' s.d ' . ($endDate ? \Carbon\Carbon::parse($endDate)->format('d/m/Y') : 'Akhir')
@@ -1443,9 +1506,9 @@ class ReportController extends Controller
             ]
         ]);
 
-        // 2. RINGKASAN FINANSIAL HEADER
+        // 2. RINGKASAN STATISTIK TABLE (A6:B14)
         $sheet->mergeCells('A6:B6');
-        $sheet->setCellValue('A6', 'METRIK KEUANGAN');
+        $sheet->setCellValue('A6', 'RINGKASAN STATISTIK');
         $sheet->getStyle('A6')->applyFromArray([
             'font' => [
                 'name' => 'Segoe UI',
@@ -1458,81 +1521,79 @@ class ReportController extends Controller
                 'startColor' => ['rgb' => '1E293B'] // Dark Slate
             ],
             'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
             ]
         ]);
         
-        $sheet->setCellValue('A7', 'Keterangan Metrik');
-        $sheet->setCellValue('B7', 'Nilai / Jumlah');
+        $sheet->setCellValue('A7', 'Keterangan');
+        $sheet->setCellValue('B7', 'Nilai');
         $sheet->getStyle('A7:B7')->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F1F5F9']],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]]
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
         ]);
 
-        // 3. RINGKASAN FINANSIAL DATA
-        $metrics = [
-            ['Total Omzet (Pemasukan)', $data['revenue']],
-            ['Total Laba Kotor', $data['profit']],
-            ['Total Pengeluaran Operasional', $data['expenses']],
-            ['Laba Bersih (Periode)', $data['net']],
-            ['Total Setoran Modal (Periode)', $data['capital']],
-            ['Utang Belum Lunas', $data['unpaidDebts']],
-            ['Nilai Aset Stok HP Ready', $data['assetValue']],
-            ['Modal Awal Disetor (Lifetime)', $data['modalAwal']],
-            ['Modal Sekarang (Liquid Kas)', $data['modalSekarang']],
-        ];
+        // Values
+        $sheet->setCellValue('A8', 'Total Omzet (Pemasukan)');
+        $sheet->setCellValue('B8', $data['revenue']);
+        $sheet->setCellValue('A9', 'Total Laba Kotor');
+        $sheet->setCellValue('B9', $data['profit']);
+        $sheet->setCellValue('A10', 'Penerimaan Cash');
+        $sheet->setCellValue('B10', $penerimaanCash);
+        $sheet->setCellValue('A11', 'Penerimaan Transfer');
+        $sheet->setCellValue('B11', $penerimaanTransfer);
+        $sheet->setCellValue('A12', 'Piutang (Hutang)');
+        $sheet->setCellValue('B12', $piutang);
+        $sheet->setCellValue('A13', 'Jumlah Transaksi');
+        $sheet->setCellValue('B13', $txCount);
+        $sheet->setCellValue('A14', 'Rata-rata per Transaksi');
+        $sheet->setCellValue('B14', $avgPerTx);
 
-        $mRow = 8;
-        foreach ($metrics as $idx => $m) {
-            $sheet->setCellValue("A{$mRow}", $m[0]);
-            $sheet->setCellValue("B{$mRow}", $m[1]);
-            
-            // Standard formatting & zebra
-            $fillColor = ($mRow % 2 === 0) ? 'F8FAFC' : 'FFFFFF';
-            $sheet->getStyle("A{$mRow}:B{$mRow}")->applyFromArray([
+        // Styling Ringkasan Statistik
+        for ($r = 8; $r <= 14; $r++) {
+            $fillColor = ($r % 2 === 0) ? 'F8FAFC' : 'FFFFFF';
+            $sheet->getStyle("A{$r}:B{$r}")->applyFromArray([
                 'font' => ['name' => 'Segoe UI', 'size' => 9],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fillColor]],
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]]
             ]);
-            
-            $sheet->getStyle("B{$mRow}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
-            $sheet->getStyle("B{$mRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            
-            // Color Net Profit beautifully (row 11 is Laba Bersih)
-            if ($mRow === 11) {
-                $netVal = $m[1];
-                $netBg = ($netVal >= 0) ? 'D1FAE5' : 'FEE2E2'; // Light Green vs Light Red
-                $netFg = ($netVal >= 0) ? '065F46' : '991B1B';
-                $sheet->getStyle("A{$mRow}:B{$mRow}")->applyFromArray([
-                    'font' => ['bold' => true, 'color' => ['rgb' => $netFg]],
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $netBg]]
-                ]);
+            $sheet->getStyle("B{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            if ($r != 13) {
+                $sheet->getStyle("B{$r}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+            } else {
+                $sheet->getStyle("B{$r}")->getNumberFormat()->setFormatCode('#,##0');
             }
-            
-            $mRow++;
         }
+        
+        // Highlight Total Omzet & Laba
+        $sheet->getStyle('A8:B8')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'color' => ['rgb' => '1E3A8A']], // Dark Blue
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EFF6FF']]
+        ]);
+        $sheet->getStyle('A9:B9')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'color' => ['rgb' => '065F46']], // Dark Green
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1FAE5']]
+        ]);
 
-        // 4. NATIVE EXCEL COLUMN CHART COMPARISON
-        // Categories from A8 to A11 (Omzet, Laba Kotor, Pengeluaran, Laba Bersih)
+        // 3. NATIVE EXCEL COLUMN CHART COMPARISON (payment method breakdown)
         $categories = [
             new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues(
                 \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues::DATASERIES_TYPE_STRING, 
-                '\'Laporan Keuangan\'!$A$8:$A$11', 
+                '\'Laporan Keuangan\'!$A$10:$A$12', 
                 null, 
-                4
+                3
             )
         ];
-        // Values from B8 to B11
         $values = [
             new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues(
                 \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues::DATASERIES_TYPE_NUMBER, 
-                '\'Laporan Keuangan\'!$B$8:$B$11', 
+                '\'Laporan Keuangan\'!$B$10:$B$12', 
                 null, 
-                4
+                3
             )
         ];
-
         $series = new \PhpOffice\PhpSpreadsheet\Chart\DataSeries(
             \PhpOffice\PhpSpreadsheet\Chart\DataSeries::TYPE_BARCHART, 
             \PhpOffice\PhpSpreadsheet\Chart\DataSeries::GROUPING_CLUSTERED, 
@@ -1541,11 +1602,9 @@ class ReportController extends Controller
             $categories, 
             $values
         );
-
         $plotArea = new \PhpOffice\PhpSpreadsheet\Chart\PlotArea(null, [$series]);
-        $legend = new \PhpOffice\PhpSpreadsheet\Chart\Legend(\PhpOffice\PhpSpreadsheet\Chart\Legend::POSITION_RIGHT, null, false);
-        $chartTitle = new \PhpOffice\PhpSpreadsheet\Chart\Title('Kinerja Finansial Toko (Rp)');
-
+        $legend = new \PhpOffice\PhpSpreadsheet\Chart\Legend(\PhpOffice\PhpSpreadsheet\Chart\Legend::POSITION_BOTTOM, null, false);
+        $chartTitle = new \PhpOffice\PhpSpreadsheet\Chart\Title('Komposisi Metode Penerimaan (Rp)');
         $chart = new \PhpOffice\PhpSpreadsheet\Chart\Chart(
             'finance-bar-chart',
             $chartTitle,
@@ -1556,47 +1615,247 @@ class ReportController extends Controller
             null,
             null
         );
-
-        // Chart positioning
         $chart->setTopLeftPosition('D6');
-        $chart->setBottomRightPosition('K22');
+        $chart->setBottomRightPosition('K14');
         $sheet->addChart($chart);
 
-        // 5. DETAIL TABLES HEADERS (Row 25)
-        // Expenses Header A25:F25
-        $sheet->mergeCells('A25:F25');
-        $sheet->setCellValue('A25', 'RINCIAN CATATAN PENGELUARAN');
-        $sheet->getStyle('A25')->applyFromArray([
+        // 4. ASET BARANG SECTION (Row 16 onwards)
+        $sheet->mergeCells('A16:B16');
+        $sheet->setCellValue('A16', 'ASET BARANG');
+        $sheet->getStyle('A16')->applyFromArray([
+            'font' => [
+                'name' => 'Segoe UI',
+                'bold' => true,
+                'size' => 10,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '1E293B'] // Dark Slate to match Ringkasan Statistik
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ]
+        ]);
+
+        $sheet->setCellValue('A17', 'ASET');
+        $sheet->setCellValue('B17', 'NILAI');
+        $sheet->getStyle('A17:B17')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => '1E293B']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F1F5F9']], // Light Gray to match Ringkasan Statistik
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+        ]);
+
+        $sheet->setCellValue('A18', 'UNIT');
+        $sheet->setCellValue('B18', $unitVal);
+        $sheet->setCellValue('A19', 'CASH');
+        $sheet->setCellValue('B19', $cashVal);
+        $sheet->setCellValue('A20', 'BANK');
+        $sheet->setCellValue('B20', $bankVal);
+        $sheet->setCellValue('A21', 'ORDERAN');
+        $sheet->setCellValue('B21', $orderanVal);
+        $sheet->setCellValue('A22', 'TEMPO');
+        $sheet->setCellValue('B22', $tempoVal);
+        $sheet->setCellValue('A23', 'HUTANG');
+        $sheet->setCellValue('B23', $hutangTopVal);
+        
+        // Row 24 is blank spacer row
+        $sheet->setCellValue('A24', '');
+        $sheet->setCellValue('B24', '');
+
+        $sheet->setCellValue('A25', 'MAMA');
+        $sheet->setCellValue('B25', $mamaVal);
+        $sheet->setCellValue('A26', 'RIEL HANDPHONE');
+        $sheet->setCellValue('B26', $rielHpVal);
+
+        // Apply beautiful styling for rows 18-26 (excluding row 24 from styling or giving it simple borders)
+        for ($r = 18; $r <= 26; $r++) {
+            if ($r === 24) {
+                // Spacer row gets no borders and no colors to keep it blank and clean
+                $sheet->getStyle("A{$r}:B{$r}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFFFF']],
+                    'borders' => [
+                        'left' => ['borderStyle' => Border::BORDER_NONE],
+                        'right' => ['borderStyle' => Border::BORDER_NONE],
+                        'top' => ['borderStyle' => Border::BORDER_NONE],
+                        'bottom' => ['borderStyle' => Border::BORDER_NONE],
+                    ]
+                ]);
+                continue;
+            }
+            
+            $fillColor = ($r % 2 === 0) ? 'F8FAFC' : 'FFFFFF';
+            $sheet->getStyle("A{$r}:B{$r}")->applyFromArray([
+                'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9], // Keep labels bold
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fillColor]],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]]
+            ]);
+            
+            $sheet->getStyle("A{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
+            $sheet->getStyle("B{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("B{$r}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+
+            // Text color for values: dark red for TEMPO, HUTANG, MAMA if they contain values
+            if (in_array($r, [22, 23, 25])) {
+                $sheet->getStyle("B{$r}")->applyFromArray([
+                    'font' => ['color' => ['rgb' => 'B91C1C']] // Dark Red text
+                ]);
+            }
+        }
+
+        // TOTAL KOTOR (Row 27)
+        $sheet->setCellValue('A27', 'TOTAL KOTOR');
+        $sheet->setCellValue('B27', '=SUM(B18:B26)');
+        $sheet->getStyle('A27:B27')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => '1E3A8A']], // Dark Blue
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EFF6FF']], // Soft Blue
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'BFDBFE']]]
+        ]);
+        $sheet->getStyle('A27')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
+        $sheet->getStyle('B27')->getNumberFormat()->setFormatCode('"Rp "#,##0');
+        $sheet->getStyle('B27')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        // HUTANG bottom (Row 28)
+        $sheet->setCellValue('A28', 'HUTANG');
+        $sheet->setCellValue('B28', $hutangBottomVal);
+        $sheet->getStyle('A28:B28')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => '991B1B']], // Dark Red text
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEE2E2']], // Soft Red
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FCA5A5']]]
+        ]);
+        $sheet->getStyle('A28')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
+        $sheet->getStyle('B28')->getNumberFormat()->setFormatCode('"Rp "#,##0');
+        $sheet->getStyle('B28')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        // TOTAL AKHIR (Row 29)
+        $sheet->setCellValue('A29', 'TOTAL AKHIR');
+        $sheet->setCellValue('B29', '=B27-B28');
+        $sheet->getStyle('A29:B29')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => '5B21B6']], // Dark Purple
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F5F3FF']], // Soft Purple
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'DDD6FE']]]
+        ]);
+        $sheet->getStyle('A29')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
+        $sheet->getStyle('B29')->getNumberFormat()->setFormatCode('"Rp "#,##0');
+        $sheet->getStyle('B29')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        // ASET BULAN LALU (Row 30)
+        $sheet->setCellValue('A30', 'ASET BULAN LALU');
+        $sheet->setCellValue('B30', $asetBulanLaluVal);
+        $sheet->getStyle('A30:B30')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => '9D174D']], // Dark Pink
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFF1F2']], // Soft Rose
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FECDD3']]]
+        ]);
+        $sheet->getStyle('A30')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
+        $sheet->getStyle('B30')->getNumberFormat()->setFormatCode('"Rp "#,##0');
+        $sheet->getStyle('B30')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        // PENINGKATAN (Row 31)
+        $sheet->setCellValue('A31', 'PENINGKATAN');
+        $sheet->setCellValue('B31', '=B29-B30');
+        $sheet->getStyle('A31:B31')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => '1E293B']], // Dark Slate
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F1F5F9']], // Soft Gray
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]]
+        ]);
+        $sheet->getStyle('A31')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
+        $sheet->getStyle('B31')->getNumberFormat()->setFormatCode('"Rp "#,##0');
+        $sheet->getStyle('B31')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        // HOLD (Row 32)
+        $sheet->setCellValue('A32', 'HOLD');
+        $sheet->setCellValue('B32', $holdVal);
+        $sheet->getStyle('A32:B32')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => '92400E']], // Dark Amber
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEF3C7']], // Soft Amber
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FDE68A']]]
+        ]);
+        $sheet->getStyle('A32')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
+        $sheet->getStyle('B32')->getNumberFormat()->setFormatCode('"Rp "#,##0');
+        $sheet->getStyle('B32')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        // 5. NATIVE EXCEL COLUMN CHART FOR ASET BARANG (Row 16 to 32, columns D to K)
+        $categories2 = [
+            new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues(
+                \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues::DATASERIES_TYPE_STRING, 
+                '\'Laporan Keuangan\'!$A$18:$A$26', 
+                null, 
+                9
+            )
+        ];
+        $values2 = [
+            new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues(
+                \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues::DATASERIES_TYPE_NUMBER, 
+                '\'Laporan Keuangan\'!$B$18:$B$26', 
+                null, 
+                9
+            )
+        ];
+        $series2 = new \PhpOffice\PhpSpreadsheet\Chart\DataSeries(
+            \PhpOffice\PhpSpreadsheet\Chart\DataSeries::TYPE_BARCHART, 
+            \PhpOffice\PhpSpreadsheet\Chart\DataSeries::GROUPING_CLUSTERED, 
+            range(0, count($values2) - 1), 
+            [], 
+            $categories2, 
+            $values2
+        );
+        $plotArea2 = new \PhpOffice\PhpSpreadsheet\Chart\PlotArea(null, [$series2]);
+        $legend2 = new \PhpOffice\PhpSpreadsheet\Chart\Legend(\PhpOffice\PhpSpreadsheet\Chart\Legend::POSITION_BOTTOM, null, false);
+        $chartTitle2 = new \PhpOffice\PhpSpreadsheet\Chart\Title('Komposisi Aset Barang (Rp)');
+        $chart2 = new \PhpOffice\PhpSpreadsheet\Chart\Chart(
+            'asset-bar-chart',
+            $chartTitle2,
+            $legend2,
+            $plotArea2,
+            true,
+            \PhpOffice\PhpSpreadsheet\Chart\DataSeries::EMPTY_AS_GAP,
+            null,
+            null
+        );
+        $chart2->setTopLeftPosition('D16');
+        $chart2->setBottomRightPosition('K32');
+        $sheet->addChart($chart2);
+
+        // 6. DETAIL TABLES SECTION (Row 35 onwards)
+        // Expenses Header A35:F35
+        $sheet->mergeCells('A35:F35');
+        $sheet->setCellValue('A35', 'RINCIAN CATATAN PENGELUARAN');
+        $sheet->getStyle('A35')->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'BE123C']], // Soft Red
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
+        ]);
+        
+        $sheet->fromArray(['Tanggal', 'Keterangan', 'Kategori', 'Jumlah', 'Catatan', 'Dicatat Oleh'], null, 'A36');
+        $sheet->getStyle('A36:F36')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => 'BE123C']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFE4E6']], // Rose 100
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FDA4AF']]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
         ]);
         
-        $sheet->fromArray(['Tanggal', 'Keterangan', 'Kategori', 'Jumlah', 'Catatan', 'Dicatat Oleh'], null, 'A26');
-        $sheet->getStyle('A26:F26')->applyFromArray([
-            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFE4E6']], // Rose 100
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FDA4AF']]]
-        ]);
-        
-        // Capital Header I25:M25
-        $sheet->mergeCells('I25:M25');
-        $sheet->setCellValue('I25', 'RINCIAN CATATAN SETORAN MODAL');
-        $sheet->getStyle('I25')->applyFromArray([
+        // Capital Header I35:M35
+        $sheet->mergeCells('I35:M35');
+        $sheet->setCellValue('I35', 'RINCIAN CATATAN SETORAN MODAL');
+        $sheet->getStyle('I35')->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '047857']], // Dark Emerald
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
         ]);
         
-        $sheet->fromArray(['Tanggal', 'Keterangan', 'Tipe', 'Jumlah', 'Dicatat Oleh'], null, 'I26');
-        $sheet->getStyle('I26:M26')->applyFromArray([
-            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9],
+        $sheet->fromArray(['Tanggal', 'Keterangan', 'Tipe', 'Jumlah', 'Dicatat Oleh'], null, 'I36');
+        $sheet->getStyle('I36:M36')->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => '047857']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1FAE5']], // Emerald 100
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'A7F3D0']]]
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'A7F3D0']]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
         ]);
 
         // Populate Expenses
-        $expRow = 27;
+        $expRow = 37;
         foreach ($expensesList as $e) {
             $sheet->setCellValue("A{$expRow}", $e->expense_date->format('d/m/Y'));
             $sheet->setCellValue("B{$expRow}", $e->description);
@@ -1614,16 +1873,26 @@ class ReportController extends Controller
             $sheet->getStyle("D{$expRow}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
             $sheet->getStyle("A{$expRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle("C{$expRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("D{$expRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             
             $expRow++;
         }
 
         // Populate Capitals
-        $capRow = 27;
+        $capRow = 37;
         foreach ($capitalsList as $c) {
             $sheet->setCellValue("I{$capRow}", $c->entry_date->format('d/m/Y'));
             $sheet->setCellValue("J{$capRow}", $c->description);
-            $sheet->setCellValue("K{$capRow}", $c->type === 'initial' ? 'Modal Awal' : 'Modal Tambahan');
+            
+            $typeLabel = match($c->type) {
+                'initial' => 'Modal Awal',
+                'addition' => 'Modal Tambahan',
+                'withdrawal' => 'Pengurangan',
+                'purchase' => 'Pembelian',
+                default => ucfirst($c->type)
+            };
+            
+            $sheet->setCellValue("K{$capRow}", $typeLabel);
             $sheet->setCellValue("L{$capRow}", $c->amount);
             $sheet->setCellValue("M{$capRow}", $c->creator->name ?? '—');
             
@@ -1636,11 +1905,12 @@ class ReportController extends Controller
             $sheet->getStyle("L{$capRow}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
             $sheet->getStyle("I{$capRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle("K{$capRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("L{$capRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             
             $capRow++;
         }
 
-        // 6. AUTO-FIT COLUMNS AND FORMAT ROWS
+        // 7. AUTO-FIT COLUMNS AND FORMAT ROWS
         foreach (range('A', 'N') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
@@ -1650,6 +1920,14 @@ class ReportController extends Controller
         $sheet->getRowDimension('3')->setRowHeight(20);
         $sheet->getRowDimension('4')->setRowHeight(24);
         $sheet->getRowDimension('6')->setRowHeight(28);
+        
+        $sheet->getRowDimension('16')->setRowHeight(24);
+        $sheet->getRowDimension('17')->setRowHeight(22);
+        for ($r = 18; $r <= 32; $r++) {
+            $sheet->getRowDimension((string)$r)->setRowHeight(20);
+        }
+        $sheet->getRowDimension('35')->setRowHeight(28);
+        $sheet->getRowDimension('36')->setRowHeight(22);
     }
 
     private function buildExpensesSheet($sheet): void

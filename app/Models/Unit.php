@@ -11,7 +11,7 @@ class Unit extends Model
     protected $fillable = [
         'model_id', 'created_by', 'unit_type', 'grade', 'ram', 'rom', 'color',
         'imei', 'serial_number', 'purchase_price', 'photo_path', 'photo_path_2', 'photo_path_3',
-        'notes', 'status', 'purchase_date',
+        'notes', 'status', 'purchase_date', 'purchase_payment_method',
     ];
 
     protected function casts(): array

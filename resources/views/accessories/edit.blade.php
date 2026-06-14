@@ -55,8 +55,18 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="field-label">Kategori</label>
-                                <input type="text" name="category" value="{{ old('category', $accessory->category) }}" placeholder="mis. Case, Charger, TWS"
-                                       class="field-input" />
+                                <select name="category" class="field-input @error('category') error @enderror">
+                                    <option value="">Pilih Kategori (Optional)</option>
+                                    @php
+                                        $defaultCategories = ['Case', 'Charger', 'Kabel', 'TWS', 'Anti Gores', 'Powerbank'];
+                                        $allCategories = collect($defaultCategories)->merge($categories ?? [])->unique()->values();
+                                    @endphp
+                                    @foreach($allCategories as $cat)
+                                        <option value="{{ $cat }}" {{ old('category', $accessory->category) === $cat ? 'selected' : '' }}>
+                                            {{ $cat }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div>
                                 <label class="field-label">Stok <span style="color:var(--warn)">*</span></label>
@@ -75,13 +85,40 @@
                         </svg>
                         <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Harga</span>
                     </div>
-                    <div class="p-5">
+                    <div class="p-5 space-y-4">
                         <div>
                             <label class="field-label">Harga Beli <span style="color:var(--warn)">*</span></label>
                             <div class="money-wrap">
                                 <span class="rp-prefix">Rp</span>
                                 <input type="text" name="purchase_price" id="acc-buy" value="{{ old('purchase_price', $accessory->purchase_price) }}" required
                                        class="field-input money-input" placeholder="0" inputmode="numeric" />
+                            </div>
+                        </div>
+
+                        {{-- Payment Method --}}
+                        <div>
+                            <label class="field-label">Bayar Dari <span style="color:var(--warn)">*</span></label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                       style="{{ old('purchase_payment_method', $accessory->purchase_payment_method ?? 'cash') === 'cash' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)' }}">
+                                    <input type="radio" name="purchase_payment_method" value="cash"
+                                           class="accent-blue-600"
+                                           {{ old('purchase_payment_method', $accessory->purchase_payment_method ?? 'cash') === 'cash' ? 'checked' : '' }} />
+                                    <div>
+                                        <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
+                                        <div class="text-[10px]" style="color:var(--ink-mute)">Bayar pakai uang tunai</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                       style="{{ old('purchase_payment_method', $accessory->purchase_payment_method ?? 'cash') === 'transfer' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)' }}">
+                                    <input type="radio" name="purchase_payment_method" value="transfer"
+                                           class="accent-blue-600"
+                                           {{ old('purchase_payment_method', $accessory->purchase_payment_method ?? 'cash') === 'transfer' ? 'checked' : '' }} />
+                                    <div>
+                                        <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
+                                        <div class="text-[10px]" style="color:var(--ink-mute)">Bayar via rekening bank</div>
+                                    </div>
+                                </label>
                             </div>
                         </div>
                     </div>
