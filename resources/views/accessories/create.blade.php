@@ -136,27 +136,7 @@
                     </div>
                 </div>
 
-                {{-- Right: live margin + actions --}}
                 <div class="space-y-5">
-                    <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
-                        <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
-                            <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Estimasi Margin</span>
-                        </div>
-                        <div class="p-5">
-                            <div class="mb-3">
-                                <label class="field-label">Harga Jual (Estimasi)</label>
-                                <div class="money-wrap">
-                                    <span class="rp-prefix">Rp</span>
-                                    <input type="text" id="acc-est-jual" class="field-input money-input" placeholder="0" inputmode="numeric" />
-                                </div>
-                            </div>
-                            <div class="text-2xl font-semibold font-mono tabular-nums" id="margin-amount" style="color:var(--ink-mute)">Rp 0</div>
-                            <div class="text-xs mt-1" id="margin-pct" style="color:var(--ink-mute)">Isi harga jual estimasi</div>
-                            <div class="mt-3 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
-                                <div id="margin-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:var(--success)"></div>
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="bg-white rounded-xl border p-4 space-y-2.5" style="border-color:var(--line)">
                         <button type="submit" class="btn-primary w-full" style="height:44px;font-size:14px">Simpan
