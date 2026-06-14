@@ -14,9 +14,18 @@ class ExpenseService
     public function store(array $validated, User $actor): Expense
     {
         // Normalize the amount: strip thousand-separator dots, replace comma decimal
-        $validated['amount']     = (float) str_replace(['.', ','], ['', '.'], $validated['amount']);
-        $validated['created_by'] = $actor->id;
+        $validated['amount']         = (float) str_replace(['.', ','], ['', '.'], $validated['amount']);
+        $validated['payment_method'] = $validated['payment_method'] ?? 'cash';
+        $validated['created_by']     = $actor->id;
         return $this->expenses->create($validated);
+    }
+
+    public function update(Expense $expense, array $validated): Expense
+    {
+        $validated['amount']         = (float) str_replace(['.', ','], ['', '.'], $validated['amount']);
+        $validated['payment_method'] = $validated['payment_method'] ?? 'cash';
+        $expense->update($validated);
+        return $expense->fresh();
     }
 
     public function destroy(Expense $expense): void
@@ -24,3 +33,4 @@ class ExpenseService
         $this->expenses->delete($expense);
     }
 }
+

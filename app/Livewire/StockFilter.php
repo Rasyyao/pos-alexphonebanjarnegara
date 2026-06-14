@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\ProductBrand;
 use App\Models\Unit;
+use App\Repositories\Contracts\UnitRepositoryInterface;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -12,7 +13,7 @@ class StockFilter extends Component
     use WithPagination;
 
     public string $search    = '';
-    public ?int $brand_id    = null;
+    public string $brand_id  = '';
     public string $unit_type = '';
     public string $status    = 'ready';
     public string $ram       = '';
@@ -32,7 +33,7 @@ class StockFilter extends Component
     public function resetFilters(): void
     {
         $this->search    = '';
-        $this->brand_id  = null;
+        $this->brand_id  = '';
         $this->unit_type = '';
         $this->status    = 'ready';
         $this->ram       = '';
@@ -42,24 +43,20 @@ class StockFilter extends Component
         $this->resetPage();
     }
 
-    public function render()
+    public function render(UnitRepositoryInterface $repository)
     {
         $brands = ProductBrand::orderBy('name')->get();
 
-        $units = Unit::with('model.brand')
-            ->when($this->search, fn($q) => $q->whereHas('model', fn($q) =>
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhereHas('brand', fn($q) => $q->where('name', 'like', '%' . $this->search . '%'))
-            ))
-            ->when($this->brand_id, fn($q) => $q->whereHas('model', fn($q) => $q->where('brand_id', $this->brand_id)))
-            ->when($this->unit_type, fn($q) => $q->where('unit_type', $this->unit_type))
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
-            ->when($this->ram, fn($q) => $q->where('ram', $this->ram))
-            ->when($this->rom, fn($q) => $q->where('rom', $this->rom))
-            ->when($this->color, fn($q) => $q->where('color', $this->color))
-            ->when($this->grade, fn($q) => $q->where('grade', $this->grade))
-            ->latest()
-            ->paginate(10);
+        $units = $repository->paginate([
+            'search'    => $this->search,
+            'brand_id'  => $this->brand_id,
+            'unit_type' => $this->unit_type,
+            'status'    => $this->status,
+            'ram'       => $this->ram,
+            'rom'       => $this->rom,
+            'color'     => $this->color,
+            'grade'     => $this->grade,
+        ], 10);
 
         return view('livewire.stock-filter', compact('brands', 'units'));
     }

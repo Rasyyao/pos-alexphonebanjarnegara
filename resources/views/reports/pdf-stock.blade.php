@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+1<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
@@ -49,6 +49,9 @@
   /* total row */
   .total-row td { font-weight: 700; border-top: 1.5px solid #374151; background: #F3F4F6 !important; }
 
+  /* brand row */
+  .brand-row td { font-weight: 700; background: #E5E7EB !important; color: #111827; border-top: 1px solid #9CA3AF; border-bottom: 1px solid #9CA3AF; padding: 6px 8px; }
+
   /* FOOTER */
   .footer { margin-top: 14px; border-top: 1px solid #E5E7EB; padding-top: 6px; text-align: right; font-size: 7pt; color: #9CA3AF; font-style: italic; }
 
@@ -78,7 +81,7 @@
     <div class="kpi">
       <div class="kpi-label">Total Unit HP</div>
       <div class="kpi-value">{{ $units->count() }} unit</div>
-      <div class="kpi-sub">Ready: {{ $readyCount }} &nbsp;|&nbsp; Terjual: {{ $soldCount }}</div>
+      <div class="kpi-sub">Ready: {{ $readyCount }} &nbsp;|&nbsp; Retur: {{ $units->count() - $readyCount }}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Nilai Modal Stok Ready</div>
@@ -108,31 +111,41 @@
       </tr>
     </thead>
     <tbody>
-      @php $no = 1; $totalModal = 0; @endphp
-      @forelse($units as $u)
-        @php
-          $modal  = (float)$u->purchase_price;
-          $totalModal += $modal;
-          $status = $u->status->value;
-        @endphp
-        <tr>
-          <td class="cb-cell"><span class="cb-box"></span></td>
-          <td class="c muted">{{ $no++ }}</td>
-          <td>
-            <strong>{{ $u->model->brand->name ?? '—' }} {{ $u->model->name ?? '' }}</strong>
-            <br><span class="muted">{{ ucfirst($u->unit_type->value) }}{{ $u->grade ? ' · Grade '.$u->grade : '' }}</span>
+      @php
+        $groupedUnits = $units->groupBy(fn($u) => $u->model->brand->name ?? 'Lain-lain');
+        $no = 1;
+        $totalModal = 0;
+      @endphp
+      @forelse($groupedUnits as $brandName => $brandUnits)
+        <tr class="brand-row">
+          <td colspan="8">
+            ◆ BRAND: {{ strtoupper($brandName) }} ({{ $brandUnits->count() }} unit)
           </td>
-          <td class="muted">{{ $u->ram }}/{{ $u->rom }} &nbsp; {{ $u->color }}</td>
-          <td class="muted" style="font-size:7pt">{{ $u->imei ?: ($u->serial_number ?: '—') }}</td>
-          <td class="r">Rp {{ number_format($modal, 0, ',', '.') }}</td>
-          <td class="c">
-            @if($status === 'ready')  <span class="badge badge-ready">Ready</span>
-            @elseif($status === 'sold') <span class="badge badge-sold">Terjual</span>
-            @else <span class="badge badge-retur">{{ ucfirst($status) }}</span>
-            @endif
-          </td>
-          <td class="c muted">{{ $u->purchase_date ? $u->purchase_date->format('d/m/Y') : '—' }}</td>
         </tr>
+        @foreach($brandUnits as $u)
+          @php
+            $modal  = (float)$u->purchase_price;
+            $totalModal += $modal;
+            $status = $u->status->value;
+          @endphp
+          <tr>
+            <td class="cb-cell"><span class="cb-box"></span></td>
+            <td class="c muted">{{ $no++ }}</td>
+            <td>
+              <strong>{{ $u->model->name ?? '—' }}</strong>
+              <br><span class="muted">{{ ucfirst($u->unit_type->value) }}{{ $u->grade ? ' · Grade '.$u->grade : '' }}</span>
+            </td>
+            <td class="muted">{{ $u->ram }}/{{ $u->rom }} &nbsp; {{ $u->color }}</td>
+            <td class="muted" style="font-size:7pt">{{ $u->imei ?: ($u->serial_number ?: '—') }}</td>
+            <td class="r">Rp {{ number_format($modal, 0, ',', '.') }}</td>
+            <td class="c">
+              @if($status === 'ready')  <span class="badge badge-ready">Ready</span>
+              @else <span class="badge badge-retur">Retur</span>
+              @endif
+            </td>
+            <td class="c muted">{{ $u->purchase_date ? $u->purchase_date->format('d/m/Y') : '—' }}</td>
+          </tr>
+        @endforeach
       @empty
         <tr><td colspan="8" style="text-align:center;padding:14px;color:#9CA3AF">Tidak ada data unit</td></tr>
       @endforelse

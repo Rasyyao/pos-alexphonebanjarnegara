@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
         Route::get('finance/export', [FinanceController::class, 'export'])->name('finance.export');
         Route::resource('capitals', CapitalController::class)->except(['index','show','create']);
         Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+        Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
         Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
         Route::patch('debts/{debt}/pay-legacy', [DebtController::class, 'markPaid'])->name('debts.mark_paid_legacy');
         Route::get('reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');

@@ -14,8 +14,9 @@ class PayDebtRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type'   => ['required', 'string', 'in:full,partial'],
-            'amount' => ['required_if:type,partial', 'nullable', 'numeric', 'min:1'],
+            'type'           => ['required', 'string', 'in:full,partial'],
+            'amount'         => ['required_if:type,partial', 'nullable', 'numeric', 'min:1'],
+            'payment_method' => ['required', 'string', 'in:cash,transfer'],
         ];
     }
 

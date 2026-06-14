@@ -3,7 +3,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreExpenseRequest extends FormRequest
+class UpdateExpenseRequest extends FormRequest
 {
     public function authorize(): bool
     {

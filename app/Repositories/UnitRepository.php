@@ -12,14 +12,31 @@ class UnitRepository implements UnitRepositoryInterface
     public function paginate(array $filters = [], int $perPage = 10, string $pageName = 'page'): LengthAwarePaginator
     {
         return Unit::with('model.brand')
+            ->when($filters['search'] ?? null, function ($q, $v) {
+                $q->where(function ($subQ) use ($v) {
+                    $subQ->where('color', 'like', "%{$v}%")
+                         ->orWhere('ram', 'like', "%{$v}%")
+                         ->orWhere('rom', 'like', "%{$v}%")
+                         ->orWhere('grade', 'like', "%{$v}%")
+                         ->orWhere('imei', 'like', "%{$v}%")
+                         ->orWhere('serial_number', 'like', "%{$v}%")
+                         ->orWhereHas('model', function ($modelQ) use ($v) {
+                             $modelQ->where('name', 'like', "%{$v}%")
+                                    ->orWhereHas('brand', function ($brandQ) use ($v) {
+                                        $brandQ->where('name', 'like', "%{$v}%");
+                                    });
+                         });
+                });
+            })
             ->when($filters['brand_id'] ?? null, fn($q, $v) => $q->whereHas('model', fn($q) => $q->where('brand_id', $v)))
             ->when($filters['model_id'] ?? null, fn($q, $v) => $q->where('model_id', $v))
             ->when($filters['unit_type'] ?? null, fn($q, $v) => $q->where('unit_type', $v))
             ->when($filters['grade'] ?? null, fn($q, $v) => $q->where('grade', $v))
             ->when($filters['status'] ?? null, fn($q, $v) => $q->where('status', $v))
-            ->when($filters['ram'] ?? null, fn($q, $v) => $q->where('ram', $v))
-            ->when($filters['rom'] ?? null, fn($q, $v) => $q->where('rom', $v))
-            ->when($filters['color'] ?? null, fn($q, $v) => $q->where('color', $v))
+            ->when($filters['exclude_status'] ?? null, fn($q, $v) => $q->where('status', '!=', $v))
+            ->when($filters['ram'] ?? null, fn($q, $v) => $q->where('ram', 'like', "%{$v}%"))
+            ->when($filters['rom'] ?? null, fn($q, $v) => $q->where('rom', 'like', "%{$v}%"))
+            ->when($filters['color'] ?? null, fn($q, $v) => $q->where('color', 'like', "%{$v}%"))
             ->latest()
             ->paginate($perPage, ['*'], $pageName);
     }

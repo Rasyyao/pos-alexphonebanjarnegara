@@ -1,29 +1,29 @@
 <div>
     {{-- Filter bar --}}
     <div class="bg-white rounded-xl border p-4 mb-4 flex flex-wrap gap-2" style="border-color:var(--line)">
-        <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari brand / model..." class="field-input" style="width:200px;height:36px;padding:0 10px;font-size:13px" />
+        <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari brand, model, imei..." class="field-input" style="width:200px;height:36px;padding:0 10px;font-size:13px" />
 
-        <select wire:model.live.debounce.300ms="brand_id" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px;min-width:120px">
+        <select wire:model.live="brand_id" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px;min-width:120px">
             <option value="">Semua Brand</option>
             @foreach($brands as $brand)
                 <option value="{{ $brand->id }}">{{ $brand->name }}</option>
             @endforeach
         </select>
 
-        <select wire:model.live.debounce.300ms="unit_type" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
+        <select wire:model.live="unit_type" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
             <option value="">Semua Tipe</option>
             <option value="baru">Baru</option>
             <option value="second">Second</option>
         </select>
 
-        <select wire:model.live.debounce.300ms="status" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
+        <select wire:model.live="status" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
             <option value="">Semua Status</option>
             <option value="ready">Ready</option>
             <option value="sold">Terjual</option>
             <option value="returned">Retur</option>
         </select>
 
-        <select wire:model.live.debounce.300ms="grade" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
+        <select wire:model.live="grade" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
             <option value="">Semua Grade</option>
             <option value="A">Grade A</option>
             <option value="B">Grade B</option>

@@ -145,7 +145,7 @@
                         </div>
                     </div>
                     <div class="pt-2 border-t" style="border-color:var(--line)">
-                        <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Laba Kotor</span>
+                        <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Laba Bersih</span>
                         <div class="text-xl font-bold font-mono tracking-tight tabular-nums" style="color:var(--success)">
                             Rp {{ number_format($today['profit'], 0, ',', '.') }}
                         </div>
@@ -170,7 +170,7 @@
                             </div>
                         </div>
                         <div class="pt-2 border-t" style="border-color:var(--line)">
-                            <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Laba Kotor</span>
+                            <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Laba Bersih</span>
                             <div class="text-xl font-bold font-mono tracking-tight tabular-nums"
                                 style="color:var(--success)">
                                 Rp {{ number_format($week['profit'], 0, ',', '.') }}
@@ -212,7 +212,7 @@
                             </div>
                         </div>
                         <div class="pt-2 border-t" style="border-color:var(--line)">
-                            <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Laba Kotor</span>
+                            <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Laba Bersih</span>
                             <div class="text-xl font-bold font-mono tracking-tight tabular-nums"
                                 style="color:var(--success)">
                                 Rp {{ number_format($month['profit'], 0, ',', '.') }}
@@ -344,6 +344,8 @@
                                     <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono"
                                         style="color:var(--ink-mute)">Kategori</th>
                                     <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono"
+                                        style="color:var(--ink-mute)">Metode</th>
+                                    <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono"
                                         style="color:var(--ink-mute)">Catatan</th>
                                     <th class="text-right px-5 py-2.5 font-bold uppercase tracking-wider font-mono"
                                         style="color:var(--ink-mute)">Jumlah</th>
@@ -352,43 +354,65 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($expenses as $expense)
-                                    <tr style="border-bottom:1px solid var(--line)">
-                                        <td class="px-5 py-3 font-mono" style="color:var(--ink-soft)">
-                                            {{ $expense->expense_date->format('d/m/Y') }}</td>
-                                        <td class="px-5 py-3 font-medium" style="color:var(--ink)">
-                                            {{ $expense->description }}</td>
-                                        <td class="px-5 py-3">
-                                            <span
-                                                class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-mono text-[9px] capitalize">{{ $expense->category }}</span>
-                                        </td>
-                                        <td class="px-5 py-3" style="color:var(--ink-mute)">{{ $expense->notes ?: '—' }}
-                                        </td>
-                                        <td class="px-5 py-3 text-right font-mono font-bold tabular-nums"
-                                            style="color:var(--warn)">
-                                            Rp {{ number_format($expense->amount, 0, ',', '.') }}
-                                        </td>
-                                        <td class="px-5 py-3 text-center">
-                                            <form method="POST" action="{{ route('expenses.destroy', $expense) }}"
-                                                onsubmit="return confirm('Hapus pengeluaran ini?')">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" title="Hapus"
-                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                                                    style="background:#FFF5F5;color:var(--warn)"
-                                                    onmouseenter="this.style.background='#FEE2E2'"
-                                                    onmouseleave="this.style.background='#FFF5F5'">
-                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
-                                                        stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
+                                    @forelse($expenses as $expense)
+                                        <tr style="border-bottom:1px solid var(--line)">
+                                            <td class="px-5 py-3 font-mono" style="color:var(--ink-soft)">
+                                                {{ $expense->expense_date->format('d/m/Y') }}</td>
+                                            <td class="px-5 py-3 font-medium" style="color:var(--ink)">
+                                                {{ $expense->description }}</td>
+                                            <td class="px-5 py-3">
+                                                <span
+                                                    class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-mono text-[9px] capitalize">{{ $expense->category }}</span>
+                                            </td>
+                                            <td class="px-5 py-3">
+                                                @if (($expense->payment_method ?? 'cash') === 'transfer')
+                                                    <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-mono text-[9px] font-semibold">Transfer</span>
+                                                @else
+                                                    <span class="px-2 py-0.5 rounded-full bg-green-50 text-green-600 font-mono text-[9px] font-semibold">Tunai</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-5 py-3" style="color:var(--ink-mute)">{{ $expense->notes ?: '—' }}
+                                            </td>
+                                            <td class="px-5 py-3 text-right font-mono font-bold tabular-nums"
+                                                style="color:var(--warn)">
+                                                Rp {{ number_format($expense->amount, 0, ',', '.') }}
+                                            </td>
+                                            <td class="px-5 py-3 text-center">
+                                                <div class="flex items-center justify-center gap-1.5">
+                                                    <button type="button"
+                                                        onclick="openEditExpenseModal({{ $expense->id }}, '{{ addslashes($expense->description) }}', {{ $expense->amount }}, '{{ $expense->category }}', '{{ $expense->expense_date->format('Y-m-d') }}', '{{ addslashes($expense->notes ?? '') }}', '{{ $expense->payment_method ?? 'cash' }}')"
+                                                        title="Edit"
+                                                        class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                                                        style="background:#EFF6FF;color:var(--accent)"
+                                                        onmouseenter="this.style.background='#DBEAFE'"
+                                                        onmouseleave="this.style.background='#EFF6FF'">
+                                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                                                            stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                    <form method="POST" action="{{ route('expenses.destroy', $expense) }}"
+                                                        onsubmit="return confirm('Hapus pengeluaran ini?')">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" title="Hapus"
+                                                            class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                                                            style="background:#FFF5F5;color:var(--warn)"
+                                                            onmouseenter="this.style.background='#FEE2E2'"
+                                                            onmouseleave="this.style.background='#FFF5F5'">
+                                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                                                                stroke="currentColor" stroke-width="2">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="px-5 py-8 text-center text-xs"
+                                        <td colspan="7" class="px-5 py-8 text-center text-xs"
                                             style="color:var(--ink-mute)">Belum ada data pengeluaran dicatat</td>
                                     </tr>
                                 @endforelse
@@ -452,6 +476,32 @@
                                 <input type="text" name="description"
                                     placeholder="mis. Bayar listrik, Isi ulang tabung gas, Gaji admin..." required
                                     class="field-input" />
+                            </div>
+                            {{-- Payment Method Toggle --}}
+                            <div>
+                                <label class="field-label">Metode Pembayaran <span style="color:var(--warn)">*</span></label>
+                                <div class="grid grid-cols-2 gap-3 mt-1.5">
+                                    <label id="fin-exp-cash-label"
+                                        class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                        style="border-color:var(--accent);background:rgba(37,99,235,0.03)">
+                                        <input type="radio" name="payment_method" value="cash" checked
+                                            class="accent-blue-600" onchange="highlightFinExpMethod()" />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
+                                            <div class="text-[10px]" style="color:var(--ink-mute)">Bayar pakai uang tunai</div>
+                                        </div>
+                                    </label>
+                                    <label id="fin-exp-transfer-label"
+                                        class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                        style="border-color:var(--line)">
+                                        <input type="radio" name="payment_method" value="transfer"
+                                            class="accent-blue-600" onchange="highlightFinExpMethod()" />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
+                                            <div class="text-[10px]" style="color:var(--ink-mute)">Bayar via rekening bank</div>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
                             <div>
                                 <label class="field-label">Jumlah <span style="color:var(--warn)">*</span></label>
@@ -562,12 +612,166 @@
                     }
                 }
 
+                function highlightFinExpMethod() {
+                    const isCash = document.querySelector('#modal-pengeluaran-quick input[name="payment_method"][value="cash"]')?.checked;
+                    const cashLabel = document.getElementById('fin-exp-cash-label');
+                    const transferLabel = document.getElementById('fin-exp-transfer-label');
+                    if (!cashLabel || !transferLabel) return;
+                    cashLabel.style.borderColor = isCash ? 'var(--accent)' : 'var(--line)';
+                    cashLabel.style.background = isCash ? 'rgba(37,99,235,0.03)' : '';
+                    transferLabel.style.borderColor = isCash ? 'var(--line)' : 'var(--accent)';
+                    transferLabel.style.background = isCash ? '' : 'rgba(37,99,235,0.03)';
+                }
+
+                function openEditExpenseModal(id, description, amount, category, date, notes, paymentMethod) {
+                    const form = document.getElementById('edit-expense-form');
+                    form.action = '/expenses/' + id;
+                    document.getElementById('edit-exp-description').value = description;
+                    document.getElementById('edit-exp-amount').value = parseFloat(amount).toLocaleString('id-ID');
+                    document.getElementById('edit-exp-category').value = category;
+                    document.getElementById('edit-exp-date').value = date;
+                    document.getElementById('edit-exp-notes').value = notes;
+                    const cashRadio = document.getElementById('edit-exp-cash');
+                    const transferRadio = document.getElementById('edit-exp-transfer');
+                    if (paymentMethod === 'transfer') {
+                        transferRadio.checked = true;
+                    } else {
+                        cashRadio.checked = true;
+                    }
+                    highlightEditExpMethod();
+                    const modal = document.getElementById('modal-edit-expense');
+                    modal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    setTimeout(() => document.getElementById('edit-exp-description').focus(), 50);
+                }
+
+                function closeEditExpenseModal() {
+                    document.getElementById('modal-edit-expense').classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+
+                function highlightEditExpMethod() {
+                    const isCash = document.getElementById('edit-exp-cash')?.checked;
+                    const cashLabel = document.getElementById('edit-exp-cash-label');
+                    const transferLabel = document.getElementById('edit-exp-transfer-label');
+                    if (!cashLabel || !transferLabel) return;
+                    cashLabel.style.borderColor = isCash ? 'var(--accent)' : 'var(--line)';
+                    cashLabel.style.background = isCash ? 'rgba(37,99,235,0.03)' : '';
+                    transferLabel.style.borderColor = isCash ? 'var(--line)' : 'var(--accent)';
+                    transferLabel.style.background = isCash ? '' : 'rgba(37,99,235,0.03)';
+                }
+
                 document.addEventListener('keydown', e => {
                     if (e.key === 'Escape') {
                         closeExpenseModal();
+                        closeEditExpenseModal();
                     }
                 });
             </script>
+
+        {{-- ========== MODAL: Edit Pengeluaran ========== --}}
+        <div id="modal-edit-expense" class="fixed inset-0 z-[110] hidden overflow-y-auto"
+            onclick="if(event.target===this){closeEditExpenseModal()}">
+            <div class="fixed inset-0" style="background:rgba(10,37,64,.5)"></div>
+            <div class="relative min-h-full flex items-center justify-center px-4 pt-12 pb-12">
+                <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden modal-pop"
+                    onclick="event.stopPropagation()">
+                    <div class="flex items-start justify-between px-6 py-5"
+                        style="border-bottom:1px solid var(--line)">
+                        <div class="flex items-center gap-3">
+                            <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                style="background:#EFF6FF;color:var(--accent)">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-semibold leading-none" style="color:var(--ink)">Edit Pengeluaran</h3>
+                                <p class="text-xs mt-1.5" style="color:var(--ink-mute)">Ubah data pengeluaran operasional</p>
+                            </div>
+                        </div>
+                        <button onclick="closeEditExpenseModal()"
+                            class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                            style="color:var(--ink-mute);background:var(--bg-soft)"
+                            onmouseenter="this.style.background='var(--line)'"
+                            onmouseleave="this.style.background='var(--bg-soft)'">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <form id="edit-expense-form" method="POST" action="" class="p-6 space-y-5">
+                        @csrf @method('PUT')
+                        <div>
+                            <label class="field-label">Keterangan <span style="color:var(--warn)">*</span></label>
+                            <input type="text" name="description" id="edit-exp-description" required class="field-input" />
+                        </div>
+                        {{-- Payment Method Toggle --}}
+                        <div>
+                            <label class="field-label">Metode Pembayaran <span style="color:var(--warn)">*</span></label>
+                            <div class="grid grid-cols-2 gap-3 mt-1.5">
+                                <label id="edit-exp-cash-label"
+                                    class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                    style="border-color:var(--accent);background:rgba(37,99,235,0.03)">
+                                    <input type="radio" name="payment_method" value="cash" id="edit-exp-cash" checked
+                                        class="accent-blue-600" onchange="highlightEditExpMethod()" />
+                                    <div>
+                                        <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
+                                        <div class="text-[10px]" style="color:var(--ink-mute)">Bayar pakai uang tunai</div>
+                                    </div>
+                                </label>
+                                <label id="edit-exp-transfer-label"
+                                    class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                    style="border-color:var(--line)">
+                                    <input type="radio" name="payment_method" value="transfer" id="edit-exp-transfer"
+                                        class="accent-blue-600" onchange="highlightEditExpMethod()" />
+                                    <div>
+                                        <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
+                                        <div class="text-[10px]" style="color:var(--ink-mute)">Bayar via rekening bank</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Jumlah <span style="color:var(--warn)">*</span></label>
+                            <div class="money-wrap">
+                                <span class="rp-prefix">Rp</span>
+                                <input type="text" name="amount" id="edit-exp-amount" required placeholder="0"
+                                    class="field-input money-input" inputmode="numeric"
+                                    style="height:48px;font-size:16px" />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="field-label">Kategori</label>
+                                <select name="category" id="edit-exp-category" required class="field-input">
+                                    <option value="operasional">Operasional</option>
+                                    <option value="listrik">Listrik &amp; Gas</option>
+                                    <option value="gaji">Gaji</option>
+                                    <option value="sewa">Sewa</option>
+                                    <option value="lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="field-label">Tanggal</label>
+                                <input type="date" name="expense_date" id="edit-exp-date" required class="field-input" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Catatan</label>
+                            <textarea name="notes" id="edit-exp-notes" rows="2" class="field-input" placeholder="Detail tambahan (opsional)"></textarea>
+                        </div>
+                        <div class="flex gap-3 pt-1">
+                            <button type="submit" class="btn-primary flex-1" style="background:var(--accent)">Simpan Perubahan</button>
+                            <button type="button" onclick="closeEditExpenseModal()" class="btn-secondary" style="padding:0 24px">Batal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         @endif
     </div>
 @endsection

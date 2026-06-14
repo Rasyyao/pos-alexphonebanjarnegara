@@ -13,16 +13,24 @@ class DebtService
         private readonly DebtRepositoryInterface $debts,
     ) {}
 
-    public function markPaid(Debt $debt): Debt
+    public function markPaid(Debt $debt, string $paymentMethod = 'cash'): Debt
     {
         $status = is_string($debt->status) ? $debt->status : ($debt->status->value ?? '');
         if ($status === 'paid') {
             throw new \LogicException('Utang sudah lunas.');
         }
-        return $this->debts->markPaid($debt);
+        $remaining = $debt->amount - $debt->paid_amount;
+        return DB::transaction(function () use ($debt, $remaining, $paymentMethod) {
+            $updated = $this->debts->markPaid($debt);
+            $debt->sale->payments()->create([
+                'method' => $paymentMethod,
+                'amount' => $remaining,
+            ]);
+            return $updated;
+        });
     }
 
-    public function pay(Debt $debt, string $type, float $amount = 0): Debt
+    public function pay(Debt $debt, string $type, float $amount = 0, string $paymentMethod = 'cash'): Debt
     {
         $status = is_string($debt->status) ? $debt->status : ($debt->status->value ?? '');
         if ($status === 'paid') {
@@ -45,7 +53,7 @@ class DebtService
             throw new \InvalidArgumentException('Tipe pembayaran tidak valid.');
         }
 
-        return DB::transaction(function () use ($debt, $payAmount, $type) {
+        return DB::transaction(function () use ($debt, $payAmount, $type, $paymentMethod) {
             $newPaidAmount = $debt->paid_amount + $payAmount;
             $newStatus = $newPaidAmount >= $debt->amount ? 'paid' : 'partial';
 
@@ -54,11 +62,17 @@ class DebtService
                 'status'      => $newStatus,
             ]);
 
+            $updatedDebt->sale->payments()->create([
+                'method' => $paymentMethod,
+                'amount' => $payAmount,
+            ]);
+
             Log::info('Debt payment recorded', [
                 'debt_id'               => $updatedDebt->id,
                 'sale_id'               => $updatedDebt->sale_id,
                 'invoice'               => $updatedDebt->sale->invoice_number ?? '—',
                 'payment_type'          => $type,
+                'payment_method'        => $paymentMethod,
                 'paid_amount_increment' => $payAmount,
                 'total_paid_amount'     => $updatedDebt->paid_amount,
                 'outstanding_remaining' => $updatedDebt->amount - $updatedDebt->paid_amount,

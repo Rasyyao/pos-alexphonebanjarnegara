@@ -9,6 +9,7 @@
     outstanding: 0,
     paymentType: 'full',
     installmentAmount: 0,
+    paymentMethod: 'cash',
     
     openPayModal(debt) {
         this.activeDebt = debt;
@@ -16,6 +17,7 @@
         this.outstanding = parseFloat(debt.amount) - parseFloat(debt.paid_amount);
         this.paymentType = 'full';
         this.installmentAmount = this.outstanding;
+        this.paymentMethod = 'cash';
         this.showPayModal = true;
     },
     
@@ -250,13 +252,13 @@
                     <label class="field-label">Pilih Jenis Pembayaran</label>
                     <div class="grid grid-cols-2 gap-3">
                         <label class="flex flex-col items-center justify-center p-3 border rounded-xl cursor-pointer hover:bg-gray-50/50 transition-colors"
-                               :style="paymentType === 'full' ? 'border-color:var(--accent);background:rgba(37,99,235,0.02)' : 'border-color:var(--line)']">
+                               :style="paymentType === 'full' ? 'border-color:var(--accent);background:rgba(37,99,235,0.02)' : 'border-color:var(--line)'">
                             <input type="radio" name="type" value="full" x-model="paymentType" class="sr-only" />
                             <span class="text-xs font-bold" :style="paymentType === 'full' ? 'color:var(--accent)' : 'color:var(--ink-soft)'">Bayar Lunas</span>
                             <span class="text-[9px] mt-0.5" style="color:var(--ink-mute)">Bayar semua sisa utang</span>
                         </label>
                         <label class="flex flex-col items-center justify-center p-3 border rounded-xl cursor-pointer hover:bg-gray-50/50 transition-colors"
-                               :style="paymentType === 'partial' ? 'border-color:var(--accent);background:rgba(37,99,235,0.02)' : 'border-color:var(--line)']">
+                               :style="paymentType === 'partial' ? 'border-color:var(--accent);background:rgba(37,99,235,0.02)' : 'border-color:var(--line)'">
                             <input type="radio" name="type" value="partial" x-model="paymentType" class="sr-only" />
                             <span class="text-xs font-bold" :style="paymentType === 'partial' ? 'color:var(--accent)' : 'color:var(--ink-soft)'">Cicil Sebagian</span>
                             <span class="text-[9px] mt-0.5" style="color:var(--ink-mute)">Bayar cicilan sebagian</span>
@@ -267,11 +269,59 @@
                 {{-- Installment Custom Amount Input --}}
                 <div x-show="paymentType === 'partial'" x-transition>
                     <label class="field-label">Jumlah Pembayaran Cicilan</label>
-                    <div class="money-wrap">
+                    <div class="money-wrap" x-data="{
+                        displayValue: '',
+                        initDisplayValue() {
+                            let amt = parseInt(installmentAmount, 10) || 0;
+                            this.displayValue = amt > 0 ? amt.toLocaleString('id-ID') : '';
+                        }
+                    }" x-init="
+                        $watch('installmentAmount', value => {
+                            let amt = parseInt(value, 10) || 0;
+                            let rawInput = parseInt(displayValue.replace(/[^0-9]/g, ''), 10) || 0;
+                            if (amt !== rawInput) {
+                                displayValue = amt > 0 ? amt.toLocaleString('id-ID') : '';
+                            }
+                        });
+                        $watch('showPayModal', value => {
+                            if (value) {
+                                initDisplayValue();
+                            }
+                        });
+                    ">
                         <span class="rp-prefix">Rp</span>
-                        <input type="number" name="amount" x-model="installmentAmount" class="field-input" min="1" :max="outstanding" placeholder="Contoh: 200000" />
+                        <input type="text"
+                               inputmode="numeric"
+                               x-model="displayValue"
+                               class="field-input"
+                               placeholder="Contoh: 200.000"
+                               x-on:input="
+                                   let raw = parseInt(displayValue.replace(/[^0-9]/g, ''), 10) || 0;
+                                   displayValue = raw > 0 ? raw.toLocaleString('id-ID') : '';
+                                   installmentAmount = raw;
+                               " />
+                        <input type="hidden" name="amount" :value="installmentAmount" />
                     </div>
                     <span class="text-[10px] mt-1 block" style="color:var(--ink-mute)">Masukkan jumlah cicilan yang disetorkan. Sisa utang: <span class="font-bold font-mono text-[11px]" x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(outstanding)"></span></span>
+                </div>
+
+                {{-- Payment Method Selection --}}
+                <div>
+                    <label class="field-label">Metode Pembayaran</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex flex-col items-center justify-center p-3 border rounded-xl cursor-pointer hover:bg-gray-50/50 transition-colors"
+                               :style="paymentMethod === 'cash' ? 'border-color:var(--accent);background:rgba(37,99,235,0.02)' : 'border-color:var(--line)'">
+                            <input type="radio" name="payment_method" value="cash" x-model="paymentMethod" class="sr-only" />
+                            <span class="text-xs font-bold" :style="paymentMethod === 'cash' ? 'color:var(--accent)' : 'color:var(--ink-soft)'">Tunai (Cash)</span>
+                            <span class="text-[9px] mt-0.5" style="color:var(--ink-mute)">Masuk ke kas tunai</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-3 border rounded-xl cursor-pointer hover:bg-gray-50/50 transition-colors"
+                               :style="paymentMethod === 'transfer' ? 'border-color:var(--accent);background:rgba(37,99,235,0.02)' : 'border-color:var(--line)'">
+                            <input type="radio" name="payment_method" value="transfer" x-model="paymentMethod" class="sr-only" />
+                            <span class="text-xs font-bold" :style="paymentMethod === 'transfer' ? 'color:var(--accent)' : 'color:var(--ink-soft)'">Transfer (ATM)</span>
+                            <span class="text-[9px] mt-0.5" style="color:var(--ink-mute)">Masuk ke saldo ATM</span>
+                        </label>
+                    </div>
                 </div>
 
                 {{-- Live Calculation Breakdown --}}

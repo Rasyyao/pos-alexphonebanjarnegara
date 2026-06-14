@@ -12,11 +12,60 @@ class SaleRepository implements SaleRepositoryInterface
 {
     public function paginate(array $filters = []): LengthAwarePaginator
     {
-        return Sale::with(['creator', 'approver', 'items.unit.model', 'items.accessory'])
-            ->when($filters['status'] ?? null, fn($q, $v) => $q->where('status', $v))
-            ->when($filters['date'] ?? null, fn($q, $v) => $q->whereDate('sale_date', $v))
-            ->when($filters['search'] ?? null, fn($q, $v) => $q->where('invoice_number', 'like', "%{$v}%"))
-            ->latest()
+        $query = Sale::with(['creator', 'approver', 'items.unit.model.brand', 'items.accessory'])
+            ->when($filters['status'] ?? null, fn($q, $v) => $q->where('status', $v));
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%")
+                  ->orWhereHas('items.unit.model', function ($sub) use ($search) {
+                      $sub->where('name', 'like', "%{$search}%")
+                          ->orWhereHas('brand', function ($brandQ) use ($search) {
+                              $brandQ->where('name', 'like', "%{$search}%");
+                          });
+                  })
+                  ->orWhereHas('items.accessory', function ($sub) use ($search) {
+                      $sub->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if (!empty($filters['period'])) {
+            switch ($filters['period']) {
+                case 'today':
+                    $query->whereDate('sale_date', today());
+                    break;
+                case 'week':
+                    $query->whereBetween('sale_date', [
+                        now()->startOfWeek()->toDateString(),
+                        now()->endOfWeek()->toDateString()
+                    ]);
+                    break;
+                case 'month':
+                    $query->whereMonth('sale_date', now()->month)
+                          ->whereYear('sale_date', now()->year);
+                    break;
+                case 'date':
+                    if (!empty($filters['date'])) {
+                        $query->whereDate('sale_date', $filters['date']);
+                    }
+                    break;
+                case 'range':
+                    if (!empty($filters['start_date'])) {
+                        $query->whereDate('sale_date', '>=', $filters['start_date']);
+                    }
+                    if (!empty($filters['end_date'])) {
+                        $query->whereDate('sale_date', '<=', $filters['end_date']);
+                    }
+                    break;
+            }
+        } elseif (!empty($filters['date'])) {
+            $query->whereDate('sale_date', $filters['date']);
+        }
+
+        return $query->latest()
             ->paginate(10);
     }
 

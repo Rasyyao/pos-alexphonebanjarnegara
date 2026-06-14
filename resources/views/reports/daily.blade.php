@@ -61,7 +61,7 @@
             </p>
         </div>
 
-        {{-- Laba Kotor --}}
+        {{-- Laba Bersih --}}
         @if(auth()->user()->role->value === 'superadmin')
         <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
             <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style="background:rgba(16,128,107,0.08)">
@@ -69,7 +69,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
-            <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--success)">Laba Kotor</p>
+            <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--success)">Laba Bersih</p>
             <p class="text-lg font-bold font-mono tabular-nums mt-0.5" style="color:var(--success)">
                 Rp {{ number_format($total_profit, 0, ',', '.') }}
             </p>
@@ -78,7 +78,7 @@
         <div class="bg-white rounded-xl border p-4 shadow-sm relative overflow-hidden" style="border-color:var(--line)">
             <div class="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center text-center p-2">
                 <svg class="w-5 h-5 mb-1 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                <span class="text-[10px] font-semibold" style="color:var(--ink-soft)">Laba Kotor</span>
+                <span class="text-[10px] font-semibold" style="color:var(--ink-soft)">Laba Bersih</span>
                 <span class="text-[8px] uppercase tracking-wider font-mono font-bold mt-0.5" style="color:var(--accent)">Superadmin Only</span>
             </div>
         </div>
@@ -144,7 +144,7 @@
                                 <th class="text-right px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Total Belanja</th>
                                 <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Metode Pembayaran</th>
                                 @if(auth()->user()->role->value === 'superadmin')
-                                <th class="text-right px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Laba Kotor</th>
+                                <th class="text-right px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Laba Bersih</th>
                                 @endif
                             </tr>
                         </thead>

@@ -9,7 +9,7 @@ class CapitalRepository implements CapitalRepositoryInterface
 {
     public function paginate(int $perPage = 10): LengthAwarePaginator
     {
-        return Capital::with('creator')->latest('entry_date')->paginate($perPage);
+        return Capital::with('creator')->whereNull('sale_id')->latest('entry_date')->paginate($perPage);
     }
 
     public function sumTotal(): float

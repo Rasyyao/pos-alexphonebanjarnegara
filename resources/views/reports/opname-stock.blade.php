@@ -66,6 +66,9 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
 /* total row */
 .total-row td { background: #E8EDF5 !important; font-weight: 700; border-top: 2px solid #0A2540; }
 
+/* brand row */
+.brand-row td { background: #E8EDF5 !important; font-weight: 700; border-top: 1.5px solid #0A2540; border-bottom: 1.5px solid #0A2540; color: #0A2540; }
+
 /* ── LEGEND ── */
 .legend { margin-top: 10px; display: flex; gap: 20px; font-size: 7.5pt; color: #3D5374; }
 .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
@@ -155,7 +158,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
     <div class="kpi">
       <div class="kpi-label">Total Unit HP</div>
       <div class="kpi-value">{{ $units->count() }} unit</div>
-      <div class="kpi-sub">Ready: {{ $readyCount }} &nbsp;|&nbsp; Terjual: {{ $soldCount }}</div>
+      <div class="kpi-sub">Ready: {{ $readyCount }} &nbsp;|&nbsp; Retur: {{ $units->count() - $readyCount }}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Nilai Modal Stok Ready</div>
@@ -196,38 +199,46 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
       </tr>
     </thead>
     <tbody>
-      @php $no = 1; @endphp
-      @forelse($units as $u)
-      <tr>
-        <td class="cb-cell"><span class="cb-box"></span></td>
-        <td class="c muted">{{ $no++ }}</td>
-        <td>
-          <strong>{{ $u->model->brand->name ?? '—' }} {{ $u->model->name ?? '' }}</strong>
-          <br><span class="muted">{{ ucfirst($u->unit_type->value) }}{{ $u->grade ? ' · Grade '.$u->grade : '' }}</span>
-        </td>
-        <td class="muted">{{ $u->ram }}/{{ $u->rom }}<br>{{ $u->color }}</td>
-        <td class="muted" style="font-size:6.5pt">
-          {{ $u->imei ? 'IMEI: '.$u->imei : '' }}
-          {{ $u->serial_number ? ($u->imei ? ' · ' : '').'SN: '.$u->serial_number : '' }}
-          @if(!$u->imei && !$u->serial_number) — @endif
-        </td>
-        <td class="r">Rp {{ number_format((float)$u->purchase_price, 0, ',', '.') }}</td>
-        <td class="c">
-          @if($u->status->value === 'ready')
-            <span class="badge badge-ready">Ready</span>
-          @elseif($u->status->value === 'sold')
-            <span class="badge badge-sold">Terjual</span>
-          @else
-            <span class="badge badge-retur">{{ ucfirst($u->status->value) }}</span>
-          @endif
-        </td>
-        <td class="c" style="font-weight:700">1</td>
-        <td class="c fill-cell">&nbsp;</td>
-        <td class="c fill-cell">&nbsp;</td>
-        <td class="fill-cell-wide">&nbsp;</td>
-      </tr>
+      @php
+        $groupedUnits = $units->groupBy(fn($u) => $u->model->brand->name ?? 'Lain-lain');
+        $no = 1;
+      @endphp
+      @forelse($groupedUnits as $brandName => $brandUnits)
+        <tr class="brand-row">
+          <td colspan="11" style="text-align:left;padding:6px 8px;">
+            ◆ BRAND: {{ strtoupper($brandName) }} ({{ $brandUnits->count() }} unit)
+          </td>
+        </tr>
+        @foreach($brandUnits as $u)
+          <tr>
+            <td class="cb-cell"><span class="cb-box"></span></td>
+            <td class="c muted">{{ $no++ }}</td>
+            <td>
+              <strong>{{ $u->model->name ?? '—' }}</strong>
+              <br><span class="muted">{{ ucfirst($u->unit_type->value) }}{{ $u->grade ? ' · Grade '.$u->grade : '' }}</span>
+            </td>
+            <td class="muted">{{ $u->ram }}/{{ $u->rom }}<br>{{ $u->color }}</td>
+            <td class="muted" style="font-size:6.5pt">
+              {{ $u->imei ? 'IMEI: '.$u->imei : '' }}
+              {{ $u->serial_number ? ($u->imei ? ' · ' : '').'SN: '.$u->serial_number : '' }}
+              @if(!$u->imei && !$u->serial_number) — @endif
+            </td>
+            <td class="r">Rp {{ number_format((float)$u->purchase_price, 0, ',', '.') }}</td>
+            <td class="c">
+              @if($u->status->value === 'ready')
+                <span class="badge badge-ready">Ready</span>
+              @else
+                <span class="badge badge-retur">Retur</span>
+              @endif
+            </td>
+            <td class="c" style="font-weight:700">1</td>
+            <td class="c fill-cell">&nbsp;</td>
+            <td class="c fill-cell">&nbsp;</td>
+            <td class="fill-cell-wide">&nbsp;</td>
+          </tr>
+        @endforeach
       @empty
-      <tr><td colspan="11" style="text-align:center;padding:16px;color:#7A8AA8">Tidak ada data unit</td></tr>
+        <tr><td colspan="11" style="text-align:center;padding:16px;color:#7A8AA8">Tidak ada data unit</td></tr>
       @endforelse
       <tr class="total-row">
         <td class="cb-cell">&nbsp;</td>

@@ -99,7 +99,7 @@ class FinanceService
         $capital = (float) $capitalsQuery->sum('amount');
 
         // Modal Awal and Modal Sekarang (Lifetime)
-        $modalAwal = (float) \App\Models\Capital::whereIn('type', ['initial', 'addition'])->sum('amount')
+        $modalAwal = (float) \App\Models\Capital::whereIn('type', ['initial', 'addition'])->whereNull('sale_id')->sum('amount')
                   - (float) \App\Models\Capital::where('type', 'withdrawal')->sum('amount');
         $totalHPPurchases        = $this->units->totalPurchaseValue();
         $lifetimeRevenue         = (float) \App\Models\Sale::where('status', 'approved')->sum('total_price');
@@ -164,7 +164,7 @@ class FinanceService
         
         $totalCapital = (float) $capitalsQuery->clone()->whereIn('type', ['initial', 'addition'])->sum('amount')
                       - (float) $capitalsQuery->clone()->where('type', 'withdrawal')->sum('amount');
-        $capitalsList = $capitalsQuery->latest('entry_date')->paginate(10, ['*'], 'page_capital')->appends(request()->query());
+        $capitalsList = $capitalsQuery->clone()->whereNull('sale_id')->latest('entry_date')->paginate(10, ['*'], 'page_capital')->appends(request()->query());
 
         // Modal Awal and Modal Sekarang (Lifetime basis to remain mathematically accurate liquid Cash)
         $modalAwalNonSales = (float) \App\Models\Capital::whereIn('type', ['initial', 'addition'])->whereNull('sale_id')->sum('amount');
@@ -219,11 +219,14 @@ class FinanceService
                             ->value('total');
         $totalAccessoryTransfer = $accAssetTransfer + $accSoldTransfer;
 
-        // Saldo ATM  = modal via transfer + revenue via transfer − HP bought via transfer − accessories bought via transfer
-        $saldoAtmLifetime = $modalTransfer + $revenueTransfer - $hpTransfer - $totalAccessoryTransfer;
+        // Saldo ATM  = modal via transfer + revenue via transfer − HP bought via transfer − accessories bought via transfer − expenses paid via transfer
+        $lifetimeExpensesCash     = (float) \App\Models\Expense::where('payment_method', 'cash')->sum('amount');
+        $lifetimeExpensesTransfer = (float) \App\Models\Expense::where('payment_method', 'transfer')->sum('amount');
 
-        // Saldo Kas  = modal via cash − withdrawals + revenue via cash − HP bought via cash − accessories bought via cash − expenses
-        $saldoKas = $modalCash - $totalWithdrawal + $revenueCash - $hpCash - $totalAccessoryCash - $lifetimeExpenses;
+        $saldoAtmLifetime = $modalTransfer + $revenueTransfer - $hpTransfer - $totalAccessoryTransfer - $lifetimeExpensesTransfer;
+
+        // Saldo Kas  = modal via cash − withdrawals + revenue via cash − HP bought via cash − accessories bought via cash − cash expenses
+        $saldoKas = $modalCash - $totalWithdrawal + $revenueCash - $hpCash - $totalAccessoryCash - $lifetimeExpensesCash;
 
         return [
             'today'            => $today,
@@ -254,6 +257,9 @@ class FinanceService
             'saldoKas'          => $saldoKas,
             'saldoAtmLifetime'  => $saldoAtmLifetime,
             'lifetimeRevenue'   => $lifetimeRevenue,
+            'lifetimeExpenses'  => $lifetimeExpenses,
+            'lifetimeExpensesCash'     => $lifetimeExpensesCash,
+            'lifetimeExpensesTransfer' => $lifetimeExpensesTransfer,
         ];
     }
 }

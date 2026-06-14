@@ -80,7 +80,7 @@
       <div class="kpi-value">Rp {{ number_format($totalRev, 0, ',', '.') }}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Laba Kotor</div>
+      <div class="kpi-label">Laba Bersih</div>
       <div class="kpi-value green">Rp {{ number_format($totalProfit, 0, ',', '.') }}</div>
     </div>
     <div class="kpi">

@@ -61,7 +61,8 @@ class DebtRepaymentTest extends TestCase
     public function test_debt_can_be_paid_in_full(): void
     {
         $response = $this->actingAs($this->user)->post(route('debts.pay', $this->debt), [
-            'type' => 'full',
+            'type'           => 'full',
+            'payment_method' => 'cash',
         ]);
 
         $response->assertRedirect();
@@ -76,8 +77,9 @@ class DebtRepaymentTest extends TestCase
     {
         // Pay an installment of 200.000
         $response = $this->actingAs($this->user)->post(route('debts.pay', $this->debt), [
-            'type'   => 'partial',
-            'amount' => 200000,
+            'type'           => 'partial',
+            'amount'         => 200000,
+            'payment_method' => 'transfer',
         ]);
 
         $response->assertRedirect();
@@ -93,8 +95,9 @@ class DebtRepaymentTest extends TestCase
     {
         // Try to pay 600.000 when only 500.000 is outstanding
         $response = $this->actingAs($this->user)->post(route('debts.pay', $this->debt), [
-            'type'   => 'partial',
-            'amount' => 600000,
+            'type'           => 'partial',
+            'amount'         => 600000,
+            'payment_method' => 'cash',
         ]);
 
         $response->assertRedirect();
@@ -108,8 +111,9 @@ class DebtRepaymentTest extends TestCase
     public function test_invalid_payment_amount_fails_validation(): void
     {
         $response = $this->actingAs($this->user)->post(route('debts.pay', $this->debt), [
-            'type'   => 'partial',
-            'amount' => -50,
+            'type'           => 'partial',
+            'amount'         => -50,
+            'payment_method' => 'cash',
         ]);
 
         $response->assertSessionHasErrors(['amount']);

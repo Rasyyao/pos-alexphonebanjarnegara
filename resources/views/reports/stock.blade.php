@@ -55,10 +55,10 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-white rounded-xl border p-5 shadow-sm" style="border-color:var(--line)">
                 <div class="text-[10px] font-bold uppercase tracking-widest font-mono mb-1.5" style="color:var(--ink-mute)">
-                    Total HP Ready</div>
+                    Total Unit HP</div>
                 <div class="text-2xl font-bold font-mono tabular-nums" style="color:var(--ink)">{{ $units->total() }} unit
                 </div>
-                <p class="text-[11px] mt-1" style="color:var(--ink-mute)">Unit handphone siap jual saat ini</p>
+                <p class="text-[11px] mt-1" style="color:var(--ink-mute)">Unit handphone dalam stok saat ini</p>
             </div>
 
             <div class="bg-white rounded-xl border p-5 shadow-sm" style="border-color:var(--line)">
@@ -157,8 +157,8 @@
                         class="px-2.5 py-1 rounded-md transition-colors {{ !request('status') ? 'bg-white font-semibold text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">Semua</a>
                     <a href="?status=ready"
                         class="px-2.5 py-1 rounded-md transition-colors {{ request('status') === 'ready' ? 'bg-white font-semibold text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">Ready</a>
-                    <a href="?status=sold"
-                        class="px-2.5 py-1 rounded-md transition-colors {{ request('status') === 'sold' ? 'bg-white font-semibold text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">Terjual</a>
+                    <a href="?status=returned"
+                        class="px-2.5 py-1 rounded-md transition-colors {{ request('status') === 'returned' ? 'bg-white font-semibold text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">Retur</a>
                 </div>
             </div>
 
@@ -349,12 +349,12 @@
             const statusData = {
                 labels: {!! json_encode(
                     array_map(
-                        fn($s) => $s === 'ready' ? 'Ready' : ($s === 'sold' ? 'Terjual' : 'Retur'),
+                        fn($s) => $s === 'ready' ? 'Ready' : 'Retur',
                         array_column($statusDist, 'status'),
                     ),
                 ) !!},
                 values: {!! json_encode(array_column($statusDist, 'count')) !!},
-                colors: ['#10B981', '#6B7280', '#EF4444'],
+                colors: ['#10B981', '#EF4444'],
                 labelName: 'Status Unit'
             };
 

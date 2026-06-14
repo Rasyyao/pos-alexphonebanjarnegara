@@ -1,7 +1,7 @@
 <div>
     {{-- Filter bar --}}
-    <div class="bg-white rounded-xl border p-4 mb-4 flex flex-wrap gap-2 animate-fade-in" style="border-color:var(--line)">
-        <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari invoice..." class="field-input" style="width:200px;height:36px;padding:0 10px;font-size:13px" />
+    <div class="bg-white rounded-xl border p-4 mb-4 flex flex-wrap items-center gap-2 animate-fade-in" style="border-color:var(--line)">
+        <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari invoice, produk, pelanggan..." class="field-input" style="width:240px;height:36px;padding:0 10px;font-size:13px" />
 
         <select wire:model.live.debounce.300ms="status" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px;min-width:140px">
             <option value="">Semua Status</option>
@@ -10,13 +10,30 @@
             <option value="cancelled">Cancelled</option>
         </select>
 
-        <input wire:model.live.debounce.300ms="date" type="date" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px" />
+        <select wire:model.live="period" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px;min-width:140px">
+            <option value="all">Semua Waktu</option>
+            <option value="today">Harian (Hari Ini)</option>
+            <option value="week">Mingguan (Minggu Ini)</option>
+            <option value="month">Bulanan (Bulan Ini)</option>
+            <option value="date">Pilih Tanggal</option>
+            <option value="range">Rentang Waktu</option>
+        </select>
+
+        @if($period === 'date')
+            <input wire:model.live="date" type="date" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px" />
+        @elseif($period === 'range')
+            <div class="flex items-center gap-1">
+                <input wire:model.live="startDate" type="date" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px" />
+                <span class="text-xs" style="color:var(--ink-mute)">s.d</span>
+                <input wire:model.live="endDate" type="date" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px" />
+            </div>
+        @endif
 
         <button wire:click="resetFilters" class="btn-secondary" style="height:36px;padding:0 14px;font-size:13px">Reset</button>
     </div>
 
     {{-- Loading skeleton --}}
-    <div wire:loading wire:target="search,status,date,resetFilters"
+    <div wire:loading wire:target="search,status,period,date,startDate,endDate,resetFilters"
          class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
         @for($r = 0; $r < 6; $r++)
         <div class="flex items-center px-5 py-3.5 animate-pulse" style="border-bottom:1px solid var(--line)">
@@ -29,7 +46,7 @@
     </div>
 
     {{-- Table --}}
-    <div wire:loading.remove wire:target="search,status,date,resetFilters"
+    <div wire:loading.remove wire:target="search,status,period,date,startDate,endDate,resetFilters"
          class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -51,10 +68,13 @@
                         <td class="px-5 py-3.5 font-medium font-mono" style="color:var(--ink)">{{ $sale->invoice_number }}</td>
                         <td class="px-4 py-3.5" style="color:var(--ink-soft)">{{ $sale->customer_name ?: '—' }}</td>
                         @php
-                            $firstItem = $sale->items->first();
-                            $productName = $firstItem?->unit?->model?->name ?? $firstItem?->accessory?->name ?? '—';
+                            $productNames = $sale->items->map(fn($i) => $i->unit_id
+                                ? (($i->unit->model->brand->name ?? '') . ' ' . ($i->unit->model->name ?? ''))
+                                : (($i->accessory->name ?? '—') . ' ×' . $i->quantity)
+                            )->join(', ');
+                            if (empty($productNames)) $productNames = '—';
                         @endphp
-                        <td class="px-4 py-3.5" style="color:var(--ink-soft)">{{ $productName }}</td>
+                        <td class="px-4 py-3.5" style="color:var(--ink-soft)">{{ $productNames }}</td>
                         <td class="px-4 py-3.5" style="color:var(--ink-soft)">{{ $sale->sale_date->format('d/m/Y') }}</td>
                         <td class="px-4 py-3.5" style="color:var(--ink-soft)">{{ $sale->creator->name ?? '—' }}</td>
                         <td class="px-4 py-3.5 text-right font-mono font-medium tabular-nums" style="color:var(--ink)">
