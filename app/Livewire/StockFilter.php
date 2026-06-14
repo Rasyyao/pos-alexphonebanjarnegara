@@ -11,8 +11,8 @@ class StockFilter extends Component
 {
     use WithPagination;
 
-    public ?int $brand_id   = null;
-    public ?int $model_id   = null;
+    public string $search    = '';
+    public ?int $brand_id    = null;
     public string $unit_type = '';
     public string $status    = 'ready';
     public string $ram       = '';
@@ -20,25 +20,19 @@ class StockFilter extends Component
     public string $color     = '';
     public string $grade     = '';
 
-    public function updatingBrandId(): void
-    {
-        $this->model_id = null;
-        $this->resetPage();
-    }
-
-    public function updatedBrandId(): void    { $this->resetPage(); }
-    public function updatedModelId(): void    { $this->resetPage(); }
-    public function updatedUnitType(): void   { $this->resetPage(); }
-    public function updatedStatus(): void     { $this->resetPage(); }
-    public function updatedRam(): void        { $this->resetPage(); }
-    public function updatedRom(): void        { $this->resetPage(); }
-    public function updatedColor(): void      { $this->resetPage(); }
-    public function updatedGrade(): void      { $this->resetPage(); }
+    public function updatedSearch(): void    { $this->resetPage(); }
+    public function updatedBrandId(): void   { $this->resetPage(); }
+    public function updatedUnitType(): void  { $this->resetPage(); }
+    public function updatedStatus(): void    { $this->resetPage(); }
+    public function updatedRam(): void       { $this->resetPage(); }
+    public function updatedRom(): void       { $this->resetPage(); }
+    public function updatedColor(): void     { $this->resetPage(); }
+    public function updatedGrade(): void     { $this->resetPage(); }
 
     public function resetFilters(): void
     {
+        $this->search    = '';
         $this->brand_id  = null;
-        $this->model_id  = null;
         $this->unit_type = '';
         $this->status    = 'ready';
         $this->ram       = '';
@@ -50,15 +44,14 @@ class StockFilter extends Component
 
     public function render()
     {
-        $brands = ProductBrand::with('models')->orderBy('name')->get();
-
-        $models = $this->brand_id
-            ? ProductBrand::find($this->brand_id)?->models()->orderBy('name')->get() ?? collect()
-            : collect();
+        $brands = ProductBrand::orderBy('name')->get();
 
         $units = Unit::with('model.brand')
+            ->when($this->search, fn($q) => $q->whereHas('model', fn($q) =>
+                $q->where('name', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('brand', fn($q) => $q->where('name', 'like', '%' . $this->search . '%'))
+            ))
             ->when($this->brand_id, fn($q) => $q->whereHas('model', fn($q) => $q->where('brand_id', $this->brand_id)))
-            ->when($this->model_id, fn($q) => $q->where('model_id', $this->model_id))
             ->when($this->unit_type, fn($q) => $q->where('unit_type', $this->unit_type))
             ->when($this->status, fn($q) => $q->where('status', $this->status))
             ->when($this->ram, fn($q) => $q->where('ram', $this->ram))
@@ -68,6 +61,6 @@ class StockFilter extends Component
             ->latest()
             ->paginate(10);
 
-        return view('livewire.stock-filter', compact('brands', 'models', 'units'));
+        return view('livewire.stock-filter', compact('brands', 'units'));
     }
 }

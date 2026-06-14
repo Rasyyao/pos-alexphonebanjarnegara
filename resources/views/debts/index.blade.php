@@ -120,6 +120,7 @@
                 <thead>
                     <tr style="background:var(--bg-soft); border-bottom:1px solid var(--line)">
                         <th class="text-left px-5 py-3 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Invoice</th>
+                        <th class="text-left px-5 py-3 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Pembeli</th>
                         <th class="text-left px-5 py-3 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Kasir</th>
                         <th class="text-right px-5 py-3 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Total Tagihan</th>
                         <th class="text-right px-5 py-3 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Sudah Dibayar</th>
@@ -137,6 +138,7 @@
                                 {{ $debt->sale->invoice_number ?? '—' }}
                             </a>
                         </td>
+                        <td class="px-5 py-3.5" style="color:var(--ink-soft)">{{ $debt->sale->customer_name ?: '—' }}</td>
                         <td class="px-5 py-3.5" style="color:var(--ink-soft)">{{ $debt->sale->creator->name ?? '—' }}</td>
                         <td class="px-5 py-3.5 text-right font-mono font-bold tabular-nums" style="color:var(--ink)">
                             Rp {{ number_format($debt->amount, 0, ',', '.') }}
@@ -185,7 +187,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-5 py-14 text-center text-xs" style="color:var(--ink-mute)">Tidak ada data piutang pelanggan terdaftar</td>
+                        <td colspan="9" class="px-5 py-14 text-center text-xs" style="color:var(--ink-mute)">Tidak ada data piutang pelanggan terdaftar</td>
                     </tr>
                     @endforelse
                 </tbody>

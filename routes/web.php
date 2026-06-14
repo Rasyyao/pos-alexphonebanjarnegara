@@ -8,6 +8,7 @@ use App\Http\Controllers\CapitalController;
 use App\Http\Controllers\DebtController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('units', UnitController::class);
+    Route::post('brands', [BrandController::class, 'store'])->name('brands.store');
+    Route::delete('brands/{brand}', [BrandController::class, 'destroy'])->name('brands.destroy');
     Route::resource('accessories', AccessoryController::class);
     Route::get('reports/finance', [ReportController::class, 'finance'])->name('reports.finance');
     Route::get('reports/stock', [ReportController::class, 'stock'])->name('reports.stock');

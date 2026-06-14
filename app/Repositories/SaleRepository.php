@@ -12,7 +12,7 @@ class SaleRepository implements SaleRepositoryInterface
 {
     public function paginate(array $filters = []): LengthAwarePaginator
     {
-        return Sale::with(['creator', 'approver'])
+        return Sale::with(['creator', 'approver', 'items.unit.model', 'items.accessory'])
             ->when($filters['status'] ?? null, fn($q, $v) => $q->where('status', $v))
             ->when($filters['date'] ?? null, fn($q, $v) => $q->whereDate('sale_date', $v))
             ->when($filters['search'] ?? null, fn($q, $v) => $q->where('invoice_number', 'like', "%{$v}%"))

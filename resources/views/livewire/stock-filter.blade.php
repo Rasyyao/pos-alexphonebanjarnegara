@@ -1,34 +1,29 @@
 <div>
     {{-- Filter bar --}}
     <div class="bg-white rounded-xl border p-4 mb-4 flex flex-wrap gap-2" style="border-color:var(--line)">
-        <select wire:model.live="brand_id" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px;min-width:120px">
+        <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari brand / model..." class="field-input" style="width:200px;height:36px;padding:0 10px;font-size:13px" />
+
+        <select wire:model.live.debounce.300ms="brand_id" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px;min-width:120px">
             <option value="">Semua Brand</option>
             @foreach($brands as $brand)
                 <option value="{{ $brand->id }}">{{ $brand->name }}</option>
             @endforeach
         </select>
 
-        <select wire:model.live="model_id" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px;min-width:120px;{{ !$brand_id ? 'opacity:.5;cursor:not-allowed' : '' }}" @if(!$brand_id) disabled @endif>
-            <option value="">Semua Model</option>
-            @foreach($models as $model)
-                <option value="{{ $model->id }}">{{ $model->name }}</option>
-            @endforeach
-        </select>
-
-        <select wire:model.live="unit_type" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
+        <select wire:model.live.debounce.300ms="unit_type" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
             <option value="">Semua Tipe</option>
             <option value="baru">Baru</option>
             <option value="second">Second</option>
         </select>
 
-        <select wire:model.live="status" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
+        <select wire:model.live.debounce.300ms="status" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
             <option value="">Semua Status</option>
             <option value="ready">Ready</option>
             <option value="sold">Terjual</option>
             <option value="returned">Retur</option>
         </select>
 
-        <select wire:model.live="grade" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
+        <select wire:model.live.debounce.300ms="grade" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px">
             <option value="">Semua Grade</option>
             <option value="A">Grade A</option>
             <option value="B">Grade B</option>
@@ -44,7 +39,7 @@
     </div>
 
     {{-- Loading skeleton --}}
-    <div wire:loading wire:target="brand_id,model_id,unit_type,status,grade,ram,rom,resetFilters"
+    <div wire:loading wire:target="search,brand_id,unit_type,status,grade,ram,rom,resetFilters"
          class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
         @for($r = 0; $r < 6; $r++)
         <div class="flex items-center px-5 py-3.5 animate-pulse" style="border-bottom:1px solid var(--line)">
@@ -57,7 +52,7 @@
     </div>
 
     {{-- Table --}}
-    <div wire:loading.remove wire:target="brand_id,model_id,unit_type,status,grade,ram,rom,resetFilters"
+    <div wire:loading.remove wire:target="search,brand_id,unit_type,status,grade,ram,rom,resetFilters"
          class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">

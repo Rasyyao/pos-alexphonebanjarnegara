@@ -278,8 +278,7 @@
             {{-- Logo --}}
             <div class="h-14 flex items-center px-5 flex-shrink-0 border-b" style="border-color:var(--line)">
                 <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5">
-                    <span class="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] font-bold text-white"
-                        style="background:var(--accent)">A</span>
+                    <img src="{{ asset('assets/logoalex.webp') }}" alt="Alex Phone" class="h-8 w-8 object-contain">
                     <div>
                         <div class="font-semibold text-[15px] leading-none" style="color:var(--ink)">Alex Phone</div>
                         <div class="text-[10px] uppercase tracking-widest mt-0.5 font-mono"

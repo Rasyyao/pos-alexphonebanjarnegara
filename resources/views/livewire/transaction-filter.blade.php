@@ -3,14 +3,14 @@
     <div class="bg-white rounded-xl border p-4 mb-4 flex flex-wrap gap-2 animate-fade-in" style="border-color:var(--line)">
         <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari invoice..." class="field-input" style="width:200px;height:36px;padding:0 10px;font-size:13px" />
 
-        <select wire:model.live="status" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px;min-width:140px">
+        <select wire:model.live.debounce.300ms="status" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px;min-width:140px">
             <option value="">Semua Status</option>
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="cancelled">Cancelled</option>
         </select>
 
-        <input wire:model.live="date" type="date" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px" />
+        <input wire:model.live.debounce.300ms="date" type="date" class="field-input" style="width:auto;height:36px;padding:0 10px;font-size:13px" />
 
         <button wire:click="resetFilters" class="btn-secondary" style="height:36px;padding:0 14px;font-size:13px">Reset</button>
     </div>
@@ -36,6 +36,8 @@
                 <thead>
                     <tr style="background:var(--bg-soft); border-bottom:1px solid var(--line)">
                         <th class="text-left px-5 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Invoice</th>
+                        <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Pembeli</th>
+                        <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Produk</th>
                         <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Tanggal</th>
                         <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Kasir</th>
                         <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Total</th>
@@ -47,6 +49,12 @@
                     @forelse($sales as $sale)
                     <tr class="group" style="border-bottom:1px solid var(--line)" onmouseenter="this.style.background='var(--bg-soft)'" onmouseleave="this.style.background=''">
                         <td class="px-5 py-3.5 font-medium font-mono" style="color:var(--ink)">{{ $sale->invoice_number }}</td>
+                        <td class="px-4 py-3.5" style="color:var(--ink-soft)">{{ $sale->customer_name ?: '—' }}</td>
+                        @php
+                            $firstItem = $sale->items->first();
+                            $productName = $firstItem?->unit?->model?->name ?? $firstItem?->accessory?->name ?? '—';
+                        @endphp
+                        <td class="px-4 py-3.5" style="color:var(--ink-soft)">{{ $productName }}</td>
                         <td class="px-4 py-3.5" style="color:var(--ink-soft)">{{ $sale->sale_date->format('d/m/Y') }}</td>
                         <td class="px-4 py-3.5" style="color:var(--ink-soft)">{{ $sale->creator->name ?? '—' }}</td>
                         <td class="px-4 py-3.5 text-right font-mono font-medium tabular-nums" style="color:var(--ink)">
@@ -112,7 +120,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-5 py-14 text-center text-sm" style="color:var(--ink-mute)">
+                        <td colspan="8" class="px-5 py-14 text-center text-sm" style="color:var(--ink-mute)">
                             Tidak ada transaksi ditemukan.
                             <a href="{{ route('sales.create') }}" style="color:var(--accent)" class="font-medium hover:underline ml-1">Buat transaksi pertama</a>
                         </td>

@@ -43,8 +43,7 @@
                                         <option value="">Pilih Brand</option>
                                         @foreach ($brands as $b)
                                             <option value="{{ $b->name }}"
-                                                {{ old('brand_name') === $b->name ? 'selected' : '' }}>{{ $b->name }}
-                                            </option>
+                                                {{ old('brand_name') === $b->name ? 'selected' : '' }}>{{ $b->name }}</option>
                                         @endforeach
                                     </select>
                                     @error('brand_name')
