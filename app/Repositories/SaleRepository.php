@@ -16,20 +16,22 @@ class SaleRepository implements SaleRepositoryInterface
             ->when($filters['status'] ?? null, fn($q, $v) => $q->where('status', $v));
 
         if (!empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%")
-                  ->orWhere('customer_name', 'like', "%{$search}%")
-                  ->orWhereHas('items.unit.model', function ($sub) use ($search) {
-                      $sub->where('name', 'like', "%{$search}%")
-                          ->orWhereHas('brand', function ($brandQ) use ($search) {
-                              $brandQ->where('name', 'like', "%{$search}%");
-                          });
-                  })
-                  ->orWhereHas('items.accessory', function ($sub) use ($search) {
-                      $sub->where('name', 'like', "%{$search}%");
-                  });
-            });
+            $words = array_filter(explode(' ', $filters['search']));
+            foreach ($words as $word) {
+                $query->where(function ($q) use ($word) {
+                    $q->where('invoice_number', 'like', "%{$word}%")
+                      ->orWhere('customer_name', 'like', "%{$word}%")
+                      ->orWhereHas('items.unit.model', function ($sub) use ($word) {
+                          $sub->where('name', 'like', "%{$word}%")
+                              ->orWhereHas('brand', function ($brandQ) use ($word) {
+                                  $brandQ->where('name', 'like', "%{$word}%");
+                              });
+                      })
+                      ->orWhereHas('items.accessory', function ($sub) use ($word) {
+                          $sub->where('name', 'like', "%{$word}%");
+                      });
+                });
+            }
         }
 
         if (!empty($filters['period'])) {

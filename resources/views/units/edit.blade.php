@@ -141,30 +141,140 @@
                                 <input type="date" name="purchase_date" value="{{ old('purchase_date', $unit->purchase_date->toDateString()) }}" required class="field-input" />
                             </div>
                         </div>
-                        {{-- Payment Method --}}
-                        <div>
-                            <label class="field-label">Bayar Dari <span style="color:var(--warn)">*</span></label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
-                                       style="{{ old('purchase_payment_method', $unit->purchase_payment_method ?? 'cash') === 'cash' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)' }}">
-                                    <input type="radio" name="purchase_payment_method" value="cash"
-                                           class="accent-blue-600"
-                                           {{ old('purchase_payment_method', $unit->purchase_payment_method ?? 'cash') === 'cash' ? 'checked' : '' }} />
-                                    <div>
-                                        <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
-                                        <div class="text-[10px]" style="color:var(--ink-mute)">Bayar pakai uang tunai</div>
+                        {{-- Payment Method Selection --}}
+                        <div x-data="{
+                            method: '{{ old('purchase_cash', $unit->purchase_cash) > 0 && old('purchase_transfer', $unit->purchase_transfer) > 0 ? 'split' : old('purchase_payment_method', $unit->purchase_payment_method ?? 'cash') }}',
+                            isSyncing: false,
+                            init() {
+                                // For edit, if it's already a split or has old inputs, we do not auto-override during init.
+                                // But if it is 'cash' or 'transfer', we sync it.
+                                this.$nextTick(() => {
+                                    if (this.method !== 'split') {
+                                        this.syncSplit();
+                                    }
+                                });
+                                // Watch for purchase price input changes
+                                const priceInput = document.querySelector('[name=&quot;purchase_price&quot;]');
+                                if (priceInput) {
+                                    priceInput.addEventListener('input', () => {
+                                        this.syncSplit();
+                                    });
+                                }
+                            },
+                            getPrice() {
+                                const val = document.querySelector('[name=&quot;purchase_price&quot;]')?.value || '';
+                                return parseInt(val.replace(/[^0-9]/g, ''), 10) || 0;
+                            },
+                            syncSplit() {
+                                if (this.isSyncing) return;
+                                this.isSyncing = true;
+                                const total = this.getPrice();
+                                if (this.method === 'cash') {
+                                    this.setVal('purchase_cash', total);
+                                    this.setVal('purchase_transfer', 0);
+                                } else if (this.method === 'transfer') {
+                                    this.setVal('purchase_cash', 0);
+                                    this.setVal('purchase_transfer', total);
+                                }
+                                this.isSyncing = false;
+                            },
+                            setVal(name, amount) {
+                                const el = document.querySelector(`[name=&quot;${name}&quot;]`);
+                                if (el) {
+                                    el.value = amount ? amount.toLocaleString('id-ID') : '';
+                                    // Dispatch input event to trigger any listeners
+                                    el.dispatchEvent(new Event('input'));
+                                }
+                            },
+                            onInputCash(val) {
+                                if (this.isSyncing) return;
+                                this.isSyncing = true;
+                                const cash = parseInt((val || '').replace(/[^0-9]/g, ''), 10) || 0;
+                                const total = this.getPrice();
+                                const transfer = Math.max(0, total - cash);
+                                this.setVal('purchase_transfer', transfer);
+                                this.isSyncing = false;
+                            },
+                            onInputTransfer(val) {
+                                if (this.isSyncing) return;
+                                this.isSyncing = true;
+                                const transfer = parseInt((val || '').replace(/[^0-9]/g, ''), 10) || 0;
+                                const total = this.getPrice();
+                                const cash = Math.max(0, total - transfer);
+                                this.setVal('purchase_cash', cash);
+                                this.isSyncing = false;
+                            }
+                        }" class="space-y-4">
+                            <input type="hidden" name="purchase_payment_method" :value="method === 'split' ? 'cash' : method" />
+
+                            <div>
+                                <label class="field-label">Bayar Dari <span style="color:var(--warn)">*</span></label>
+                                <div class="grid grid-cols-3 gap-3">
+                                    {{-- Kas Tunai --}}
+                                    <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                           :style="method === 'cash' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)'">
+                                        <input type="radio" value="cash" x-model="method" @change="syncSplit()"
+                                               class="accent-blue-600" />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
+                                            <div class="text-[10px] font-mono" style="color:var(--ink-mute)">Saldo: Rp {{ number_format($saldoKas, 0, ',', '.') }}</div>
+                                        </div>
+                                    </label>
+
+                                    {{-- Transfer / ATM --}}
+                                    <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                           :style="method === 'transfer' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)'">
+                                        <input type="radio" value="transfer" x-model="method" @change="syncSplit()"
+                                               class="accent-blue-600" />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
+                                            <div class="text-[10px] font-mono" style="color:var(--ink-mute)">Saldo: Rp {{ number_format($saldoAtm, 0, ',', '.') }}</div>
+                                        </div>
+                                    </label>
+
+                                    {{-- Gabungan --}}
+                                    <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
+                                           :style="method === 'split' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)'">
+                                        <input type="radio" value="split" x-model="method" @change="syncSplit()"
+                                               class="accent-blue-600" />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Gabungan</div>
+                                            <div class="text-[10px]" style="color:var(--ink-mute)">Cash + Transfer</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {{-- Split Inputs --}}
+                            <div class="grid grid-cols-2 gap-4" x-show="method === 'split'" x-transition>
+                                <div>
+                                    <label class="field-label">Bayar Cash <span style="color:var(--warn)">*</span></label>
+                                    <div class="money-wrap">
+                                        <span class="rp-prefix">Rp</span>
+                                        <input type="text" name="purchase_cash"
+                                               value="{{ old('purchase_cash', $unit->purchase_cash) }}"
+                                               @input="onInputCash($event.target.value)"
+                                               class="field-input money-input @error('purchase_cash') error @enderror"
+                                               placeholder="0" inputmode="numeric" />
                                     </div>
-                                </label>
-                                <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
-                                       style="{{ old('purchase_payment_method', $unit->purchase_payment_method ?? 'cash') === 'transfer' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)' }}">
-                                    <input type="radio" name="purchase_payment_method" value="transfer"
-                                           class="accent-blue-600"
-                                           {{ old('purchase_payment_method', $unit->purchase_payment_method ?? 'cash') === 'transfer' ? 'checked' : '' }} />
-                                    <div>
-                                        <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
-                                        <div class="text-[10px]" style="color:var(--ink-mute)">Bayar via rekening bank</div>
+                                    @error('purchase_cash')
+                                        <p class="field-error">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label class="field-label">Bayar Transfer <span style="color:var(--warn)">*</span></label>
+                                    <div class="money-wrap">
+                                        <span class="rp-prefix">Rp</span>
+                                        <input type="text" name="purchase_transfer"
+                                               value="{{ old('purchase_transfer', $unit->purchase_transfer) }}"
+                                               @input="onInputTransfer($event.target.value)"
+                                               class="field-input money-input @error('purchase_transfer') error @enderror"
+                                               placeholder="0" inputmode="numeric" />
                                     </div>
-                                </label>
+                                    @error('purchase_transfer')
+                                        <p class="field-error">{{ $message }}</p>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
 
@@ -195,28 +305,6 @@
                         <textarea name="notes" rows="4" class="field-input" placeholder="Kondisi, kelengkapan, dll...">{{ old('notes', $unit->notes) }}</textarea>
                     </div>
                 </div>
-
-                {{-- Estimasi Margin --}}
-                <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
-                    <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
-                        <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Estimasi Margin</span>
-                    </div>
-                    <div class="p-5">
-                        <div class="mb-3">
-                            <label class="field-label">Harga Jual (Estimasi)</label>
-                            <div class="money-wrap">
-                                <span class="rp-prefix">Rp</span>
-                                <input type="text" id="edit-est-jual" class="field-input money-input" placeholder="0" inputmode="numeric" />
-                            </div>
-                        </div>
-                        <div class="text-2xl font-semibold font-mono tabular-nums" id="edit-margin-amount" style="color:var(--ink-mute)">Rp 0</div>
-                        <div class="text-xs mt-1" id="edit-margin-pct" style="color:var(--ink-mute)">Isi harga jual estimasi</div>
-                        <div class="mt-3 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
-                            <div id="edit-margin-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:var(--success)"></div>
-                        </div>
-                    </div>
-                </div>
-
                 {{-- Submit --}}
                 <button type="submit" class="btn-primary w-full" style="height:44px;font-size:14px">
                     Simpan Perubahan

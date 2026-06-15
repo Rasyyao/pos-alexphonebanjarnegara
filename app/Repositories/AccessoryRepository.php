@@ -11,7 +11,12 @@ class AccessoryRepository implements AccessoryRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 10, string $pageName = 'page'): LengthAwarePaginator
     {
-        return Accessory::when($filters['search'] ?? null, fn($q, $v) => $q->where('name', 'like', "%{$v}%"))
+        return Accessory::when($filters['search'] ?? null, function ($q, $v) {
+                $words = array_filter(explode(' ', $v));
+                foreach ($words as $word) {
+                    $q->where('name', 'like', "%{$word}%");
+                }
+            })
             ->when($filters['category'] ?? null, fn($q, $v) => $q->where('category', $v))
             ->when($filters['stock_status'] ?? null, function($q, $v) {
                 if ($v === 'ready') {

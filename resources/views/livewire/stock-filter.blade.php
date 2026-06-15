@@ -38,22 +38,10 @@
         <button wire:click="resetFilters" class="btn-secondary" style="height:36px;padding:0 14px;font-size:13px">Reset</button>
     </div>
 
-    {{-- Loading skeleton --}}
-    <div wire:loading wire:target="search,brand_id,unit_type,status,grade,ram,rom,resetFilters"
-         class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
-        @for($r = 0; $r < 6; $r++)
-        <div class="flex items-center px-5 py-3.5 animate-pulse" style="border-bottom:1px solid var(--line)">
-            <div class="h-3.5 rounded w-1/4 mr-8" style="background:var(--line)"></div>
-            <div class="h-3.5 rounded w-16 mr-8" style="background:var(--line)"></div>
-            <div class="h-3.5 rounded w-1/4 mr-8" style="background:var(--line)"></div>
-            <div class="h-3.5 rounded w-24 ml-auto" style="background:var(--line)"></div>
-        </div>
-        @endfor
-    </div>
-
     {{-- Table --}}
-    <div wire:loading.remove wire:target="search,brand_id,unit_type,status,grade,ram,rom,resetFilters"
-         class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
+    <div class="bg-white rounded-xl border overflow-hidden relative transition-opacity duration-200" 
+         style="border-color:var(--line)"
+         wire:loading.class="opacity-60 pointer-events-none">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
@@ -68,7 +56,7 @@
                 </thead>
                 <tbody>
                     @forelse($units as $unit)
-                    <tr class="transition-colors" style="border-bottom:1px solid var(--line)"
+                    <tr wire:key="unit-{{ $unit->id }}" class="transition-colors" style="border-bottom:1px solid var(--line)"
                         onmouseenter="this.style.background='var(--bg-soft)'" onmouseleave="this.style.background=''">
                         <td class="px-5 py-3.5">
                             <div class="font-semibold" style="color:var(--ink)">{{ $unit->model->brand->name ?? '—' }}</div>

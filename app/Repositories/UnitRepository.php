@@ -13,20 +13,23 @@ class UnitRepository implements UnitRepositoryInterface
     {
         return Unit::with('model.brand')
             ->when($filters['search'] ?? null, function ($q, $v) {
-                $q->where(function ($subQ) use ($v) {
-                    $subQ->where('color', 'like', "%{$v}%")
-                         ->orWhere('ram', 'like', "%{$v}%")
-                         ->orWhere('rom', 'like', "%{$v}%")
-                         ->orWhere('grade', 'like', "%{$v}%")
-                         ->orWhere('imei', 'like', "%{$v}%")
-                         ->orWhere('serial_number', 'like', "%{$v}%")
-                         ->orWhereHas('model', function ($modelQ) use ($v) {
-                             $modelQ->where('name', 'like', "%{$v}%")
-                                    ->orWhereHas('brand', function ($brandQ) use ($v) {
-                                        $brandQ->where('name', 'like', "%{$v}%");
-                                    });
-                         });
-                });
+                $words = array_filter(explode(' ', $v));
+                foreach ($words as $word) {
+                    $q->where(function ($subQ) use ($word) {
+                        $subQ->where('color', 'like', "%{$word}%")
+                             ->orWhere('ram', 'like', "%{$word}%")
+                             ->orWhere('rom', 'like', "%{$word}%")
+                             ->orWhere('grade', 'like', "%{$word}%")
+                             ->orWhere('imei', 'like', "%{$word}%")
+                             ->orWhere('serial_number', 'like', "%{$word}%")
+                             ->orWhereHas('model', function ($modelQ) use ($word) {
+                                 $modelQ->where('name', 'like', "%{$word}%")
+                                        ->orWhereHas('brand', function ($brandQ) use ($word) {
+                                            $brandQ->where('name', 'like', "%{$word}%");
+                                        });
+                             });
+                    });
+                }
             })
             ->when($filters['brand_id'] ?? null, fn($q, $v) => $q->whereHas('model', fn($q) => $q->where('brand_id', $v)))
             ->when($filters['model_id'] ?? null, fn($q, $v) => $q->where('model_id', $v))

@@ -24,10 +24,10 @@
         </a>
     </div>
 
-    <div class="grid lg:grid-cols-3 gap-5">
+    <div class="grid gap-5">
 
         {{-- Left: main details (col-span-2) --}}
-        <div class="lg:col-span-2 space-y-5">
+        <div class=" space-y-5">
 
             {{-- Informasi Produk --}}
             <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
@@ -80,8 +80,14 @@
                     </div>
                     <div class="flex items-center px-5 py-3" style="border-color:var(--line)">
                         <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Bayar Dari</span>
-                        <span class="text-sm font-semibold font-mono" style="color:var(--ink-soft)">
-                            {{ $accessory->purchase_payment_method === 'transfer' ? 'Transfer / ATM' : 'Kas Tunai' }}
+                        <span class="text-sm font-semibold" style="color:var(--ink-soft)">
+                            @if($accessory->purchase_cash > 0 && $accessory->purchase_transfer > 0)
+                                Gabungan (Cash: Rp {{ number_format($accessory->purchase_cash, 0, ',', '.') }} & Transfer: Rp {{ number_format($accessory->purchase_transfer, 0, ',', '.') }})
+                            @elseif($accessory->purchase_transfer > 0)
+                                Transfer / ATM (Rp {{ number_format($accessory->purchase_transfer, 0, ',', '.') }})
+                            @else
+                                Kas Tunai (Rp {{ number_format($accessory->purchase_cash, 0, ',', '.') }})
+                            @endif
                         </span>
                     </div>
                 </div>
@@ -163,43 +169,6 @@
                     </table>
                 </div>
                 @endif
-            </div>
-
-        </div>
-
-        {{-- Right sidebar: margin + actions --}}
-        <div class="space-y-5">
-
-            {{-- Harga Jual --}}
-            <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
-                <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
-                    <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Harga Jual</span>
-                </div>
-                <div class="p-5">
-                    <label class="field-label">Harga Jual</label>
-                    <div class="money-wrap">
-                        <span class="rp-prefix">Rp</span>
-                        <input type="text" id="show-est-jual" class="field-input money-input" placeholder="0" inputmode="numeric" />
-                    </div>
-                    <div class="mt-3 pt-3 border-t" style="border-color:var(--line)">
-                        <div class="text-[10px] font-bold uppercase tracking-widest font-mono mb-1" style="color:var(--ink-mute)">Estimasi Margin</div>
-                        <div class="text-xl font-bold font-mono tabular-nums" id="show-margin-amount" style="color:var(--ink-mute)">Rp 0</div>
-                        <div class="text-xs mt-0.5" id="show-margin-pct" style="color:var(--ink-mute)">Isi harga jual untuk lihat margin</div>
-                        <div class="mt-2 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
-                            <div id="show-margin-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:var(--success)"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Actions --}}
-            <div class="space-y-2.5">
-                <a href="{{ route('accessories.edit', $accessory) }}" class="btn-primary w-full" style="height:44px;font-size:14px">
-                    Edit Aksesoris
-                </a>
-                <a href="{{ route('accessories.index') }}" class="btn-secondary w-full" style="height:44px;font-size:14px">
-                    Kembali ke Daftar
-                </a>
             </div>
 
         </div>

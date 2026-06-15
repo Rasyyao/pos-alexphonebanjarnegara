@@ -30,10 +30,10 @@
         @endif
     </div>
 
-    <div class="grid lg:grid-cols-3 gap-5">
+    <div class="grid gap-5">
 
         {{-- Left: main details (col-span-2) --}}
-        <div class="lg:col-span-2 space-y-4">
+        <div class="space-y-4">
 
             {{-- Spesifikasi --}}
             <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
@@ -76,7 +76,13 @@
                     <div class="flex items-center px-5 py-3" style="border-color:var(--line)">
                         <span class="w-36 text-xs font-medium flex-shrink-0" style="color:var(--ink-mute)">Bayar Dari</span>
                         <span class="text-sm font-semibold" style="color:var(--ink)">
-                            {{ $unit->purchase_payment_method === 'transfer' ? 'Transfer / ATM' : 'Kas Tunai' }}
+                            @if($unit->purchase_cash > 0 && $unit->purchase_transfer > 0)
+                                Gabungan (Cash: Rp {{ number_format($unit->purchase_cash, 0, ',', '.') }} & Transfer: Rp {{ number_format($unit->purchase_transfer, 0, ',', '.') }})
+                            @elseif($unit->purchase_transfer > 0)
+                                Transfer / ATM (Rp {{ number_format($unit->purchase_transfer, 0, ',', '.') }})
+                            @else
+                                Kas Tunai (Rp {{ number_format($unit->purchase_cash, 0, ',', '.') }})
+                            @endif
                         </span>
                     </div>
                 </div>
@@ -139,43 +145,6 @@
             @endif
 
         </div>
-
-        {{-- Right sidebar --}}
-        <div class="space-y-4">
-
-            {{-- Estimasi Margin (manual input) --}}
-            <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
-                <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
-                    <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Estimasi Margin</span>
-                </div>
-                <div class="p-5">
-                    <div class="grid grid-cols-2 gap-3 mb-3">
-                        <div>
-                            <label class="field-label">Harga Beli (Modal)</label>
-                            <div class="money-wrap">
-                                <span class="rp-prefix">Rp</span>
-                                <input type="text" id="show-est-modal" class="field-input money-input"
-                                       value="{{ number_format($unit->purchase_price, 0, ',', '.') }}" inputmode="numeric" />
-                            </div>
-                        </div>
-                        <div>
-                            <label class="field-label">Harga Jual (Estimasi)</label>
-                            <div class="money-wrap">
-                                <span class="rp-prefix">Rp</span>
-                                <input type="text" id="show-est-jual" class="field-input money-input" placeholder="0" inputmode="numeric" />
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-2xl font-semibold font-mono tabular-nums" id="show-margin-amount" style="color:var(--ink-mute)">Rp 0</div>
-                    <div class="text-xs mt-1" id="show-margin-pct" style="color:var(--ink-mute)">Isi harga jual estimasi untuk lihat margin</div>
-                    <div class="mt-3 h-1.5 rounded-full overflow-hidden" style="background:var(--bg-soft)">
-                        <div id="show-margin-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:var(--success)"></div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
     </div>
 </div>
 

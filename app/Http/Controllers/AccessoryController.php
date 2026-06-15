@@ -13,6 +13,7 @@ class AccessoryController extends Controller
     public function __construct(
         private readonly AccessoryService $service,
         private readonly AccessoryRepositoryInterface $accessories,
+        private readonly FinanceService $finance,
     ) {}
 
     public function index()
@@ -23,18 +24,42 @@ class AccessoryController extends Controller
     public function create()
     {
         $categories = $this->accessories->categories();
-        return view('accessories.create', compact('categories'));
+        $summary = $this->finance->reportSummary();
+        $saldoKas = (float) $summary['saldoKas'];
+        $saldoAtm = (float) $summary['saldoAtmLifetime'];
+        return view('accessories.create', compact('categories', 'saldoKas', 'saldoAtm'));
     }
 
     public function store(StoreAccessoryRequest $request)
     {
-        $data          = $request->validated();
-        $kasLiquid     = FinanceService::kasLiquidNow();
-        $totalCost     = (float)$data['purchase_price'] * (int)($data['stock_qty'] ?? 1);
+        $data = $request->validated();
+        $summary = $this->finance->reportSummary();
+        $saldoKas = (float) $summary['saldoKas'];
+        $saldoAtm = (float) $summary['saldoAtmLifetime'];
 
-        if ($totalCost > $kasLiquid) {
+        $purchaseCash = (float) ($request->purchase_cash ?? 0);
+        $purchaseTransfer = (float) ($request->purchase_transfer ?? 0);
+        $purchasePrice = (float) $request->purchase_price;
+        $stockQty = (int) ($request->stock_qty ?? 0);
+
+        if (abs($purchaseCash + $purchaseTransfer - $purchasePrice) > 0.01) {
             return back()->withInput()->withErrors([
-                'purchase_price' => 'Kas liquid tidak cukup (Rp ' . number_format($kasLiquid, 0, ',', '.') . '). Total beli Rp ' . number_format($totalCost, 0, ',', '.') . ' melebihi kas tersedia.',
+                'purchase_price' => 'Jumlah cash dan transfer harus sama dengan harga beli.',
+            ]);
+        }
+
+        $totalCashCost = $purchaseCash * $stockQty;
+        $totalTransferCost = $purchaseTransfer * $stockQty;
+
+        if ($totalCashCost > $saldoKas) {
+            return back()->withInput()->withErrors([
+                'purchase_cash' => 'Saldo Kas Tunai tidak cukup (Maksimal Rp ' . number_format($saldoKas, 0, ',', '.') . ', Total beli Rp ' . number_format($totalCashCost, 0, ',', '.') . ').',
+            ]);
+        }
+
+        if ($totalTransferCost > $saldoAtm) {
+            return back()->withInput()->withErrors([
+                'purchase_transfer' => 'Saldo ATM / Rekening tidak cukup (Maksimal Rp ' . number_format($saldoAtm, 0, ',', '.') . ', Total beli Rp ' . number_format($totalTransferCost, 0, ',', '.') . ').',
             ]);
         }
 
@@ -56,12 +81,47 @@ class AccessoryController extends Controller
     public function edit(Accessory $accessory)
     {
         $categories = $this->accessories->categories();
-        return view('accessories.edit', compact('accessory', 'categories'));
+        $summary = $this->finance->reportSummary();
+        $saldoKas = (float) $summary['saldoKas'];
+        $saldoAtm = (float) $summary['saldoAtmLifetime'];
+        return view('accessories.edit', compact('accessory', 'categories', 'saldoKas', 'saldoAtm'));
     }
 
     public function update(UpdateAccessoryRequest $request, Accessory $accessory)
     {
-        $this->service->update($accessory, $request->validated());
+        $data = $request->validated();
+        $summary = $this->finance->reportSummary();
+        // Add back this accessory's existing purchase cash and transfer costs to available balances
+        $saldoKas = (float) $summary['saldoKas'] + ((float) $accessory->purchase_cash * $accessory->stock_qty);
+        $saldoAtm = (float) $summary['saldoAtmLifetime'] + ((float) $accessory->purchase_transfer * $accessory->stock_qty);
+
+        $purchaseCash = (float) ($request->purchase_cash ?? 0);
+        $purchaseTransfer = (float) ($request->purchase_transfer ?? 0);
+        $purchasePrice = (float) $request->purchase_price;
+        $stockQty = (int) ($request->stock_qty ?? 0);
+
+        if (abs($purchaseCash + $purchaseTransfer - $purchasePrice) > 0.01) {
+            return back()->withInput()->withErrors([
+                'purchase_price' => 'Jumlah cash dan transfer harus sama dengan harga beli.',
+            ]);
+        }
+
+        $totalCashCost = $purchaseCash * $stockQty;
+        $totalTransferCost = $purchaseTransfer * $stockQty;
+
+        if ($totalCashCost > $saldoKas) {
+            return back()->withInput()->withErrors([
+                'purchase_cash' => 'Saldo Kas Tunai tidak cukup (Maksimal Rp ' . number_format($saldoKas, 0, ',', '.') . ', Total beli Rp ' . number_format($totalCashCost, 0, ',', '.') . ').',
+            ]);
+        }
+
+        if ($totalTransferCost > $saldoAtm) {
+            return back()->withInput()->withErrors([
+                'purchase_transfer' => 'Saldo ATM / Rekening tidak cukup (Maksimal Rp ' . number_format($saldoAtm, 0, ',', '.') . ', Total beli Rp ' . number_format($totalTransferCost, 0, ',', '.') . ').',
+            ]);
+        }
+
+        $this->service->update($accessory, $data);
         return redirect()->route('accessories.show', $accessory)->with('success', 'Aksesoris berhasil diperbarui.');
     }
 

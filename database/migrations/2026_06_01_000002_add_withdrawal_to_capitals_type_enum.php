@@ -7,11 +7,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE capitals MODIFY COLUMN type ENUM('initial','addition','purchase','withdrawal') NOT NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE capitals MODIFY COLUMN type ENUM('initial','addition','purchase','withdrawal') NOT NULL");
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE capitals MODIFY COLUMN type ENUM('initial','addition','purchase') NOT NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE capitals MODIFY COLUMN type ENUM('initial','addition','purchase') NOT NULL");
+        }
     }
 };

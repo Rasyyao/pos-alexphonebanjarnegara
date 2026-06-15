@@ -2,7 +2,7 @@
 @section('title', 'Stok HP')
 
 @section('content')
-<div x-data="{ showBrandModal: false }">
+<div x-data="{ showBrandModal: {{ $errors->has('name') ? 'true' : 'false' }} }">
 
     <div class="flex items-center justify-between mb-5">
         <div>
@@ -103,17 +103,4 @@
 
 </div>
 
-{{-- Re-open modal if there's a validation error for brand name --}}
-@if($errors->has('name'))
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.store('brandModal', { open: true });
-    });
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            document.querySelector('[\\@click="showBrandModal = true"]')?.click();
-        }, 50);
-    });
-</script>
-@endif
 @endsection
