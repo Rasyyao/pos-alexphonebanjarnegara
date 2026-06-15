@@ -106,163 +106,83 @@
                                 @enderror
                             </div>
 
-                            {{-- Payment Method Selection --}}
-                            <div x-data="{
-                                method: '{{ old('purchase_cash') && old('purchase_transfer') ? 'split' : old('purchase_payment_method', 'cash') }}',
-                                isSyncing: false,
-                                qty: {{ old('stock_qty', 0) }},
-                                init() {
-                                    this.$nextTick(() => {
-                                        this.syncSplit();
-                                    });
-                                    // Watch for purchase price input changes
-                                    const priceInput = document.querySelector('[name=&quot;purchase_price&quot;]');
-                                    if (priceInput) {
-                                        priceInput.addEventListener('input', () => {
-                                            this.syncSplit();
-                                        });
-                                    }
-                                    // Watch for stock_qty changes
-                                    const qtyInput = document.querySelector('[name=&quot;stock_qty&quot;]');
-                                    if (qtyInput) {
-                                        qtyInput.addEventListener('input', (e) => {
-                                            this.qty = parseInt(e.target.value, 10) || 0;
-                                        });
-                                    }
-                                },
-                                getPrice() {
-                                    const val = document.querySelector('[name=&quot;purchase_price&quot;]')?.value || '';
-                                    return parseInt(val.replace(/[^0-9]/g, ''), 10) || 0;
-                                },
-                                syncSplit() {
-                                    if (this.isSyncing) return;
-                                    this.isSyncing = true;
-                                    const total = this.getPrice();
-                                    if (this.method === 'cash') {
-                                        this.setVal('purchase_cash', total);
-                                        this.setVal('purchase_transfer', 0);
-                                    } else if (this.method === 'transfer') {
-                                        this.setVal('purchase_cash', 0);
-                                        this.setVal('purchase_transfer', total);
-                                    }
-                                    this.isSyncing = false;
-                                },
-                                setVal(name, amount) {
-                                    const el = document.querySelector(`[name=&quot;${name}&quot;]`);
-                                    if (el) {
-                                        el.value = amount ? amount.toLocaleString('id-ID') : '';
-                                        // Dispatch input event to trigger any listeners
-                                        el.dispatchEvent(new Event('input'));
-                                    }
-                                },
-                                getRawVal(name) {
-                                    const el = document.querySelector(`[name=&quot;${name}&quot;]`);
-                                    return parseInt((el?.value || '').replace(/[^0-9]/g, ''), 10) || 0;
-                                },
-                                onInputCash(val) {
-                                    if (this.isSyncing) return;
-                                    this.isSyncing = true;
-                                    const cash = parseInt((val || '').replace(/[^0-9]/g, ''), 10) || 0;
-                                    const total = this.getPrice();
-                                    const transfer = Math.max(0, total - cash);
-                                    this.setVal('purchase_transfer', transfer);
-                                    this.isSyncing = false;
-                                },
-                                onInputTransfer(val) {
-                                    if (this.isSyncing) return;
-                                    this.isSyncing = true;
-                                    const transfer = parseInt((val || '').replace(/[^0-9]/g, ''), 10) || 0;
-                                    const total = this.getPrice();
-                                    const cash = Math.max(0, total - transfer);
-                                    this.setVal('purchase_cash', cash);
-                                    this.isSyncing = false;
-                                },
-                                formatRupiah(amount) {
-                                    return 'Rp ' + amount.toLocaleString('id-ID');
-                                }
-                            }" class="space-y-4">
-                                <input type="hidden" name="purchase_payment_method" :value="method === 'split' ? 'cash' : method" />
+                            {{-- Payment Method --}}
+                            @php $payMethod = old('purchase_payment_method', 'cash'); @endphp
+                            <div>
+                                <label class="field-label">Bayar Dari <span style="color:var(--warn)">*</span></label>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <label id="pay-lbl-cash" class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50">
+                                        <input type="radio" name="purchase_payment_method" value="cash" class="accent-blue-600" {{ $payMethod === 'cash' ? 'checked' : '' }} />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
+                                            <div class="text-[10px] font-mono" style="color:var(--ink-mute)">Saldo: Rp {{ number_format($saldoKas, 0, ',', '.') }}</div>
+                                        </div>
+                                    </label>
+                                    <label id="pay-lbl-transfer" class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50">
+                                        <input type="radio" name="purchase_payment_method" value="transfer" class="accent-blue-600" {{ $payMethod === 'transfer' ? 'checked' : '' }} />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
+                                            <div class="text-[10px] font-mono" style="color:var(--ink-mute)">Saldo: Rp {{ number_format($saldoAtm, 0, ',', '.') }}</div>
+                                        </div>
+                                    </label>
+                                    <label id="pay-lbl-split" class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50">
+                                        <input type="radio" name="purchase_payment_method" value="split" class="accent-blue-600" {{ $payMethod === 'split' ? 'checked' : '' }} />
+                                        <div>
+                                            <div class="text-xs font-bold" style="color:var(--ink)">Gabungan</div>
+                                            <div class="text-[10px]" style="color:var(--ink-mute)">Cash + Transfer</div>
+                                        </div>
+                                    </label>
+                                </div>
+                                @error('purchase_payment_method')<p class="field-error">{{ $message }}</p>@enderror
+                            </div>
 
+                            {{-- Split inputs (only for Gabungan) --}}
+                            <div class="grid grid-cols-2 gap-4" id="split-inputs" style="{{ $payMethod === 'split' ? '' : 'display:none' }}">
                                 <div>
-                                    <label class="field-label">Bayar Dari <span style="color:var(--warn)">*</span></label>
-                                    <div class="grid grid-cols-3 gap-3">
-                                        {{-- Kas Tunai --}}
-                                        <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
-                                               :style="method === 'cash' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)'">
-                                            <input type="radio" value="cash" x-model="method" @change="syncSplit()"
-                                                   class="accent-blue-600" />
-                                            <div>
-                                                <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
-                                                <div class="text-[10px] font-mono" style="color:var(--ink-mute)">Saldo: Rp {{ number_format($saldoKas, 0, ',', '.') }}</div>
-                                            </div>
-                                        </label>
-
-                                        {{-- Transfer / ATM --}}
-                                        <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
-                                               :style="method === 'transfer' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)'">
-                                            <input type="radio" value="transfer" x-model="method" @change="syncSplit()"
-                                                   class="accent-blue-600" />
-                                            <div>
-                                                <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
-                                                <div class="text-[10px] font-mono" style="color:var(--ink-mute)">Saldo: Rp {{ number_format($saldoAtm, 0, ',', '.') }}</div>
-                                            </div>
-                                        </label>
-
-                                        {{-- Gabungan --}}
-                                        <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50"
-                                               :style="method === 'split' ? 'border-color:var(--accent);background:rgba(37,99,235,0.03)' : 'border-color:var(--line)'">
-                                            <input type="radio" value="split" x-model="method" @change="syncSplit()"
-                                                   class="accent-blue-600" />
-                                            <div>
-                                                <div class="text-xs font-bold" style="color:var(--ink)">Gabungan</div>
-                                                <div class="text-[10px]" style="color:var(--ink-mute)">Cash + Transfer</div>
-                                            </div>
-                                        </label>
+                                    <label class="field-label">Bayar Cash (per unit)</label>
+                                    <div class="money-wrap"><span class="rp-prefix">Rp</span>
+                                        <input type="text" name="purchase_cash" value="{{ old('purchase_cash') }}"
+                                               class="field-input money-input @error('purchase_cash') error @enderror"
+                                               placeholder="0" inputmode="numeric" />
                                     </div>
+                                    @error('purchase_cash')<p class="field-error">{{ $message }}</p>@enderror
                                 </div>
-
-                                {{-- Split Inputs --}}
-                                <div class="grid grid-cols-2 gap-4" x-show="method === 'split'" x-transition>
-                                    <div>
-                                        <label class="field-label">Bayar Cash (per unit) <span style="color:var(--warn)">*</span></label>
-                                        <div class="money-wrap">
-                                            <span class="rp-prefix">Rp</span>
-                                            <input type="text" name="purchase_cash"
-                                                   value="{{ old('purchase_cash') }}"
-                                                   @input="onInputCash($event.target.value)"
-                                                   class="field-input money-input @error('purchase_cash') error @enderror"
-                                                   placeholder="0" inputmode="numeric" />
-                                        </div>
-                                        <p class="text-[10px] mt-1 text-gray-500">
-                                            Total Cash: <span class="font-mono font-bold text-gray-700" x-text="formatRupiah(getRawVal('purchase_cash') * qty)"></span>
-                                        </p>
-                                        @error('purchase_cash')
-                                            <p class="field-error">{{ $message }}</p>
-                                        @enderror
+                                <div>
+                                    <label class="field-label">Bayar Transfer (per unit)</label>
+                                    <div class="money-wrap"><span class="rp-prefix">Rp</span>
+                                        <input type="text" name="purchase_transfer" value="{{ old('purchase_transfer') }}"
+                                               class="field-input money-input @error('purchase_transfer') error @enderror"
+                                               placeholder="0" inputmode="numeric" />
                                     </div>
-                                    <div>
-                                        <label class="field-label">Bayar Transfer (per unit) <span style="color:var(--warn)">*</span></label>
-                                        <div class="money-wrap">
-                                            <span class="rp-prefix">Rp</span>
-                                            <input type="text" name="purchase_transfer"
-                                                   value="{{ old('purchase_transfer') }}"
-                                                   @input="onInputTransfer($event.target.value)"
-                                                   class="field-input money-input @error('purchase_transfer') error @enderror"
-                                                   placeholder="0" inputmode="numeric" />
-                                        </div>
-                                        <p class="text-[10px] mt-1 text-gray-500">
-                                            Total Transfer: <span class="font-mono font-bold text-gray-700" x-text="formatRupiah(getRawVal('purchase_transfer') * qty)"></span>
-                                        </p>
-                                        @error('purchase_transfer')
-                                            <p class="field-error">{{ $message }}</p>
-                                        @enderror
-                                    </div>
+                                    @error('purchase_transfer')<p class="field-error">{{ $message }}</p>@enderror
                                 </div>
-                        </div>
+                            </div>
+                            <script>
+                            (function(){
+                                var labels = {cash:'pay-lbl-cash',transfer:'pay-lbl-transfer',split:'pay-lbl-split'};
+                                function update(val){
+                                    Object.keys(labels).forEach(function(k){
+                                        var el=document.getElementById(labels[k]);
+                                        if(!el)return;
+                                        el.style.borderColor = k===val?'var(--accent)':'var(--line)';
+                                        el.style.background  = k===val?'rgba(37,99,235,0.03)':'';
+                                    });
+                                    var s=document.getElementById('split-inputs');
+                                    if(s) s.style.display = val==='split'?'grid':'none';
+                                }
+                                document.querySelectorAll('[name="purchase_payment_method"]').forEach(function(r){
+                                    r.addEventListener('change',function(){update(this.value);});
+                                });
+                                var checked=document.querySelector('[name="purchase_payment_method"]:checked');
+                                update(checked?checked.value:'cash');
+                            })();
+                            </script>
                     </div>
-                </div>
-            </div>
-             <div class="space-y-5">
+                    </div> {{-- Closes Harga card --}}
+                </div> {{-- Closes Left column --}}
+
+                {{-- Right column --}}
+                <div class="space-y-5">
                     <div class="bg-white rounded-xl border p-4 space-y-2.5" style="border-color:var(--line)">
                         <button type="submit" class="btn-primary w-full" style="height:44px;font-size:14px">Simpan
                             Aksesoris</button>
@@ -270,6 +190,8 @@
                             style="height:44px;font-size:14px">Batal</a>
                     </div>
                 </div>
+
+            </div> {{-- Closes Grid container --}}
 
         </form>
     </div>

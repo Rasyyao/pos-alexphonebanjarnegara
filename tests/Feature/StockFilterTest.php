@@ -87,4 +87,52 @@ class StockFilterTest extends TestCase
             ->assertSee('Opopo c31')
             ->assertSee('iPhone 15');
     }
+
+    public function test_can_create_unit_with_formatted_currency_prices(): void
+    {
+        $admin = User::create([
+            'name' => 'Super Admin',
+            'username' => 'superadmin',
+            'password' => bcrypt('password'),
+            'role' => 'superadmin',
+            'is_active' => true,
+        ]);
+
+        // Deposit initial capital so there is enough balance
+        \App\Models\Capital::create([
+            'created_by' => $admin->id,
+            'description' => 'Initial Capital Cash',
+            'amount' => 50000000,
+            'type' => 'initial',
+            'entry_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+        ]);
+        \App\Models\Capital::create([
+            'created_by' => $admin->id,
+            'description' => 'Initial Capital Transfer',
+            'amount' => 50000000,
+            'type' => 'initial',
+            'entry_date' => now()->toDateString(),
+            'payment_method' => 'transfer',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('units.store'), [
+            'brand_name' => 'Apple',
+            'model_name' => 'iPhone 16 Pro',
+            'unit_type' => 'baru',
+            'purchase_price' => '20.000.000',
+            'purchase_date' => now()->toDateString(),
+            'purchase_cash' => '10.000.000',
+            'purchase_transfer' => '10.000.000',
+            'imei' => '999998888877777',
+        ]);
+
+        $response->assertRedirect(route('units.index'));
+        $this->assertDatabaseHas('units', [
+            'purchase_price' => 20000000,
+            'purchase_cash' => 10000000,
+            'purchase_transfer' => 10000000,
+            'imei' => '999998888877777',
+        ]);
+    }
 }

@@ -5,6 +5,21 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreCapitalRequest extends FormRequest
 {
     public function authorize(): bool { return true; }
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'amount' => $this->cleanMoney($this->amount),
+        ]);
+    }
+
+    private function cleanMoney(mixed $val): mixed
+    {
+        if (is_string($val)) {
+            return preg_replace('/[^0-9]/', '', $val);
+        }
+        return $val;
+    }
+
     public function rules(): array
     {
         return [

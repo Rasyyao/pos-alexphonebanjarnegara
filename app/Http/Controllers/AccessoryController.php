@@ -32,35 +32,27 @@ class AccessoryController extends Controller
 
     public function store(StoreAccessoryRequest $request)
     {
-        $data = $request->validated();
-        $summary = $this->finance->reportSummary();
+        $data  = $request->validated();
+        $price = (float) $data['purchase_price'];
+        $qty   = (int)   $data['stock_qty'];
+
+        [$purchaseCash, $purchaseTransfer, $data] = $this->resolveSplit($data, $price);
+
+        $summary  = $this->finance->reportSummary();
         $saldoKas = (float) $summary['saldoKas'];
         $saldoAtm = (float) $summary['saldoAtmLifetime'];
 
-        $purchaseCash = (float) ($request->purchase_cash ?? 0);
-        $purchaseTransfer = (float) ($request->purchase_transfer ?? 0);
-        $purchasePrice = (float) $request->purchase_price;
-        $stockQty = (int) ($request->stock_qty ?? 0);
-
-        if (abs($purchaseCash + $purchaseTransfer - $purchasePrice) > 0.01) {
-            return back()->withInput()->withErrors([
-                'purchase_price' => 'Jumlah cash dan transfer harus sama dengan harga beli.',
-            ]);
+        if (abs($purchaseCash + $purchaseTransfer - $price) > 0.01) {
+            $msg = 'Jumlah cash dan transfer harus sama dengan harga beli.';
+            return back()->withInput()->with('error', $msg)->withErrors(['purchase_price' => $msg]);
         }
-
-        $totalCashCost = $purchaseCash * $stockQty;
-        $totalTransferCost = $purchaseTransfer * $stockQty;
-
-        if ($totalCashCost > $saldoKas) {
-            return back()->withInput()->withErrors([
-                'purchase_cash' => 'Saldo Kas Tunai tidak cukup (Maksimal Rp ' . number_format($saldoKas, 0, ',', '.') . ', Total beli Rp ' . number_format($totalCashCost, 0, ',', '.') . ').',
-            ]);
+        if (($purchaseCash * $qty) > $saldoKas) {
+            $msg = 'Saldo Kas Tunai tidak cukup. Butuh Rp ' . number_format($purchaseCash * $qty, 0, ',', '.') . ', tersedia Rp ' . number_format($saldoKas, 0, ',', '.') . '.';
+            return back()->withInput()->with('error', $msg)->withErrors(['purchase_cash' => $msg]);
         }
-
-        if ($totalTransferCost > $saldoAtm) {
-            return back()->withInput()->withErrors([
-                'purchase_transfer' => 'Saldo ATM / Rekening tidak cukup (Maksimal Rp ' . number_format($saldoAtm, 0, ',', '.') . ', Total beli Rp ' . number_format($totalTransferCost, 0, ',', '.') . ').',
-            ]);
+        if (($purchaseTransfer * $qty) > $saldoAtm) {
+            $msg = 'Saldo ATM / Rekening tidak cukup. Butuh Rp ' . number_format($purchaseTransfer * $qty, 0, ',', '.') . ', tersedia Rp ' . number_format($saldoAtm, 0, ',', '.') . '.';
+            return back()->withInput()->with('error', $msg)->withErrors(['purchase_transfer' => $msg]);
         }
 
         $this->service->store($data);
@@ -89,36 +81,24 @@ class AccessoryController extends Controller
 
     public function update(UpdateAccessoryRequest $request, Accessory $accessory)
     {
-        $data = $request->validated();
-        $summary = $this->finance->reportSummary();
-        // Add back this accessory's existing purchase cash and transfer costs to available balances
+        $data  = $request->validated();
+        $price = (float) $data['purchase_price'];
+        $qty   = (int)   $data['stock_qty'];
+
+        [$purchaseCash, $purchaseTransfer, $data] = $this->resolveSplit($data, $price);
+
+        $summary  = $this->finance->reportSummary();
         $saldoKas = (float) $summary['saldoKas'] + ((float) $accessory->purchase_cash * $accessory->stock_qty);
         $saldoAtm = (float) $summary['saldoAtmLifetime'] + ((float) $accessory->purchase_transfer * $accessory->stock_qty);
 
-        $purchaseCash = (float) ($request->purchase_cash ?? 0);
-        $purchaseTransfer = (float) ($request->purchase_transfer ?? 0);
-        $purchasePrice = (float) $request->purchase_price;
-        $stockQty = (int) ($request->stock_qty ?? 0);
-
-        if (abs($purchaseCash + $purchaseTransfer - $purchasePrice) > 0.01) {
-            return back()->withInput()->withErrors([
-                'purchase_price' => 'Jumlah cash dan transfer harus sama dengan harga beli.',
-            ]);
+        if (abs($purchaseCash + $purchaseTransfer - $price) > 0.01) {
+            return back()->withInput()->withErrors(['purchase_price' => 'Jumlah cash dan transfer harus sama dengan harga beli.']);
         }
-
-        $totalCashCost = $purchaseCash * $stockQty;
-        $totalTransferCost = $purchaseTransfer * $stockQty;
-
-        if ($totalCashCost > $saldoKas) {
-            return back()->withInput()->withErrors([
-                'purchase_cash' => 'Saldo Kas Tunai tidak cukup (Maksimal Rp ' . number_format($saldoKas, 0, ',', '.') . ', Total beli Rp ' . number_format($totalCashCost, 0, ',', '.') . ').',
-            ]);
+        if (($purchaseCash * $qty) > $saldoKas) {
+            return back()->withInput()->withErrors(['purchase_cash' => 'Saldo Kas Tunai tidak cukup (Rp ' . number_format($saldoKas, 0, ',', '.') . ').']);
         }
-
-        if ($totalTransferCost > $saldoAtm) {
-            return back()->withInput()->withErrors([
-                'purchase_transfer' => 'Saldo ATM / Rekening tidak cukup (Maksimal Rp ' . number_format($saldoAtm, 0, ',', '.') . ', Total beli Rp ' . number_format($totalTransferCost, 0, ',', '.') . ').',
-            ]);
+        if (($purchaseTransfer * $qty) > $saldoAtm) {
+            return back()->withInput()->withErrors(['purchase_transfer' => 'Saldo ATM / Rekening tidak cukup (Rp ' . number_format($saldoAtm, 0, ',', '.') . ').']);
         }
 
         $this->service->update($accessory, $data);
@@ -129,5 +109,26 @@ class AccessoryController extends Controller
     {
         $this->service->destroy($accessory);
         return redirect()->route('accessories.index')->with('success', 'Aksesoris berhasil dihapus.');
+    }
+
+    private function resolveSplit(array $data, float $price): array
+    {
+        $method = $data['purchase_payment_method'];
+        if ($method === 'cash') {
+            $cash     = $price;
+            $transfer = 0.0;
+            $data['purchase_payment_method'] = 'cash';
+        } elseif ($method === 'transfer') {
+            $cash     = 0.0;
+            $transfer = $price;
+            $data['purchase_payment_method'] = 'transfer';
+        } else {
+            $cash     = (float) ($data['purchase_cash'] ?? 0);
+            $transfer = (float) ($data['purchase_transfer'] ?? 0);
+            $data['purchase_payment_method'] = 'cash';
+        }
+        $data['purchase_cash']     = $cash;
+        $data['purchase_transfer'] = $transfer;
+        return [$cash, $transfer, $data];
     }
 }

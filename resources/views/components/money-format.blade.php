@@ -2,7 +2,7 @@
 // Live Rupiah formatting: thousands separator (.) inserted AS YOU TYPE.
 (function() {
   function toRaw(val)  { return (val || '').replace(/[^0-9]/g, ''); }
-  function fmt(raw)    { return raw ? parseInt(raw, 10).toLocaleString('id-ID') : ''; }
+  function fmt(raw)    { return raw !== '' ? parseInt(raw, 10).toLocaleString('id-ID') : ''; }
 
   function handleInput(el) {
     var before    = el.value;

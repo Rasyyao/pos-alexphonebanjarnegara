@@ -521,6 +521,20 @@
                         {{ session('error') }}
                     </div>
                 </div>
+            @elseif ($errors->any())
+                <div class="fixed bottom-6 right-6 z-50 toast-enter">
+                    <div class="flex items-start gap-3 px-4 py-3 bg-white border rounded-lg shadow-md text-sm font-medium max-w-sm"
+                        style="border-color:var(--warn);color:var(--warn)">
+                        <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <div class="font-semibold">Gagal menyimpan</div>
+                            <div class="font-normal mt-0.5" style="color:var(--ink-mute)">{{ $errors->first() }}</div>
+                        </div>
+                    </div>
+                </div>
             @endif
 
             <main class="flex-1" style="padding: 2.5rem 2rem 3rem;">

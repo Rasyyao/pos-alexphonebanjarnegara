@@ -32,33 +32,29 @@ class UnitController extends Controller
 
     public function store(StoreUnitRequest $request)
     {
-        $summary = $this->finance->reportSummary();
+        $data  = $request->validated();
+        $price = (float) $data['purchase_price'];
+
+        [$purchaseCash, $purchaseTransfer, $data] = $this->resolveSplit($data, $price);
+
+        $summary  = $this->finance->reportSummary();
         $saldoKas = (float) $summary['saldoKas'];
         $saldoAtm = (float) $summary['saldoAtmLifetime'];
 
-        $purchaseCash = (float) ($request->purchase_cash ?? 0);
-        $purchaseTransfer = (float) ($request->purchase_transfer ?? 0);
-        $purchasePrice = (float) $request->purchase_price;
-
-        if (abs($purchaseCash + $purchaseTransfer - $purchasePrice) > 0.01) {
-            return back()->withInput()->withErrors([
-                'purchase_price' => 'Jumlah cash dan transfer harus sama dengan harga beli.',
-            ]);
+        if (abs($purchaseCash + $purchaseTransfer - $price) > 0.01) {
+            $msg = 'Jumlah cash dan transfer harus sama dengan harga beli.';
+            return back()->withInput()->with('error', $msg)->withErrors(['purchase_price' => $msg]);
         }
-
         if ($purchaseCash > $saldoKas) {
-            return back()->withInput()->withErrors([
-                'purchase_cash' => 'Saldo Kas Tunai tidak cukup (Maksimal Rp ' . number_format($saldoKas, 0, ',', '.') . ').',
-            ]);
+            $msg = 'Saldo Kas Tunai tidak cukup. Butuh Rp ' . number_format($purchaseCash, 0, ',', '.') . ', tersedia Rp ' . number_format($saldoKas, 0, ',', '.') . '.';
+            return back()->withInput()->with('error', $msg)->withErrors(['purchase_cash' => $msg]);
         }
-
         if ($purchaseTransfer > $saldoAtm) {
-            return back()->withInput()->withErrors([
-                'purchase_transfer' => 'Saldo ATM / Rekening tidak cukup (Maksimal Rp ' . number_format($saldoAtm, 0, ',', '.') . ').',
-            ]);
+            $msg = 'Saldo ATM / Rekening tidak cukup. Butuh Rp ' . number_format($purchaseTransfer, 0, ',', '.') . ', tersedia Rp ' . number_format($saldoAtm, 0, ',', '.') . '.';
+            return back()->withInput()->with('error', $msg)->withErrors(['purchase_transfer' => $msg]);
         }
 
-        $this->service->store($request->validated(), $request->user());
+        $this->service->store($data, $request->user());
         return redirect()->route('units.index')->with('success', 'Unit berhasil ditambahkan.');
     }
 
@@ -79,34 +75,26 @@ class UnitController extends Controller
 
     public function update(UpdateUnitRequest $request, Unit $unit)
     {
-        $summary = $this->finance->reportSummary();
-        // Add back this unit's existing purchase cash and transfer to available balances before checking
+        $data  = $request->validated();
+        $price = (float) $data['purchase_price'];
+
+        [$purchaseCash, $purchaseTransfer, $data] = $this->resolveSplit($data, $price);
+
+        $summary  = $this->finance->reportSummary();
         $saldoKas = (float) $summary['saldoKas'] + (float) $unit->purchase_cash;
         $saldoAtm = (float) $summary['saldoAtmLifetime'] + (float) $unit->purchase_transfer;
 
-        $purchaseCash = (float) ($request->purchase_cash ?? 0);
-        $purchaseTransfer = (float) ($request->purchase_transfer ?? 0);
-        $purchasePrice = (float) $request->purchase_price;
-
-        if (abs($purchaseCash + $purchaseTransfer - $purchasePrice) > 0.01) {
-            return back()->withInput()->withErrors([
-                'purchase_price' => 'Jumlah cash dan transfer harus sama dengan harga beli.',
-            ]);
+        if (abs($purchaseCash + $purchaseTransfer - $price) > 0.01) {
+            return back()->withInput()->withErrors(['purchase_price' => 'Jumlah cash dan transfer harus sama dengan harga beli.']);
         }
-
         if ($purchaseCash > $saldoKas) {
-            return back()->withInput()->withErrors([
-                'purchase_cash' => 'Saldo Kas Tunai tidak cukup (Maksimal Rp ' . number_format($saldoKas, 0, ',', '.') . ').',
-            ]);
+            return back()->withInput()->withErrors(['purchase_cash' => 'Saldo Kas Tunai tidak cukup (Rp ' . number_format($saldoKas, 0, ',', '.') . ').']);
         }
-
         if ($purchaseTransfer > $saldoAtm) {
-            return back()->withInput()->withErrors([
-                'purchase_transfer' => 'Saldo ATM / Rekening tidak cukup (Maksimal Rp ' . number_format($saldoAtm, 0, ',', '.') . ').',
-            ]);
+            return back()->withInput()->withErrors(['purchase_transfer' => 'Saldo ATM / Rekening tidak cukup (Rp ' . number_format($saldoAtm, 0, ',', '.') . ').']);
         }
 
-        $this->service->update($unit, $request->validated());
+        $this->service->update($unit, $data);
         return redirect()->route('units.index')->with('success', 'Unit berhasil diperbarui.');
     }
 
@@ -118,5 +106,26 @@ class UnitController extends Controller
         } catch (\LogicException $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    private function resolveSplit(array $data, float $price): array
+    {
+        $method = $data['purchase_payment_method'];
+        if ($method === 'cash') {
+            $cash     = $price;
+            $transfer = 0.0;
+            $data['purchase_payment_method'] = 'cash';
+        } elseif ($method === 'transfer') {
+            $cash     = 0.0;
+            $transfer = $price;
+            $data['purchase_payment_method'] = 'transfer';
+        } else {
+            $cash     = (float) ($data['purchase_cash'] ?? 0);
+            $transfer = (float) ($data['purchase_transfer'] ?? 0);
+            $data['purchase_payment_method'] = 'cash';
+        }
+        $data['purchase_cash']     = $cash;
+        $data['purchase_transfer'] = $transfer;
+        return [$cash, $transfer, $data];
     }
 }
