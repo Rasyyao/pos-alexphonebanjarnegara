@@ -12,15 +12,18 @@ class Unit extends Model
         'model_id', 'created_by', 'unit_type', 'grade', 'ram', 'rom', 'color',
         'imei', 'serial_number', 'purchase_price', 'photo_path', 'photo_path_2', 'photo_path_3',
         'notes', 'status', 'purchase_date', 'purchase_payment_method',
+        'purchase_cash', 'purchase_transfer',
     ];
 
     protected function casts(): array
     {
         return [
-            'status'         => UnitStatus::class,
-            'unit_type'      => UnitType::class,
-            'purchase_price' => 'decimal:2',
-            'purchase_date'  => 'date',
+            'status'            => UnitStatus::class,
+            'unit_type'         => UnitType::class,
+            'purchase_price'    => 'decimal:2',
+            'purchase_cash'     => 'decimal:2',
+            'purchase_transfer' => 'decimal:2',
+            'purchase_date'     => 'date',
         ];
     }
 

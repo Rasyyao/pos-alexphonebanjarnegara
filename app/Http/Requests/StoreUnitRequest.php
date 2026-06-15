@@ -20,6 +20,8 @@ class StoreUnitRequest extends FormRequest
             'purchase_price'          => ['required','numeric','min:0'],
             'purchase_date'           => ['required','date'],
             'purchase_payment_method' => ['nullable','in:cash,transfer'],
+            'purchase_cash'           => ['required','numeric','min:0'],
+            'purchase_transfer'       => ['required','numeric','min:0'],
             'notes'                   => ['nullable','string'],
         ];
     }

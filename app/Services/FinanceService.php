@@ -200,22 +200,22 @@ class FinanceService
         $revenueCash     = (float)\App\Models\SalePayment::where('method','cash')->whereHas('sale', fn($q) => $q->where('status','approved'))->sum('amount');
         $revenueTransfer = (float)\App\Models\SalePayment::where('method','transfer')->whereHas('sale', fn($q) => $q->where('status','approved'))->sum('amount');
 
-        // HP purchases: split by purchase_payment_method
-        $hpCash     = (float)\App\Models\Unit::where('purchase_payment_method','cash')->sum('purchase_price');
-        $hpTransfer = (float)\App\Models\Unit::where('purchase_payment_method','transfer')->sum('purchase_price');
+        // HP purchases: split by purchase_cash and purchase_transfer
+        $hpCash     = (float)\App\Models\Unit::sum('purchase_cash');
+        $hpTransfer = (float)\App\Models\Unit::sum('purchase_transfer');
 
-        // Accessories purchases: split by purchase_payment_method
-        $accAssetCash = \App\Models\Accessory::where('purchase_payment_method','cash')->get()->sum(fn($a) => (float)$a->purchase_price * $a->stock_qty);
+        // Accessories purchases: split by purchase_cash and purchase_transfer
+        $accAssetCash = (float)\App\Models\Accessory::selectRaw('COALESCE(SUM(purchase_cash * stock_qty),0) as v')->value('v');
         $accSoldCash  = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
-                            ->whereHas('accessory', fn($q) => $q->where('purchase_payment_method','cash'))
-                            ->selectRaw('COALESCE(SUM(purchase_price * quantity),0) as total')
+                            ->join('accessories', 'sale_items.accessory_id', '=', 'accessories.id')
+                            ->selectRaw('COALESCE(SUM(accessories.purchase_cash * sale_items.quantity),0) as total')
                             ->value('total');
         $totalAccessoryCash = $accAssetCash + $accSoldCash;
 
-        $accAssetTransfer = \App\Models\Accessory::where('purchase_payment_method','transfer')->get()->sum(fn($a) => (float)$a->purchase_price * $a->stock_qty);
+        $accAssetTransfer = (float)\App\Models\Accessory::selectRaw('COALESCE(SUM(purchase_transfer * stock_qty),0) as v')->value('v');
         $accSoldTransfer  = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
-                            ->whereHas('accessory', fn($q) => $q->where('purchase_payment_method','transfer'))
-                            ->selectRaw('COALESCE(SUM(purchase_price * quantity),0) as total')
+                            ->join('accessories', 'sale_items.accessory_id', '=', 'accessories.id')
+                            ->selectRaw('COALESCE(SUM(accessories.purchase_transfer * sale_items.quantity),0) as total')
                             ->value('total');
         $totalAccessoryTransfer = $accAssetTransfer + $accSoldTransfer;
 
@@ -260,6 +260,8 @@ class FinanceService
             'lifetimeExpenses'  => $lifetimeExpenses,
             'lifetimeExpensesCash'     => $lifetimeExpensesCash,
             'lifetimeExpensesTransfer' => $lifetimeExpensesTransfer,
+            'lifetimeProfit'           => $this->sales->totalProfit(),
+            'totalWithdrawal'          => $totalWithdrawal,
         ];
     }
 }

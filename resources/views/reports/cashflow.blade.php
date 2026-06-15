@@ -247,8 +247,7 @@
             ];
             $penTotal = max(1, collect($penerimaan)->sum('value'));
 
-            $lifetimeExpenses = (float) \App\Models\Expense::sum('amount');
-            $saldoRill = $totalModal - $lifetimeExpenses;
+            $saldoRill = $distTotal;
 
             $distCategories = [
                 [
@@ -426,14 +425,22 @@
                             </div>
                             <div class="flex items-center justify-between text-xs py-1.5 border-b"
                                 style="border-color:var(--line)">
-                                <span style="color:var(--ink-soft)">Total Omzet</span>
-                                <span class="font-bold font-mono" style="color:var(--success)">+ Rp
-                                    {{ number_format($lifetimeRevenue, 0, ',', '.') }}</span>
+                                <span style="color:var(--ink-soft)">Total Keuntungan (Laba)</span>
+                                <span class="font-bold font-mono text-emerald-600" style="color:var(--success)">+ Rp
+                                    {{ number_format($lifetimeProfit, 0, ',', '.') }}</span>
                             </div>
+                            @if ($totalWithdrawal > 0)
+                            <div class="flex items-center justify-between text-xs py-1.5 border-b"
+                                style="border-color:var(--line)">
+                                <span style="color:var(--ink-soft)">Total Penarikan Modal</span>
+                                <span class="font-bold font-mono text-orange-600" style="color:var(--warn)">− Rp
+                                    {{ number_format($totalWithdrawal, 0, ',', '.') }}</span>
+                            </div>
+                            @endif
                             <div class="flex items-center justify-between text-xs py-1.5 border-b"
                                 style="border-color:var(--line)">
                                 <span style="color:var(--ink-soft)">Total Pengeluaran</span>
-                                <span class="font-bold font-mono" style="color:var(--warn)">− Rp
+                                <span class="font-bold font-mono text-red-600" style="color:var(--warn)">− Rp
                                     {{ number_format($lifetimeExpenses, 0, ',', '.') }}</span>
                             </div>
                             <div class="flex items-center justify-between rounded-xl px-3 py-3 mt-1"
@@ -447,7 +454,7 @@
                                 </span>
                             </div>
                             <p class="text-[9px] font-mono text-center pt-1" style="color:var(--ink-mute)">
-                                = Total Modal − Total Pengeluaran
+                                = Modal + Laba{{ $totalWithdrawal > 0 ? ' − Penarikan' : '' }} − Pengeluaran
                             </p>
                         </div>
                     </div>
