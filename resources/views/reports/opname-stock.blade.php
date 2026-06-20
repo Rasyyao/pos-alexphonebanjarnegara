@@ -161,14 +161,9 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
       <div class="kpi-sub">Ready: {{ $readyCount }} &nbsp;|&nbsp; Retur: {{ $units->count() - $readyCount }}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Nilai Modal Stok Ready</div>
-      <div class="kpi-value">Rp {{ number_format($assetModal, 0, ',', '.') }}</div>
-      <div class="kpi-sub">Berdasarkan harga beli unit ready</div>
-    </div>
-    <div class="kpi">
       <div class="kpi-label">Aksesoris</div>
       <div class="kpi-value">{{ $accessories->count() }} jenis</div>
-      <div class="kpi-sub">Total qty: {{ number_format($accQty, 0, ',', '.') }} pcs &nbsp;|&nbsp; Modal: Rp {{ number_format($accModal, 0, ',', '.') }}</div>
+      <div class="kpi-sub">Total qty: {{ number_format($accQty, 0, ',', '.') }} pcs</div>
     </div>
     <div class="kpi" style="border-top-color:#7E22CE">
       <div class="kpi-label">Status Lembar</div>
@@ -190,7 +185,6 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
         <th>Brand / Model</th>
         <th>Spesifikasi</th>
         <th>IMEI / SN</th>
-        <th class="r">Harga Modal</th>
         <th class="c">Status Sistem</th>
         <th class="c" style="background:#1a4a2e">Qty Sistem</th>
         <th class="c" style="background:#7E22CE;min-width:60px">Qty Fisik</th>
@@ -205,7 +199,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
       @endphp
       @forelse($groupedUnits as $brandName => $brandUnits)
         <tr class="brand-row">
-          <td colspan="11" style="text-align:left;padding:6px 8px;">
+          <td colspan="10" style="text-align:left;padding:6px 8px;">
             ◆ BRAND: {{ strtoupper($brandName) }} ({{ $brandUnits->count() }} unit)
           </td>
         </tr>
@@ -223,7 +217,6 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
               {{ $u->serial_number ? ($u->imei ? ' · ' : '').'SN: '.$u->serial_number : '' }}
               @if(!$u->imei && !$u->serial_number) — @endif
             </td>
-            <td class="r">Rp {{ number_format((float)$u->purchase_price, 0, ',', '.') }}</td>
             <td class="c">
               @if($u->status->value === 'ready')
                 <span class="badge badge-ready">Ready</span>
@@ -238,11 +231,11 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
           </tr>
         @endforeach
       @empty
-        <tr><td colspan="11" style="text-align:center;padding:16px;color:#7A8AA8">Tidak ada data unit</td></tr>
+        <tr><td colspan="10" style="text-align:center;padding:16px;color:#7A8AA8">Tidak ada data unit</td></tr>
       @endforelse
       <tr class="total-row">
         <td class="cb-cell">&nbsp;</td>
-        <td colspan="6" style="text-align:right">TOTAL UNIT</td>
+        <td colspan="5" style="text-align:right">TOTAL UNIT</td>
         <td class="c">{{ $units->count() }}</td>
         <td class="c fill-cell" style="background:#FEF3C7 !important">&nbsp;</td>
         <td class="c fill-cell" style="background:#FEF3C7 !important">&nbsp;</td>
@@ -264,7 +257,6 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
         <th style="width:20px">No</th>
         <th>Nama Aksesoris</th>
         <th>Kategori</th>
-        <th class="r">Harga Modal</th>
         <th class="r">Harga Jual</th>
         <th class="c">Status Stok</th>
         <th class="c" style="background:#1a4a2e">Qty Sistem</th>
@@ -274,15 +266,13 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
       </tr>
     </thead>
     <tbody>
-      @php $ano = 1; $accTotalModal = 0; @endphp
+      @php $ano = 1; @endphp
       @foreach($accessories as $a)
-      @php $aModal = (float)$a->purchase_price; $accTotalModal += $aModal * $a->stock_qty; @endphp
       <tr>
         <td class="cb-cell"><span class="cb-box"></span></td>
         <td class="c muted">{{ $ano++ }}</td>
         <td><strong>{{ $a->name }}</strong></td>
         <td class="muted">{{ $a->category ?: 'Lain-lain' }}</td>
-        <td class="r">Rp {{ number_format($aModal, 0, ',', '.') }}</td>
         <td class="r">Rp {{ number_format((float)$a->selling_price, 0, ',', '.') }}</td>
         <td class="c">
           @if($a->stock_qty <= 0)
@@ -301,7 +291,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
       @endforeach
       <tr class="total-row">
         <td class="cb-cell">&nbsp;</td>
-        <td colspan="6" style="text-align:right">TOTAL AKSESORIS</td>
+        <td colspan="5" style="text-align:right">TOTAL AKSESORIS</td>
         <td class="c">{{ number_format($accQty, 0, ',', '.') }} pcs</td>
         <td class="c fill-cell" style="background:#FEF3C7 !important">&nbsp;</td>
         <td class="c fill-cell" style="background:#FEF3C7 !important">&nbsp;</td>

@@ -52,21 +52,13 @@
         </div>
 
         {{-- Stock Metrics --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="bg-white rounded-xl border p-5 shadow-sm" style="border-color:var(--line)">
                 <div class="text-[10px] font-bold uppercase tracking-widest font-mono mb-1.5" style="color:var(--ink-mute)">
                     Total Unit HP</div>
                 <div class="text-2xl font-bold font-mono tabular-nums" style="color:var(--ink)">{{ $units->total() }} unit
                 </div>
                 <p class="text-[11px] mt-1" style="color:var(--ink-mute)">Unit handphone dalam stok saat ini</p>
-            </div>
-
-            <div class="bg-white rounded-xl border p-5 shadow-sm" style="border-color:var(--line)">
-                <div class="text-[10px] font-bold uppercase tracking-widest font-mono mb-1.5" style="color:var(--ink-mute)">
-                    Nilai Aset Stok (HP)</div>
-                <div class="text-2xl font-bold font-mono tabular-nums" style="color:var(--accent)">Rp
-                    {{ number_format($assetValue, 0, ',', '.') }}</div>
-                <p class="text-[11px] mt-1" style="color:var(--ink-mute)">Berdasarkan harga modal beli ready unit</p>
             </div>
 
             <div class="bg-white rounded-xl border p-5 shadow-sm" style="border-color:var(--line)">
@@ -172,8 +164,6 @@
                                 style="color:var(--ink-mute)">Detail Spek</th>
                             <th class="text-left px-5 py-3 font-bold uppercase tracking-wider font-mono"
                                 style="color:var(--ink-mute)">IMEI / SN</th>
-                            <th class="text-right px-5 py-3 font-bold uppercase tracking-wider font-mono"
-                                style="color:var(--ink-mute)">Harga Beli (Modal)</th>
                             <th class="text-center px-5 py-3 font-bold uppercase tracking-wider font-mono"
                                 style="color:var(--ink-mute)">Status</th>
                         </tr>
@@ -210,10 +200,6 @@
                                     <div class="mt-0.5" style="color:var(--ink-mute)">SN:
                                         {{ $unit->serial_number ?: '—' }}</div>
                                 </td>
-                                <td class="px-5 py-3.5 text-right font-mono font-bold tabular-nums"
-                                    style="color:var(--ink)">
-                                    Rp {{ number_format($unit->purchase_price, 0, ',', '.') }}
-                                </td>
                                 <td class="px-5 py-3.5 text-center">
                                     @if ($unit->status->value === 'ready')
                                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
@@ -229,7 +215,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-5 py-12 text-center text-sm" style="color:var(--ink-mute)">
+                                <td colspan="4" class="px-5 py-12 text-center text-sm" style="color:var(--ink-mute)">
                                     Tidak ada unit yang terdaftar dengan filter ini</td>
                             </tr>
                         @endforelse
@@ -264,8 +250,6 @@
                             <th class="text-center px-5 py-3 font-bold uppercase tracking-wider font-mono"
                                 style="color:var(--ink-mute)">Jumlah Stok</th>
                             <th class="text-right px-5 py-3 font-bold uppercase tracking-wider font-mono"
-                                style="color:var(--ink-mute)">Harga Beli (Modal)</th>
-                            <th class="text-right px-5 py-3 font-bold uppercase tracking-wider font-mono"
                                 style="color:var(--ink-mute)">Harga Jual</th>
                             <th class="text-right px-5 py-3 font-bold uppercase tracking-wider font-mono"
                                 style="color:var(--ink-mute)">Margin Profit</th>
@@ -284,8 +268,6 @@
                                 </td>
                                 <td class="px-5 py-3.5 text-center font-mono font-bold tabular-nums"
                                     style="color:var(--ink)">{{ $accessory->stock_qty }} pcs</td>
-                                <td class="px-5 py-3.5 text-right font-mono tabular-nums" style="color:var(--ink-soft)">Rp
-                                    {{ number_format($accessory->purchase_price, 0, ',', '.') }}</td>
                                 <td class="px-5 py-3.5 text-right font-mono font-semibold tabular-nums"
                                     style="color:var(--ink)">Rp
                                     {{ number_format($accessory->selling_price, 0, ',', '.') }}</td>
@@ -347,12 +329,7 @@
             };
 
             const statusData = {
-                labels: {!! json_encode(
-                    array_map(
-                        fn($s) => $s === 'ready' ? 'Ready' : 'Retur',
-                        array_column($statusDist, 'status'),
-                    ),
-                ) !!},
+                labels: {!! json_encode(array_map(fn($s) => $s === 'ready' ? 'Ready' : 'Retur', array_column($statusDist, 'status'))) !!},
                 values: {!! json_encode(array_column($statusDist, 'count')) !!},
                 colors: ['#10B981', '#EF4444'],
                 labelName: 'Status Unit'

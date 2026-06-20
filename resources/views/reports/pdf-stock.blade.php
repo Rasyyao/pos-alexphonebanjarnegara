@@ -84,14 +84,9 @@
       <div class="kpi-sub">Ready: {{ $readyCount }} &nbsp;|&nbsp; Retur: {{ $units->count() - $readyCount }}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Nilai Modal Stok Ready</div>
-      <div class="kpi-value">Rp {{ number_format($assetModal, 0, ',', '.') }}</div>
-      <div class="kpi-sub">Berdasarkan harga beli unit ready</div>
-    </div>
-    <div class="kpi">
       <div class="kpi-label">Total Aksesoris</div>
       <div class="kpi-value">{{ $accessories->count() }} jenis</div>
-      <div class="kpi-sub">Qty: {{ number_format($accQty, 0, ',', '.') }} pcs &nbsp;|&nbsp; Modal: Rp {{ number_format($accModal, 0, ',', '.') }}</div>
+      <div class="kpi-sub">Qty: {{ number_format($accQty, 0, ',', '.') }} pcs</div>
     </div>
   </div>
 
@@ -105,7 +100,6 @@
         <th>Brand / Model</th>
         <th>Spesifikasi</th>
         <th>IMEI / SN</th>
-        <th class="r">Harga Modal</th>
         <th class="c">Status</th>
         <th class="c">Tgl. Beli</th>
       </tr>
@@ -114,20 +108,15 @@
       @php
         $groupedUnits = $units->groupBy(fn($u) => $u->model->brand->name ?? 'Lain-lain');
         $no = 1;
-        $totalModal = 0;
       @endphp
       @forelse($groupedUnits as $brandName => $brandUnits)
         <tr class="brand-row">
-          <td colspan="8">
+          <td colspan="7">
             ◆ BRAND: {{ strtoupper($brandName) }} ({{ $brandUnits->count() }} unit)
           </td>
         </tr>
         @foreach($brandUnits as $u)
-          @php
-            $modal  = (float)$u->purchase_price;
-            $totalModal += $modal;
-            $status = $u->status->value;
-          @endphp
+          @php $status = $u->status->value; @endphp
           <tr>
             <td class="cb-cell"><span class="cb-box"></span></td>
             <td class="c muted">{{ $no++ }}</td>
@@ -137,7 +126,6 @@
             </td>
             <td class="muted">{{ $u->ram }}/{{ $u->rom }} &nbsp; {{ $u->color }}</td>
             <td class="muted" style="font-size:7pt">{{ $u->imei ?: ($u->serial_number ?: '—') }}</td>
-            <td class="r">Rp {{ number_format($modal, 0, ',', '.') }}</td>
             <td class="c">
               @if($status === 'ready')  <span class="badge badge-ready">Ready</span>
               @else <span class="badge badge-retur">Retur</span>
@@ -147,12 +135,10 @@
           </tr>
         @endforeach
       @empty
-        <tr><td colspan="8" style="text-align:center;padding:14px;color:#9CA3AF">Tidak ada data unit</td></tr>
+        <tr><td colspan="7" style="text-align:center;padding:14px;color:#9CA3AF">Tidak ada data unit</td></tr>
       @endforelse
       <tr class="total-row">
-        <td colspan="5" style="text-align:right">TOTAL</td>
-        <td class="r">Rp {{ number_format($totalModal, 0, ',', '.') }}</td>
-        <td colspan="2"></td>
+        <td colspan="7" style="text-align:right">TOTAL &nbsp;{{ $units->count() }} unit</td>
       </tr>
     </tbody>
   </table>
@@ -168,14 +154,11 @@
         <th>Nama Aksesoris</th>
         <th>Kategori</th>
         <th class="c">Stok</th>
-        <th class="r">Harga Modal</th>
-        <th class="r">Total Modal</th>
       </tr>
     </thead>
     <tbody>
-      @php $ano = 1; $aTotalModal = 0; @endphp
+      @php $ano = 1; @endphp
       @foreach($accessories as $a)
-        @php $aModal = (float)$a->purchase_price; $aTM = $aModal * $a->stock_qty; $aTotalModal += $aTM; @endphp
         <tr>
           <td class="cb-cell"><span class="cb-box"></span></td>
           <td class="c muted">{{ $ano++ }}</td>
@@ -185,15 +168,11 @@
             {{ $a->stock_qty }}
             @if($a->stock_qty <= 5) <span style="color:#B91C1C;font-size:7pt">(!)</span> @endif
           </td>
-          <td class="r">Rp {{ number_format($aModal, 0, ',', '.') }}</td>
-          <td class="r">Rp {{ number_format($aTM,    0, ',', '.') }}</td>
         </tr>
       @endforeach
       <tr class="total-row">
         <td colspan="4" style="text-align:right">TOTAL</td>
         <td class="c">{{ number_format($accQty, 0, ',', '.') }} pcs</td>
-        <td></td>
-        <td class="r">Rp {{ number_format($aTotalModal, 0, ',', '.') }}</td>
       </tr>
     </tbody>
   </table>

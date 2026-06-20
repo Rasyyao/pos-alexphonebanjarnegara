@@ -55,11 +55,22 @@
                                     <select name="category" class="field-input @error('category') error @enderror">
                                         <option value="">Pilih Kategori (Optional)</option>
                                         @php
-                                            $defaultCategories = ['Case', 'Charger', 'Kabel', 'TWS', 'Anti Gores', 'Powerbank'];
-                                            $allCategories = collect($defaultCategories)->merge($categories ?? [])->unique()->values();
+                                            $defaultCategories = [
+                                                'Case',
+                                                'Charger',
+                                                'Kabel',
+                                                'TWS',
+                                                'Anti Gores',
+                                                'Powerbank',
+                                            ];
+                                            $allCategories = collect($defaultCategories)
+                                                ->merge($categories ?? [])
+                                                ->unique()
+                                                ->values();
                                         @endphp
-                                        @foreach($allCategories as $cat)
-                                            <option value="{{ $cat }}" {{ old('category') === $cat ? 'selected' : '' }}>
+                                        @foreach ($allCategories as $cat)
+                                            <option value="{{ $cat }}"
+                                                {{ old('category') === $cat ? 'selected' : '' }}>
                                                 {{ $cat }}
                                             </option>
                                         @endforeach
@@ -93,7 +104,6 @@
                         </div>
                         <div class="p-5 space-y-4">
                             <div>
-                                <label class="field-label">Harga Beli <span style="color:var(--warn)">*</span></label>
                                 <div class="money-wrap">
                                     <span class="rp-prefix">Rp</span>
                                     <input type="text" name="purchase_price" id="acc-buy"
@@ -111,73 +121,96 @@
                             <div>
                                 <label class="field-label">Bayar Dari <span style="color:var(--warn)">*</span></label>
                                 <div class="grid grid-cols-3 gap-3">
-                                    <label id="pay-lbl-cash" class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50">
-                                        <input type="radio" name="purchase_payment_method" value="cash" class="accent-blue-600" {{ $payMethod === 'cash' ? 'checked' : '' }} />
+                                    <label id="pay-lbl-cash"
+                                        class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50">
+                                        <input type="radio" name="purchase_payment_method" value="cash"
+                                            class="accent-blue-600" {{ $payMethod === 'cash' ? 'checked' : '' }} />
                                         <div>
                                             <div class="text-xs font-bold" style="color:var(--ink)">Kas Tunai</div>
-                                            <div class="text-[10px] font-mono" style="color:var(--ink-mute)">Saldo: Rp {{ number_format($saldoKas, 0, ',', '.') }}</div>
+                                            <div class="text-[10px] font-mono" style="color:var(--ink-mute)">Saldo: Rp
+                                                {{ number_format($saldoKas, 0, ',', '.') }}</div>
                                         </div>
                                     </label>
-                                    <label id="pay-lbl-transfer" class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50">
-                                        <input type="radio" name="purchase_payment_method" value="transfer" class="accent-blue-600" {{ $payMethod === 'transfer' ? 'checked' : '' }} />
+                                    <label id="pay-lbl-transfer"
+                                        class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50">
+                                        <input type="radio" name="purchase_payment_method" value="transfer"
+                                            class="accent-blue-600" {{ $payMethod === 'transfer' ? 'checked' : '' }} />
                                         <div>
                                             <div class="text-xs font-bold" style="color:var(--ink)">Transfer / ATM</div>
-                                            <div class="text-[10px] font-mono" style="color:var(--ink-mute)">Saldo: Rp {{ number_format($saldoAtm, 0, ',', '.') }}</div>
+                                            <div class="text-[10px] font-mono" style="color:var(--ink-mute)">Saldo: Rp
+                                                {{ number_format($saldoAtm, 0, ',', '.') }}</div>
                                         </div>
                                     </label>
-                                    <label id="pay-lbl-split" class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50">
-                                        <input type="radio" name="purchase_payment_method" value="split" class="accent-blue-600" {{ $payMethod === 'split' ? 'checked' : '' }} />
+                                    <label id="pay-lbl-split"
+                                        class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors hover:bg-gray-50">
+                                        <input type="radio" name="purchase_payment_method" value="split"
+                                            class="accent-blue-600" {{ $payMethod === 'split' ? 'checked' : '' }} />
                                         <div>
                                             <div class="text-xs font-bold" style="color:var(--ink)">Gabungan</div>
                                             <div class="text-[10px]" style="color:var(--ink-mute)">Cash + Transfer</div>
                                         </div>
                                     </label>
                                 </div>
-                                @error('purchase_payment_method')<p class="field-error">{{ $message }}</p>@enderror
+                                @error('purchase_payment_method')
+                                    <p class="field-error">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             {{-- Split inputs (only for Gabungan) --}}
-                            <div class="grid grid-cols-2 gap-4" id="split-inputs" style="{{ $payMethod === 'split' ? '' : 'display:none' }}">
+                            <div class="grid grid-cols-2 gap-4" id="split-inputs"
+                                style="{{ $payMethod === 'split' ? '' : 'display:none' }}">
                                 <div>
                                     <label class="field-label">Bayar Cash (per unit)</label>
                                     <div class="money-wrap"><span class="rp-prefix">Rp</span>
                                         <input type="text" name="purchase_cash" value="{{ old('purchase_cash') }}"
-                                               class="field-input money-input @error('purchase_cash') error @enderror"
-                                               placeholder="0" inputmode="numeric" />
+                                            class="field-input money-input @error('purchase_cash') error @enderror"
+                                            placeholder="0" inputmode="numeric" />
                                     </div>
-                                    @error('purchase_cash')<p class="field-error">{{ $message }}</p>@enderror
+                                    @error('purchase_cash')
+                                        <p class="field-error">{{ $message }}</p>
+                                    @enderror
                                 </div>
                                 <div>
                                     <label class="field-label">Bayar Transfer (per unit)</label>
                                     <div class="money-wrap"><span class="rp-prefix">Rp</span>
-                                        <input type="text" name="purchase_transfer" value="{{ old('purchase_transfer') }}"
-                                               class="field-input money-input @error('purchase_transfer') error @enderror"
-                                               placeholder="0" inputmode="numeric" />
+                                        <input type="text" name="purchase_transfer"
+                                            value="{{ old('purchase_transfer') }}"
+                                            class="field-input money-input @error('purchase_transfer') error @enderror"
+                                            placeholder="0" inputmode="numeric" />
                                     </div>
-                                    @error('purchase_transfer')<p class="field-error">{{ $message }}</p>@enderror
+                                    @error('purchase_transfer')
+                                        <p class="field-error">{{ $message }}</p>
+                                    @enderror
                                 </div>
                             </div>
                             <script>
-                            (function(){
-                                var labels = {cash:'pay-lbl-cash',transfer:'pay-lbl-transfer',split:'pay-lbl-split'};
-                                function update(val){
-                                    Object.keys(labels).forEach(function(k){
-                                        var el=document.getElementById(labels[k]);
-                                        if(!el)return;
-                                        el.style.borderColor = k===val?'var(--accent)':'var(--line)';
-                                        el.style.background  = k===val?'rgba(37,99,235,0.03)':'';
+                                (function() {
+                                    var labels = {
+                                        cash: 'pay-lbl-cash',
+                                        transfer: 'pay-lbl-transfer',
+                                        split: 'pay-lbl-split'
+                                    };
+
+                                    function update(val) {
+                                        Object.keys(labels).forEach(function(k) {
+                                            var el = document.getElementById(labels[k]);
+                                            if (!el) return;
+                                            el.style.borderColor = k === val ? 'var(--accent)' : 'var(--line)';
+                                            el.style.background = k === val ? 'rgba(37,99,235,0.03)' : '';
+                                        });
+                                        var s = document.getElementById('split-inputs');
+                                        if (s) s.style.display = val === 'split' ? 'grid' : 'none';
+                                    }
+                                    document.querySelectorAll('[name="purchase_payment_method"]').forEach(function(r) {
+                                        r.addEventListener('change', function() {
+                                            update(this.value);
+                                        });
                                     });
-                                    var s=document.getElementById('split-inputs');
-                                    if(s) s.style.display = val==='split'?'grid':'none';
-                                }
-                                document.querySelectorAll('[name="purchase_payment_method"]').forEach(function(r){
-                                    r.addEventListener('change',function(){update(this.value);});
-                                });
-                                var checked=document.querySelector('[name="purchase_payment_method"]:checked');
-                                update(checked?checked.value:'cash');
-                            })();
+                                    var checked = document.querySelector('[name="purchase_payment_method"]:checked');
+                                    update(checked ? checked.value : 'cash');
+                                })();
                             </script>
-                    </div>
+                        </div>
                     </div> {{-- Closes Harga card --}}
                 </div> {{-- Closes Left column --}}
 

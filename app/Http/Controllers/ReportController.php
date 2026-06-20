@@ -1537,7 +1537,6 @@ class ReportController extends Controller
         $unpaidDebts = (float) $summary['unpaidDebts'];
         $bankVal = (float) $summary['saldoAtmLifetime'];
         $cashVal = (float) $summary['saldoKas'];
-        $asetBulanLaluVal = (float) \App\Models\Capital::where('description', 'like', '%bulan lalu%')->sum('amount');
 
         // 1. HEADER TITLE BANNER
         $sheet->mergeCells('A1:K3');
@@ -1768,32 +1767,8 @@ class ReportController extends Controller
         $sheet->getStyle('B23')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->getStyle('B23')->getNumberFormat()->setFormatCode('"Rp "#,##0');
 
-        // Row 24: ASET BULAN LALU
-        $sheet->setCellValue('A24', 'ASET BULAN LALU');
-        $sheet->setCellValue('B24', $asetBulanLaluVal);
-        $sheet->getStyle('A24:B24')->applyFromArray([
-            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => '9D174D']], // Rose 800
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFF1F2']], // Rose 50
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FECDD3']]]
-        ]);
-        $sheet->getStyle('A24')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
-        $sheet->getStyle('B24')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->getStyle('B24')->getNumberFormat()->setFormatCode('"Rp "#,##0');
-
-        // Row 25: PENINGKATAN ASET
-        $sheet->setCellValue('A25', 'PENINGKATAN ASET');
-        $sheet->setCellValue('B25', '=B23-B24');
-        $sheet->getStyle('A25:B25')->applyFromArray([
-            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => '1E293B']], // Slate 800
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F1F5F9']], // Slate 100
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]]
-        ]);
-        $sheet->getStyle('A25')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
-        $sheet->getStyle('B25')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->getStyle('B25')->getNumberFormat()->setFormatCode('"Rp "#,##0');
-
-        // Explicitly clear cells in rows 26-31 to make sure they are blank and have no legacy styles or formulas
-        for ($r = 26; $r <= 31; $r++) {
+        // Explicitly clear cells in rows 24-31 to make sure they are blank and have no legacy styles or formulas
+        for ($r = 24; $r <= 31; $r++) {
             $sheet->setCellValue("A{$r}", '');
             $sheet->setCellValue("B{$r}", '');
             $sheet->getStyle("A{$r}:B{$r}")->applyFromArray([
