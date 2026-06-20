@@ -53,6 +53,12 @@
                 </svg>
                 Edit
             </a>
+            @endif
+            @php
+                $canDelete = auth()->user()->role->value === 'superadmin'
+                    || ($sale->status->value === 'pending' && $sale->sale_date->isToday() && $sale->created_by === auth()->id());
+            @endphp
+            @if($canDelete)
             <form method="POST" action="{{ route('sales.destroy', $sale) }}"
                   onsubmit="return confirm('Hapus transaksi {{ $sale->invoice_number }}?{{ $sale->status->value === "approved" ? " Stok akan dikembalikan." : "" }}')">
                 @csrf @method('DELETE')

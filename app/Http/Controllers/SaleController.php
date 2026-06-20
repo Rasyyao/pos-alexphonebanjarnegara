@@ -106,7 +106,19 @@ class SaleController extends Controller
 
     public function destroy(Sale $sale)
     {
-        abort_unless(auth()->user()->role->value === 'superadmin', 403);
+        $user = auth()->user();
+        $isSuperadmin = $user->role->value === 'superadmin';
+
+        if (!$isSuperadmin) {
+            abort_unless(
+                $sale->status->value === 'pending' &&
+                $sale->sale_date->isToday() &&
+                $sale->created_by === $user->id,
+                403,
+                'Transaksi hari sebelumnya sudah tutup buku dan tidak dapat dihapus.'
+            );
+        }
+
         $invoice = $sale->invoice_number;
 
         DB::transaction(function () use ($sale) {

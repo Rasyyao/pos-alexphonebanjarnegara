@@ -110,7 +110,13 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                                     </svg>
                                 </a>
-                                <form method="POST" action="{{ route('sales.destroy', $sale) }}" onsubmit="return confirm('Hapus transaksi {{ $sale->invoice_number }}? Stok akan dikembalikan.')">
+                                @endif
+                                @php
+                                    $canDelete = auth()->user()->role->value === 'superadmin'
+                                        || ($sale->status->value === 'pending' && $sale->sale_date->isToday() && $sale->created_by === auth()->id());
+                                @endphp
+                                @if($canDelete)
+                                <form method="POST" action="{{ route('sales.destroy', $sale) }}" onsubmit="return confirm('Hapus transaksi {{ $sale->invoice_number }}?{{ $sale->status->value === "approved" ? " Stok akan dikembalikan." : "" }}')">
                                     @csrf @method('DELETE')
                                     <button type="submit"
                                             title="Hapus Transaksi"
