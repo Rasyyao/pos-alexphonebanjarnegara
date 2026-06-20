@@ -384,12 +384,25 @@
                                 style="color: {{ $cashflowActive ? 'var(--accent)' : 'var(--ink-mute)' }}; background: {{ $cashflowActive ? 'var(--bg-soft)' : 'transparent' }}">
                                 Arus Kas (Cashflow)
                             </a>
+
+                            {{-- Mutasi Dana (Superadmin Only) --}}
+                            @php $mutasiActive = request()->routeIs('fund-transfers.*'); @endphp
+                            <a href="{{ route('fund-transfers.index') }}"
+                                class="flex items-center py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors"
+                                style="color: {{ $mutasiActive ? 'var(--accent)' : 'var(--ink-mute)' }}; background: {{ $mutasiActive ? 'var(--bg-soft)' : 'transparent' }}">
+                                Mutasi Dana
+                            </a>
                         @endif
                     </div>
                 </div>
 
                 @if (auth()->user()->role->value === 'superadmin')
-                    @php $pendingSales = \App\Models\Sale::where('status', 'pending')->count(); @endphp
+                    @php
+                        $pendingSales      = \App\Models\Sale::where('status', 'pending')->count();
+                        $pendingUnitsCount = \App\Models\Unit::where('status', 'pending')->count();
+                        $pendingAccCount   = \App\Models\Accessory::where('status', 'pending')->count();
+                        $pendingTotal      = $pendingSales + $pendingUnitsCount + $pendingAccCount;
+                    @endphp
                     <div class="pt-4 pb-1 px-3">
                         <span class="text-[10px] font-medium uppercase tracking-widest font-mono"
                             style="color:var(--ink-mute)">Superadmin</span>
@@ -410,9 +423,9 @@
                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span class="flex-1">Verifikasi</span>
-                        @if ($pendingSales > 0)
+                        @if ($pendingTotal > 0)
                             <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold font-mono leading-none"
-                                style="background:var(--warn);color:#fff">{{ $pendingSales }}</span>
+                                style="background:var(--warn);color:#fff">{{ $pendingTotal }}</span>
                         @endif
                     </a>
 
@@ -433,7 +446,9 @@
                             {{ $item['label'] }}
                         </a>
                     @endforeach
+
                 @endif
+
             </nav>
 
             {{-- User footer: Clean Logout button --}}

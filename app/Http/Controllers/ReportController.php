@@ -1492,6 +1492,10 @@ class ReportController extends Controller
         $data = $this->finance->financeSummaryForExport($startDate, $endDate);
         
         $expensesQuery = \App\Models\Expense::with('creator');
+        $exportRole = auth()->user()?->role->value ?? '';
+        if ($exportRole !== 'superadmin') {
+            $expensesQuery->where('category', '!=', 'tarik_owner');
+        }
         if ($startDate) {
             $expensesQuery->whereDate('expense_date', '>=', $startDate);
         }

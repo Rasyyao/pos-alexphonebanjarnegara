@@ -46,6 +46,7 @@ class AccessoryCreateTest extends TestCase
             'purchase_price' => '150.000',
             'purchase_cash' => '50.000',
             'purchase_transfer' => '100.000',
+            'purchase_payment_method' => 'split',
             'selling_price' => '250.000', // Note: selling_price is not validated in StoreAccessoryRequest, but let's include it
         ]);
 

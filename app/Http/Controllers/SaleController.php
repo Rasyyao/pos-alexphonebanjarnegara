@@ -12,6 +12,8 @@ class SaleController extends Controller
     public function __construct(
         private readonly SaleService             $service,
         private readonly SaleRepositoryInterface $sales,
+        private readonly \App\Repositories\Contracts\UnitRepositoryInterface $units,
+        private readonly \App\Repositories\Contracts\AccessoryRepositoryInterface $accessories,
     ) {}
 
     public function index()
@@ -27,8 +29,12 @@ class SaleController extends Controller
     public function verify()
     {
         abort_unless(auth()->user()->role->value === 'superadmin', 403);
-        $pending = $this->sales->pendingPaginate(10);
-        return view('sales.verify', compact('pending'));
+        
+        $pending = $this->sales->pendingPaginate(10, 'page_sale')->withQueryString();
+        $pendingUnits = $this->units->paginate(['status' => \App\Enums\UnitStatus::Pending], 10, 'page_unit')->withQueryString();
+        $pendingAccessories = $this->accessories->paginate(['status' => \App\Enums\AccessoryStatus::Pending], 10, 'page_accessory')->withQueryString();
+
+        return view('sales.verify', compact('pending', 'pendingUnits', 'pendingAccessories'));
     }
 
     public function store(\App\Http\Requests\StoreSaleRequest $request)

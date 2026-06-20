@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Repositories\Contracts\CapitalRepositoryInterface;
 use App\Repositories\Contracts\DebtRepositoryInterface;
 use App\Repositories\Contracts\ExpenseRepositoryInterface;
+use App\Repositories\Contracts\FundTransferRepositoryInterface;
 use App\Repositories\Contracts\SaleRepositoryInterface;
 use App\Repositories\Contracts\UnitRepositoryInterface;
 use Illuminate\Support\Collection;
@@ -11,11 +12,12 @@ use Illuminate\Support\Collection;
 class FinanceService
 {
     public function __construct(
-        private readonly SaleRepositoryInterface    $sales,
-        private readonly UnitRepositoryInterface    $units,
-        private readonly CapitalRepositoryInterface $capitals,
-        private readonly DebtRepositoryInterface    $debts,
-        private readonly ExpenseRepositoryInterface $expenses,
+        private readonly SaleRepositoryInterface        $sales,
+        private readonly UnitRepositoryInterface        $units,
+        private readonly CapitalRepositoryInterface     $capitals,
+        private readonly DebtRepositoryInterface        $debts,
+        private readonly ExpenseRepositoryInterface     $expenses,
+        private readonly FundTransferRepositoryInterface $fundTransfers,
     ) {}
 
     /** Current liquid cash — used for purchase validation in controllers. */
@@ -33,6 +35,42 @@ class FinanceService
         return $modalAwal - $withdrawal + $revenue - $hpCost - $accStock - $accSold - $expenses;
     }
 
+    /** Saldo Kas & ATM split — lightweight version for the Mutasi Dana page. */
+    public function saldoSplit(): array
+    {
+        $modalCash     = (float)\App\Models\Capital::whereIn('type', ['initial','addition'])->where('payment_method','cash')->whereNull('sale_id')->sum('amount');
+        $modalTransfer = (float)\App\Models\Capital::whereIn('type', ['initial','addition'])->where('payment_method','transfer')->whereNull('sale_id')->sum('amount');
+        $withdrawal    = (float)\App\Models\Capital::where('type', 'withdrawal')->sum('amount');
+
+        $revCash     = (float)\App\Models\SalePayment::where('method','cash')->whereHas('sale', fn($q) => $q->where('status','approved'))->sum('amount');
+        $revTransfer = (float)\App\Models\SalePayment::where('method','transfer')->whereHas('sale', fn($q) => $q->where('status','approved'))->sum('amount');
+
+        $hpCash     = (float)\App\Models\Unit::sum('purchase_cash');
+        $hpTransfer = (float)\App\Models\Unit::sum('purchase_transfer');
+
+        $accAssetCash     = (float)\App\Models\Accessory::selectRaw('COALESCE(SUM(purchase_cash * stock_qty),0) as v')->value('v');
+        $accAssetTransfer = (float)\App\Models\Accessory::selectRaw('COALESCE(SUM(purchase_transfer * stock_qty),0) as v')->value('v');
+        $accSoldCash      = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
+                               ->join('accessories','sale_items.accessory_id','=','accessories.id')
+                               ->selectRaw('COALESCE(SUM(accessories.purchase_cash * sale_items.quantity),0) as total')->value('total');
+        $accSoldTransfer  = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
+                               ->join('accessories','sale_items.accessory_id','=','accessories.id')
+                               ->selectRaw('COALESCE(SUM(accessories.purchase_transfer * sale_items.quantity),0) as total')->value('total');
+
+        $expCash     = (float)\App\Models\Expense::where('payment_method','cash')->sum('amount');
+        $expTransfer = (float)\App\Models\Expense::where('payment_method','transfer')->sum('amount');
+
+        $cashToAtm = $this->fundTransfers->sumCashToAtm();
+        $atmToCash = $this->fundTransfers->sumAtmToCash();
+
+        return [
+            'saldoKas' => $modalCash - $withdrawal + $revCash - $hpCash - $accAssetCash - $accSoldCash - $expCash
+                        + $atmToCash - $cashToAtm,
+            'saldoAtm' => $modalTransfer + $revTransfer - $hpTransfer - $accAssetTransfer - $accSoldTransfer - $expTransfer
+                        + $cashToAtm - $atmToCash,
+        ];
+    }
+
     /** Aggregate data for the Finance index page. */
     public function summary(): array
     {
@@ -40,6 +78,35 @@ class FinanceService
         $totalExp    = $allExpenses->sum('amount');
         $totalRev    = $this->sales->totalRevenue();
         $totalProfit = $this->sales->totalProfit();
+
+        // Saldo split calculations (lifetime)
+        $modalCash     = (float)\App\Models\Capital::whereIn('type', ['initial','addition'])->where('payment_method','cash')->whereNull('sale_id')->sum('amount');
+        $modalTransfer = (float)\App\Models\Capital::whereIn('type', ['initial','addition'])->where('payment_method','transfer')->whereNull('sale_id')->sum('amount');
+        $totalWithdrawal = (float)\App\Models\Capital::where('type', 'withdrawal')->sum('amount');
+        $revenueCash     = (float)\App\Models\SalePayment::where('method','cash')->whereHas('sale', fn($q) => $q->where('status','approved'))->sum('amount');
+        $revenueTransfer = (float)\App\Models\SalePayment::where('method','transfer')->whereHas('sale', fn($q) => $q->where('status','approved'))->sum('amount');
+        $hpCash     = (float)\App\Models\Unit::sum('purchase_cash');
+        $hpTransfer = (float)\App\Models\Unit::sum('purchase_transfer');
+        $accAssetCash = (float)\App\Models\Accessory::selectRaw('COALESCE(SUM(purchase_cash * stock_qty),0) as v')->value('v');
+        $accSoldCash  = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
+                            ->join('accessories', 'sale_items.accessory_id', '=', 'accessories.id')
+                            ->selectRaw('COALESCE(SUM(accessories.purchase_cash * sale_items.quantity),0) as total')
+                            ->value('total');
+        $accAssetTransfer = (float)\App\Models\Accessory::selectRaw('COALESCE(SUM(purchase_transfer * stock_qty),0) as v')->value('v');
+        $accSoldTransfer  = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
+                            ->join('accessories', 'sale_items.accessory_id', '=', 'accessories.id')
+                            ->selectRaw('COALESCE(SUM(accessories.purchase_transfer * sale_items.quantity),0) as total')
+                            ->value('total');
+        $expCash     = (float)\App\Models\Expense::where('payment_method','cash')->sum('amount');
+        $expTransfer = (float)\App\Models\Expense::where('payment_method','transfer')->sum('amount');
+
+        $transferCashToAtm = $this->fundTransfers->sumCashToAtm();
+        $transferAtmToCash = $this->fundTransfers->sumAtmToCash();
+
+        $saldoKas         = $modalCash - $totalWithdrawal + $revenueCash - $hpCash - $accAssetCash - $accSoldCash - $expCash
+                          + $transferAtmToCash - $transferCashToAtm;
+        $saldoAtmLifetime = $modalTransfer + $revenueTransfer - $hpTransfer - $accAssetTransfer - $accSoldTransfer - $expTransfer
+                          + $transferCashToAtm - $transferAtmToCash;
 
         return [
             'totalRevenue'        => $totalRev,
@@ -52,6 +119,11 @@ class FinanceService
             'totalExpenses'       => $totalExp,
             'expensesByCategory'  => $allExpenses->groupBy('category')->map->sum('amount'),
             'netCashFlow'         => $totalRev - $totalExp,
+            'fundTransfers'       => $this->fundTransfers->paginate(10),
+            'saldoKas'            => $saldoKas,
+            'saldoAtmLifetime'    => $saldoAtmLifetime,
+            'totalCashToAtm'      => $transferCashToAtm,
+            'totalAtmToCash'      => $transferAtmToCash,
         ];
     }
 
@@ -80,7 +152,11 @@ class FinanceService
         $revenue = (float) $salesQuery->sum('total_price');
         $profit  = (float) $salesQuery->sum('profit');
 
+        $exportRole = auth()->user()?->role->value ?? '';
         $expensesQuery = \App\Models\Expense::query();
+        if ($exportRole !== 'superadmin') {
+            $expensesQuery->where('category', '!=', 'tarik_owner');
+        }
         if ($startDate) {
             $expensesQuery->whereDate('expense_date', '>=', $startDate);
         }
@@ -125,7 +201,32 @@ class FinanceService
     /** Compile statistics for the unified reports hub page. */
     public function reportSummary(?string $startDate = null, ?string $endDate = null): array
     {
-        $today = $this->sales->todayStats();
+        $todayStats = $this->sales->todayStats();
+        
+        $user = auth()->user();
+        $role = $user ? (is_string($user->role) ? $user->role : ($user->role->value ?? '')) : '';
+
+        $todayExpensesQuery = \App\Models\Expense::whereDate('expense_date', today());
+        if ($role !== 'superadmin') {
+            $todayExpensesQuery->where('category', '!=', 'tarik_owner');
+        }
+        $todayExpenses = (float) $todayExpensesQuery->sum('amount');
+
+        $todayIncome   = (float) \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', today()))
+            ->sum('amount');
+        $todayDebt     = (float) \App\Models\Debt::whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', today()))
+            ->sum('amount');
+
+        $today = [
+            'revenue'    => $todayStats['revenue'],
+            'profit'     => $todayStats['profit'],
+            'count'      => $todayStats['count'],
+            'expenses'   => $todayExpenses,
+            'income'     => $todayIncome,
+            'debt'       => $todayDebt,
+            'net_profit' => $todayStats['profit'] - $todayExpenses,
+        ];
         $week  = $this->sales->weekStats();
         $month = $this->sales->monthStats();
 
@@ -143,6 +244,9 @@ class FinanceService
 
         // 2. Calculate expenses for the filtered date range
         $expensesQuery = \App\Models\Expense::with('creator');
+        if ($role !== 'superadmin') {
+            $expensesQuery->where('category', '!=', 'tarik_owner');
+        }
         if ($startDate) {
             $expensesQuery->whereDate('expense_date', '>=', $startDate);
         }
@@ -222,11 +326,19 @@ class FinanceService
         // Saldo ATM  = modal via transfer + revenue via transfer − HP bought via transfer − accessories bought via transfer − expenses paid via transfer
         $lifetimeExpensesCash     = (float) \App\Models\Expense::where('payment_method', 'cash')->sum('amount');
         $lifetimeExpensesTransfer = (float) \App\Models\Expense::where('payment_method', 'transfer')->sum('amount');
+        // ── Mutasi Dana (internal fund transfers between cash & ATM) ──────────
+        $transferCashToAtm = $this->fundTransfers->sumCashToAtm();
+        $transferAtmToCash = $this->fundTransfers->sumAtmToCash();
 
-        $saldoAtmLifetime = $modalTransfer + $revenueTransfer - $hpTransfer - $totalAccessoryTransfer - $lifetimeExpensesTransfer;
+        // Saldo ATM  = modal via transfer + revenue via transfer − HP bought via transfer − accessories bought via transfer − expenses paid via transfer
+        //              + cash_to_atm transfers − atm_to_cash transfers
+        $saldoAtmLifetime = $modalTransfer + $revenueTransfer - $hpTransfer - $totalAccessoryTransfer - $lifetimeExpensesTransfer
+                          + $transferCashToAtm - $transferAtmToCash;
 
         // Saldo Kas  = modal via cash − withdrawals + revenue via cash − HP bought via cash − accessories bought via cash − cash expenses
-        $saldoKas = $modalCash - $totalWithdrawal + $revenueCash - $hpCash - $totalAccessoryCash - $lifetimeExpensesCash;
+        //              + atm_to_cash transfers − cash_to_atm transfers
+        $saldoKas = $modalCash - $totalWithdrawal + $revenueCash - $hpCash - $totalAccessoryCash - $lifetimeExpensesCash
+                  + $transferAtmToCash - $transferCashToAtm;
 
         return [
             'today'            => $today,

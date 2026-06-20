@@ -55,7 +55,10 @@ class UnitController extends Controller
         }
 
         $this->service->store($data, $request->user());
-        return redirect()->route('units.index')->with('success', 'Unit berhasil ditambahkan.');
+        $msg = $request->user()->role->value === 'superadmin'
+            ? 'Unit berhasil ditambahkan ke stok.'
+            : 'Unit berhasil diinput & menunggu verifikasi superadmin.';
+        return redirect()->route('units.index')->with('success', $msg);
     }
 
     public function show(Unit $unit)
@@ -105,6 +108,20 @@ class UnitController extends Controller
             return redirect()->route('units.index')->with('success', 'Unit berhasil dihapus.');
         } catch (\LogicException $e) {
             return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function approve(Unit $unit)
+    {
+        if (auth()->user()->role !== \App\Enums\UserRole::Superadmin) {
+            abort(403);
+        }
+
+        try {
+            $this->service->approve($unit, auth()->user());
+            return redirect()->back()->with('success', 'Unit berhasil disetujui.');
+        } catch (\LogicException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 

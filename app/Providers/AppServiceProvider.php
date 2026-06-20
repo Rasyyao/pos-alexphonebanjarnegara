@@ -16,8 +16,10 @@ use App\Repositories\DebtRepository;
 use App\Repositories\ExpenseRepository;
 use App\Repositories\SaleRepository;
 use App\Repositories\UnitRepository;
+use App\Repositories\Contracts\FundTransferRepositoryInterface;
 use App\Repositories\Contracts\ProductBrandRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Repositories\FundTransferRepository;
 use App\Repositories\ProductBrandRepository;
 use App\Repositories\UserRepository;
 use Illuminate\Support\ServiceProvider;
@@ -34,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ExpenseRepositoryInterface::class,   ExpenseRepository::class);
         $this->app->bind(ProductBrandRepositoryInterface::class, ProductBrandRepository::class);
         $this->app->bind(UserRepositoryInterface::class,         UserRepository::class);
+        $this->app->bind(FundTransferRepositoryInterface::class, FundTransferRepository::class);
     }
 
     public function boot(): void

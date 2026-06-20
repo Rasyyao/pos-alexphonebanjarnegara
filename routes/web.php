@@ -9,6 +9,7 @@ use App\Http\Controllers\DebtController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\FundTransferController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,18 +36,26 @@ Route::middleware('auth')->group(function () {
     Route::get('sales/{sale}/edit', [SaleController::class, 'edit'])->middleware('role:superadmin')->name('sales.edit');
     Route::put('sales/{sale}', [SaleController::class, 'update'])->middleware('role:superadmin')->name('sales.update');
 
+    Route::middleware('role:superadmin,admin')->group(function () {
+        Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+        Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+        Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+        Route::get('reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
+        Route::get('reports/pdf/{type}', [ReportController::class, 'pdf'])->name('reports.pdf');
+    });
+
     Route::middleware('role:superadmin')->group(function () {
+        Route::post('units/{unit}/approve', [UnitController::class, 'approve'])->name('units.approve');
+        Route::post('accessories/{accessory}/approve', [AccessoryController::class, 'approve'])->name('accessories.approve');
         Route::resource('admin-users', AdminUserController::class);
         Route::get('finance', [FinanceController::class, 'index'])->name('finance.index');
         Route::get('finance/export', [FinanceController::class, 'export'])->name('finance.export');
         Route::resource('capitals', CapitalController::class)->except(['index','show','create']);
-        Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
-        Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
-        Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
         Route::patch('debts/{debt}/pay-legacy', [DebtController::class, 'markPaid'])->name('debts.mark_paid_legacy');
-        Route::get('reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
-        Route::get('reports/pdf/{type}', [ReportController::class, 'pdf'])->name('reports.pdf');
         Route::get('reports/cashflow', [ReportController::class, 'cashflow'])->name('reports.cashflow');
+        Route::post('fund-transfers', [FundTransferController::class, 'store'])->name('fund-transfers.store');
+        Route::delete('fund-transfers/{fundTransfer}', [FundTransferController::class, 'destroy'])->name('fund-transfers.destroy');
+        Route::get('fund-transfers', [FundTransferController::class, 'index'])->name('fund-transfers.index');
     });
 });
 

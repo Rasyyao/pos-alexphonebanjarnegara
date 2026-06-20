@@ -104,6 +104,7 @@
                         </div>
                         <div class="p-5 space-y-4">
                             <div>
+                                <label class="field-label">Harga Beli <span style="color:var(--warn)">*</span></label>
                                 <div class="money-wrap">
                                     <span class="rp-prefix">Rp</span>
                                     <input type="text" name="purchase_price" id="acc-buy"

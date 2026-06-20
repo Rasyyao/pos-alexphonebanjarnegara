@@ -13,4 +13,6 @@ interface ExpenseRepositoryInterface
     public function delete(Expense $expense): void;
     public function sumTotal(): float;
     public function sumByCategory(): Collection;
+    /** Get monthly expenses excluding owner withdrawals. */
+    public function monthlyExpensesExcludingOwner(int $months = 6): Collection;
 }

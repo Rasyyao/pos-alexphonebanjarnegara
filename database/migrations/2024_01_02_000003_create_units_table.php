@@ -21,7 +21,7 @@ return new class extends Migration
             $table->decimal('purchase_price', 12, 2);
             $table->string('photo_path')->nullable();
             $table->text('notes')->nullable();
-            $table->enum('status', ['ready', 'sold', 'returned'])->default('ready');
+            $table->enum('status', ['pending', 'ready', 'sold', 'returned'])->default('pending');
             $table->date('purchase_date');
             $table->timestamps();
         });

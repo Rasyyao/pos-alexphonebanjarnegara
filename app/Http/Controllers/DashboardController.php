@@ -5,6 +5,7 @@ use App\Repositories\Contracts\DebtRepositoryInterface;
 use App\Repositories\Contracts\SaleRepositoryInterface;
 use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Repositories\Contracts\AccessoryRepositoryInterface;
+use App\Repositories\Contracts\ExpenseRepositoryInterface;
 
 class DashboardController extends Controller
 {
@@ -13,6 +14,7 @@ class DashboardController extends Controller
         private readonly UnitRepositoryInterface $units,
         private readonly DebtRepositoryInterface $debts,
         private readonly AccessoryRepositoryInterface $accessories,
+        private readonly ExpenseRepositoryInterface $expenses,
     ) {}
 
     public function index()
@@ -36,10 +38,25 @@ class DashboardController extends Controller
         $typeDist         = $this->units->typeDistribution();
         $statusDist       = $this->units->statusDistribution();
 
+        // Monthly trends for last 6 months
+        $monthlyProfit    = $this->sales->monthlyProfit(6);
+        $monthlyExpenses  = $this->expenses->monthlyExpensesExcludingOwner(6);
+
+        $monthlyLabels    = $monthlyProfit->pluck('label')->toArray();
+        $monthlyProfits   = $monthlyProfit->pluck('profit')->toArray();
+        $monthlyExpData   = $monthlyExpenses->pluck('total')->toArray();
+
+        $monthlyNetProfits = [];
+        foreach ($monthlyProfits as $index => $profitVal) {
+            $expVal = $monthlyExpData[$index] ?? 0;
+            $monthlyNetProfits[] = $profitVal - $expVal;
+        }
+
         return view('dashboard.index', compact(
             'stockCounts', 'todayStats', 'weekStats', 'monthStats', 'weeklyRevenue',
             'paymentBreakdown', 'latestUnits', 'readyUnits', 'recentSales', 'pendingDebts', 'assetValue',
-            'totalRevenue', 'totalProfit', 'totalAccessories', 'brandDist', 'typeDist', 'statusDist'
+            'totalRevenue', 'totalProfit', 'totalAccessories', 'brandDist', 'typeDist', 'statusDist',
+            'monthlyLabels', 'monthlyNetProfits', 'monthlyExpData'
         ));
     }
 }

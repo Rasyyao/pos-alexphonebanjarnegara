@@ -55,8 +55,11 @@ class AccessoryController extends Controller
             return back()->withInput()->with('error', $msg)->withErrors(['purchase_transfer' => $msg]);
         }
 
-        $this->service->store($data);
-        return redirect()->route('accessories.index')->with('success', 'Aksesoris berhasil ditambahkan.');
+        $this->service->store($data, $request->user());
+        $msg = $request->user()->role->value === 'superadmin'
+            ? 'Aksesoris berhasil ditambahkan ke stok.'
+            : 'Aksesoris berhasil diinput & menunggu verifikasi superadmin.';
+        return redirect()->route('accessories.index')->with('success', $msg);
     }
 
     public function show(Accessory $accessory)
@@ -109,6 +112,20 @@ class AccessoryController extends Controller
     {
         $this->service->destroy($accessory);
         return redirect()->route('accessories.index')->with('success', 'Aksesoris berhasil dihapus.');
+    }
+
+    public function approve(Accessory $accessory)
+    {
+        if (auth()->user()->role !== \App\Enums\UserRole::Superadmin) {
+            abort(403);
+        }
+
+        try {
+            $this->service->approve($accessory, auth()->user());
+            return redirect()->back()->with('success', 'Aksesoris berhasil disetujui.');
+        } catch (\LogicException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
     private function resolveSplit(array $data, float $price): array

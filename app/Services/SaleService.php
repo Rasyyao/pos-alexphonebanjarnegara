@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Models\Sale;
 use App\Models\User;
 use App\Repositories\Contracts\AccessoryRepositoryInterface;
@@ -27,6 +28,8 @@ class SaleService
             $total = collect($data['items'])->sum(fn($i) => $i['selling_price'] * ($i['quantity'] ?? 1));
             $paid  = collect($data['payments'])->sum('amount');
 
+            $isSuperadmin = $actor->role === UserRole::Superadmin;
+
             $sale = $this->sales->create([
                 'created_by'     => $actor->id,
                 'invoice_number' => $this->generateInvoice(),
@@ -36,7 +39,8 @@ class SaleService
                 'total_price'    => $total,
                 'total_paid'     => $paid,
                 'profit'         => $this->calculateProfit($data['items']),
-                'status'         => 'pending',
+                'status'         => $isSuperadmin ? 'approved' : 'pending',
+                'approved_by'    => $isSuperadmin ? $actor->id : null,
             ]);
 
             foreach ($data['items'] as $item) {
@@ -54,6 +58,13 @@ class SaleService
                 ]);
             }
 
+            if ($isSuperadmin) {
+                foreach ($sale->items as $item) {
+                    if ($item->unit_id) $item->unit->update(['status' => 'sold']);
+                    if ($item->accessory_id) $item->accessory->decrement('stock_qty', $item->quantity);
+                }
+            }
+
             foreach ($data['payments'] as $payment) {
                 $sale->payments()->create($payment);
             }
@@ -63,7 +74,7 @@ class SaleService
                 $sale->debt()->create(['amount' => $utangTotal, 'paid_amount' => 0, 'status' => 'unpaid']);
             }
 
-            Log::info('Sale created', ['sale_id' => $sale->id, 'invoice' => $sale->invoice_number, 'by' => $actor->id]);
+            Log::info('Sale created', ['sale_id' => $sale->id, 'invoice' => $sale->invoice_number, 'by' => $actor->id, 'auto_approved' => $isSuperadmin]);
             return $sale;
         });
     }
@@ -98,6 +109,16 @@ class SaleService
                 }
                 if ($item['selling_price'] < $unit->purchase_price) {
                     $beli = 'Rp ' . number_format($unit->purchase_price, 0, ',', '.');
+                    throw new \InvalidArgumentException("Harga jual tidak boleh lebih rendah dari harga beli ({$beli}).");
+                }
+            }
+            if (!empty($item['accessory_id'])) {
+                $acc = $this->accessories->findById($item['accessory_id']);
+                if ($acc->status !== \App\Enums\AccessoryStatus::Approved) {
+                    throw new \InvalidArgumentException("Aksesoris {$acc->name} belum disetujui oleh Superadmin.");
+                }
+                if ($item['selling_price'] < $acc->purchase_price) {
+                    $beli = 'Rp ' . number_format($acc->purchase_price, 0, ',', '.');
                     throw new \InvalidArgumentException("Harga jual tidak boleh lebih rendah dari harga beli ({$beli}).");
                 }
             }

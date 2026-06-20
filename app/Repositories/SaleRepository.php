@@ -146,12 +146,12 @@ class SaleRepository implements SaleRepositoryInterface
             ->get();
     }
 
-    public function pendingPaginate(int $perPage = 10): \Illuminate\Pagination\LengthAwarePaginator
+    public function pendingPaginate(int $perPage = 10, string $pageName = 'page'): \Illuminate\Pagination\LengthAwarePaginator
     {
         return Sale::with(['creator', 'items.unit.model.brand', 'items.accessory', 'payments'])
             ->where('status', 'pending')
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage, ['*'], $pageName);
     }
 
     public function approvedForDate(string $date): Collection
@@ -186,5 +186,33 @@ class SaleRepository implements SaleRepositoryInterface
             ->latest()
             ->take($limit)
             ->get();
+    }
+
+    public function monthlyProfit(int $months = 6): Collection
+    {
+        $startDate = now()->subMonths($months - 1)->startOfMonth()->toDateString();
+        $sales = Sale::approved()
+            ->where('sale_date', '>=', $startDate)
+            ->get();
+
+        $result = collect();
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $yearMonth = $date->format('Y-m');
+
+            $monthlySales = $sales->filter(function ($sale) use ($yearMonth) {
+                return $sale->sale_date->format('Y-m') === $yearMonth;
+            });
+
+            $result->push((object)[
+                'year_month' => $yearMonth,
+                'label'      => $date->isoFormat('MMMM Y'),
+                'total'      => (float) $monthlySales->sum('total_price'),
+                'profit'     => (float) $monthlySales->sum('profit'),
+                'count'      => $monthlySales->count(),
+            ]);
+        }
+
+        return $result;
     }
 }

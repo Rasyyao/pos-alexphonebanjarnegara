@@ -26,6 +26,11 @@ class AccessoryRepository implements AccessoryRepositoryInterface
                 }
                 return $q;
             })
+            ->when(isset($filters['status']), function($q) use ($filters) {
+                return $q->where('status', $filters['status']);
+            }, function($q) {
+                return $q->where('status', \App\Enums\AccessoryStatus::Approved);
+            })
             ->latest()
             ->paginate($perPage, ['*'], $pageName);
     }
@@ -53,17 +58,20 @@ class AccessoryRepository implements AccessoryRepositoryInterface
 
     public function available(): Collection
     {
-        return Accessory::where('stock_qty', '>', 0)->get();
+        return Accessory::where('status', \App\Enums\AccessoryStatus::Approved)
+            ->where('stock_qty', '>', 0)
+            ->get();
     }
 
     public function totalStockQty(): int
     {
-        return (int) Accessory::sum('stock_qty');
+        return (int) Accessory::where('status', \App\Enums\AccessoryStatus::Approved)->sum('stock_qty');
     }
 
     public function categories(): Collection
     {
         return Accessory::select('category')
+            ->where('status', \App\Enums\AccessoryStatus::Approved)
             ->whereNotNull('category')
             ->where('category', '!=', '')
             ->distinct()

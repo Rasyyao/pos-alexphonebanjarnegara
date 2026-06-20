@@ -40,4 +40,30 @@ class ExpenseRepository implements ExpenseRepositoryInterface
             ->get()
             ->pluck('total', 'category');
     }
+
+    public function monthlyExpensesExcludingOwner(int $months = 6): Collection
+    {
+        $startDate = now()->subMonths($months - 1)->startOfMonth()->toDateString();
+        $expenses = Expense::where('category', '!=', 'tarik_owner')
+            ->where('expense_date', '>=', $startDate)
+            ->get();
+
+        $result = collect();
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $yearMonth = $date->format('Y-m');
+
+            $monthlyExp = $expenses->filter(function ($exp) use ($yearMonth) {
+                return $exp->expense_date->format('Y-m') === $yearMonth;
+            });
+
+            $result->push((object)[
+                'year_month' => $yearMonth,
+                'label'      => $date->isoFormat('MMMM Y'),
+                'total'      => (float) $monthlyExp->sum('amount'),
+            ]);
+        }
+
+        return $result;
+    }
 }

@@ -135,7 +135,7 @@ class SaleForm extends Component
     public function render()
     {
         $readyUnits  = Unit::with('model.brand')->where('status', 'ready')->get();
-        $accessories = Accessory::where('stock_qty', '>', 0)->get();
+        $accessories = Accessory::where('status', \App\Enums\AccessoryStatus::Approved)->where('stock_qty', '>', 0)->get();
 
         return view('livewire.sale-form', [
             'readyUnits'  => $readyUnits,

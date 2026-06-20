@@ -49,7 +49,6 @@
                         <th class="text-left px-5 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Unit</th>
                         <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Tipe</th>
                         <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Spesifikasi</th>
-                        <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Harga Beli</th>
                         <th class="text-center px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Status</th>
                         <th class="w-40 px-5 py-3"></th>
                     </tr>
@@ -79,9 +78,6 @@
                         <td class="px-4 py-3.5 text-xs font-mono" style="color:var(--ink-soft)">
                             {{ $unit->ram }}/{{ $unit->rom }}<br>
                             <span style="color:var(--ink-mute)">{{ $unit->color }}</span>
-                        </td>
-                        <td class="px-4 py-3.5 text-right font-semibold font-mono tabular-nums" style="color:var(--ink)">
-                            Rp {{ number_format($unit->purchase_price, 0, ',', '.') }}
                         </td>
                         <td class="px-4 py-3.5 text-center">
                             @if($unit->status->value === 'ready')

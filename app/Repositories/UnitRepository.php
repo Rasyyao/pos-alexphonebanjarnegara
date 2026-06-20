@@ -35,7 +35,11 @@ class UnitRepository implements UnitRepositoryInterface
             ->when($filters['model_id'] ?? null, fn($q, $v) => $q->where('model_id', $v))
             ->when($filters['unit_type'] ?? null, fn($q, $v) => $q->where('unit_type', $v))
             ->when($filters['grade'] ?? null, fn($q, $v) => $q->where('grade', $v))
-            ->when($filters['status'] ?? null, fn($q, $v) => $q->where('status', $v))
+            ->when(isset($filters['status']), function($q) use ($filters) {
+                return $q->where('status', $filters['status']);
+            }, function($q) {
+                return $q->where('status', '!=', \App\Enums\UnitStatus::Pending);
+            })
             ->when($filters['exclude_status'] ?? null, fn($q, $v) => $q->where('status', '!=', $v))
             ->when($filters['ram'] ?? null, fn($q, $v) => $q->where('ram', 'like', "%{$v}%"))
             ->when($filters['rom'] ?? null, fn($q, $v) => $q->where('rom', 'like', "%{$v}%"))

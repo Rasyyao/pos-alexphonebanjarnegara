@@ -132,7 +132,7 @@
                                 <label class="field-label">Harga Beli</label>
                                 <div class="money-wrap">
                                     <span class="rp-prefix">Rp</span>
-                                    <input type="text" name="purchase_price" value="{{ old('purchase_price', $unit->purchase_price) }}" required
+                                    <input type="text" name="purchase_price" value="{{ old('purchase_price', (int) $unit->purchase_price) }}" required
                                            class="field-input money-input" placeholder="0" inputmode="numeric" />
                                 </div>
                             </div>
@@ -180,7 +180,7 @@
                             <div>
                                 <label class="field-label">Bayar Cash</label>
                                 <div class="money-wrap"><span class="rp-prefix">Rp</span>
-                                    <input type="text" name="purchase_cash" value="{{ old('purchase_cash', $unit->purchase_cash) }}"
+                                    <input type="text" name="purchase_cash" value="{{ old('purchase_cash', (int) $unit->purchase_cash) }}"
                                            class="field-input money-input @error('purchase_cash') error @enderror"
                                            placeholder="0" inputmode="numeric" />
                                 </div>
@@ -189,7 +189,7 @@
                             <div>
                                 <label class="field-label">Bayar Transfer</label>
                                 <div class="money-wrap"><span class="rp-prefix">Rp</span>
-                                    <input type="text" name="purchase_transfer" value="{{ old('purchase_transfer', $unit->purchase_transfer) }}"
+                                    <input type="text" name="purchase_transfer" value="{{ old('purchase_transfer', (int) $unit->purchase_transfer) }}"
                                            class="field-input money-input @error('purchase_transfer') error @enderror"
                                            placeholder="0" inputmode="numeric" />
                                 </div>

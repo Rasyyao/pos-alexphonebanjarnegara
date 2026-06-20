@@ -8,7 +8,7 @@ class Accessory extends Model
 {
     protected $fillable = [
         'name', 'category', 'stock_qty', 'purchase_price', 'purchase_payment_method',
-        'purchase_cash', 'purchase_transfer',
+        'purchase_cash', 'purchase_transfer', 'status',
     ];
 
     protected function casts(): array
@@ -17,6 +17,7 @@ class Accessory extends Model
             'purchase_price'    => 'decimal:2',
             'purchase_cash'     => 'decimal:2',
             'purchase_transfer' => 'decimal:2',
+            'status'            => \App\Enums\AccessoryStatus::class,
         ];
     }
 

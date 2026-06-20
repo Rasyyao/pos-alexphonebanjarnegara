@@ -124,6 +124,7 @@ class StockFilterTest extends TestCase
             'purchase_date' => now()->toDateString(),
             'purchase_cash' => '10.000.000',
             'purchase_transfer' => '10.000.000',
+            'purchase_payment_method' => 'split',
             'imei' => '999998888877777',
         ]);
 

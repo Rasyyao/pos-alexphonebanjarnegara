@@ -139,12 +139,12 @@
                         </svg>
                     </div>
                 </div>
-                @php $nominalModalVal = $saldoAtmLifetime + $saldoKas - $unpaidDebts; @endphp
+                @php $nominalModalVal = $saldoAtmLifetime + $saldoKas + $unpaidDebts; @endphp
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-blue-600"
                     style="{{ $nominalModalVal >= 0 ? 'color:#2563EB' : 'color:var(--warn)' }}">
                     {{ $nominalModalVal < 0 ? '−' : '' }}Rp {{ number_format(abs($nominalModalVal), 0, ',', '.') }}
                 </div>
-                <div class="text-xs" style="color:var(--ink-mute)">saldo atm + cash − piutang aktif</div>
+                <div class="text-xs" style="color:var(--ink-mute)">saldo atm + cash + piutang aktif</div>
             </div>
 
             {{-- 3. Modal Disetor --}}
@@ -953,6 +953,9 @@
                                     <option value="gaji">Gaji</option>
                                     <option value="sewa">Sewa</option>
                                     <option value="lainnya">Lainnya</option>
+                                    @if (auth()->user()->role->value === 'superadmin')
+                                        <option value="tarik_owner">Tarik Saldo Owner</option>
+                                    @endif
                                 </select>
                             </div>
                             <div>
@@ -1057,6 +1060,9 @@
                                     <option value="gaji">Gaji</option>
                                     <option value="sewa">Sewa</option>
                                     <option value="lainnya">Lainnya</option>
+                                    @if (auth()->user()->role->value === 'superadmin')
+                                        <option value="tarik_owner">Tarik Saldo Owner</option>
+                                    @endif
                                 </select>
                             </div>
                             <div>

@@ -90,7 +90,7 @@
                             <label class="field-label">Harga Beli <span style="color:var(--warn)">*</span></label>
                             <div class="money-wrap">
                                 <span class="rp-prefix">Rp</span>
-                                <input type="text" name="purchase_price" id="acc-buy" value="{{ old('purchase_price', $accessory->purchase_price) }}" required
+                                <input type="text" name="purchase_price" id="acc-buy" value="{{ old('purchase_price', (int) $accessory->purchase_price) }}" required
                                        class="field-input money-input" placeholder="0" inputmode="numeric" />
                             </div>
                         </div>
@@ -135,7 +135,7 @@
                                 <label class="field-label">Bayar Cash (per unit)</label>
                                 <div class="money-wrap"><span class="rp-prefix">Rp</span>
                                     <input type="text" name="purchase_cash"
-                                           value="{{ old('purchase_cash', $accessory->purchase_cash) }}"
+                                           value="{{ old('purchase_cash', (int) $accessory->purchase_cash) }}"
                                            class="field-input money-input @error('purchase_cash') error @enderror"
                                            placeholder="0" inputmode="numeric" />
                                 </div>
@@ -145,7 +145,7 @@
                                 <label class="field-label">Bayar Transfer (per unit)</label>
                                 <div class="money-wrap"><span class="rp-prefix">Rp</span>
                                     <input type="text" name="purchase_transfer"
-                                           value="{{ old('purchase_transfer', $accessory->purchase_transfer) }}"
+                                           value="{{ old('purchase_transfer', (int) $accessory->purchase_transfer) }}"
                                            class="field-input money-input @error('purchase_transfer') error @enderror"
                                            placeholder="0" inputmode="numeric" />
                                 </div>

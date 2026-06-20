@@ -57,7 +57,7 @@
                         onmouseleave="this.style.filter='none'">
                         Filter Periode
                     </button>
-                    @if (auth()->user()->role->value === 'superadmin')
+                    @if (in_array(auth()->user()->role->value, ['superadmin', 'admin']))
                         <a href="{{ route('reports.pdf', ['type' => 'finance', 'start_date' => request('start_date'), 'end_date' => request('end_date')]) }}"
                             target="_blank"
                             class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center gap-1.5 border shadow-sm"
@@ -126,189 +126,103 @@
             }
         </script>
 
-        {{-- Stats Grid: Hari Ini, Minggu Ini, Bulan Ini --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
 
-            {{-- HARI INI (All Roles) --}}
-            <div class="bg-white rounded-xl border p-5 shadow-sm hover:shadow transition-shadow"
+            {{-- 1. Omzet --}}
+            <div class="bg-white rounded-xl border p-5 card-lift"
                 style="border-color:var(--line)">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-bold uppercase tracking-widest font-mono"
-                        style="color:var(--ink-mute)">Hari Ini (Daily)</span>
-                    <span class="w-2 h-2 rounded-full" style="background:var(--accent)"></span>
-                </div>
-                <div class="space-y-2.5">
-                    <div>
-                        <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Omzet</span>
-                        <div class="text-xl font-bold font-mono tracking-tight tabular-nums" style="color:var(--ink)">
-                            Rp {{ number_format($today['revenue'], 0, ',', '.') }}
-                        </div>
-                    </div>
-                    <div class="pt-2 border-t" style="border-color:var(--line)">
-                        <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Laba Bersih</span>
-                        <div class="text-xl font-bold font-mono tracking-tight tabular-nums" style="color:var(--success)">
-                            Rp {{ number_format($today['profit'], 0, ',', '.') }}
-                        </div>
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Omzet</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(37,99,235,0.08)">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
                     </div>
                 </div>
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-blue-600" style="color:#2563EB">
+                    Rp {{ number_format($today['revenue'], 0, ',', '.') }}
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Penjualan disetujui hari ini</div>
             </div>
 
-            {{-- MINGGU INI (Superadmin Only / Admin Locked) --}}
-            @if (auth()->user()->role->value === 'superadmin')
-                <div class="bg-white rounded-xl border p-5 shadow-sm hover:shadow transition-shadow"
-                    style="border-color:var(--line)">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-[10px] font-bold uppercase tracking-widest font-mono"
-                            style="color:var(--ink-mute)">Minggu Ini (Weekly)</span>
-                        <span class="w-2 h-2 rounded-full" style="background:var(--success)"></span>
-                    </div>
-                    <div class="space-y-2.5">
-                        <div>
-                            <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Omzet</span>
-                            <div class="text-xl font-bold font-mono tracking-tight tabular-nums" style="color:var(--ink)">
-                                Rp {{ number_format($week['revenue'], 0, ',', '.') }}
-                            </div>
-                        </div>
-                        <div class="pt-2 border-t" style="border-color:var(--line)">
-                            <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Laba Bersih</span>
-                            <div class="text-xl font-bold font-mono tracking-tight tabular-nums"
-                                style="color:var(--success)">
-                                Rp {{ number_format($week['profit'], 0, ',', '.') }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @else
-                <div class="bg-white rounded-xl border p-5 shadow-sm relative overflow-hidden flex flex-col justify-center border-dashed"
-                    style="border-color:var(--line); min-height: 150px;">
-                    <div
-                        class="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex flex-col items-center justify-center text-center p-4">
-                        <svg class="w-5 h-5 mb-1.5" style="color:var(--ink-mute)" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            {{-- 2. Pendapatan --}}
+            <div class="bg-white rounded-xl border p-5 card-lift"
+                style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Pendapatan</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(16,185,129,0.08)">
+                        <svg class="w-4 h-4 text-emerald-600" style="color:var(--success)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
-                        <span class="text-[11px] font-semibold" style="color:var(--ink-soft)">Minggu Ini (Weekly)</span>
-                        <span class="text-[9px] uppercase tracking-wider font-mono font-bold mt-0.5"
-                            style="color:var(--accent)">Superadmin Only</span>
                     </div>
                 </div>
-            @endif
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-emerald-600" style="color:var(--success)">
+                    Rp {{ number_format($today['income'], 0, ',', '.') }}
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Uang masuk (Tunai & Transfer)</div>
+            </div>
 
-            {{-- BULAN INI (Superadmin Only / Admin Locked) --}}
-            @if (auth()->user()->role->value === 'superadmin')
-                <div class="bg-white rounded-xl border p-5 shadow-sm hover:shadow transition-shadow"
-                    style="border-color:var(--line)">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-[10px] font-bold uppercase tracking-widest font-mono"
-                            style="color:var(--ink-mute)">Bulan Ini (Monthly)</span>
-                        <span class="w-2 h-2 rounded-full" style="background:#EF4444"></span>
-                    </div>
-                    <div class="space-y-2.5">
-                        <div>
-                            <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Omzet</span>
-                            <div class="text-xl font-bold font-mono tracking-tight tabular-nums" style="color:var(--ink)">
-                                Rp {{ number_format($month['revenue'], 0, ',', '.') }}
-                            </div>
-                        </div>
-                        <div class="pt-2 border-t" style="border-color:var(--line)">
-                            <span class="text-[11px] font-medium" style="color:var(--ink-soft)">Laba Bersih</span>
-                            <div class="text-xl font-bold font-mono tracking-tight tabular-nums"
-                                style="color:var(--success)">
-                                Rp {{ number_format($month['profit'], 0, ',', '.') }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @else
-                <div class="bg-white rounded-xl border p-5 shadow-sm relative overflow-hidden flex flex-col justify-center border-dashed"
-                    style="border-color:var(--line); min-height: 150px;">
-                    <div
-                        class="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex flex-col items-center justify-center text-center p-4">
-                        <svg class="w-5 h-5 mb-1.5" style="color:var(--ink-mute)" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            {{-- 3. Pengeluaran --}}
+            <div class="bg-white rounded-xl border p-5 card-lift"
+                style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Pengeluaran</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(239,68,68,0.08)">
+                        <svg class="w-4 h-4 text-red-600" style="color:var(--warn)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span class="text-[11px] font-semibold" style="color:var(--ink-soft)">Bulan Ini (Monthly)</span>
-                        <span class="text-[9px] uppercase tracking-wider font-mono font-bold mt-0.5"
-                            style="color:var(--accent)">Superadmin Only</span>
                     </div>
                 </div>
-            @endif
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-red-600" style="color:var(--warn)">
+                    Rp {{ number_format($today['expenses'], 0, ',', '.') }}
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Operasional & biaya hari ini</div>
+            </div>
+
+            {{-- 4. Laba Bersih --}}
+            @php $isProfitNegative = $today['net_profit'] < 0; @endphp
+            <div class="bg-white rounded-xl border p-5 card-lift"
+                style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Laba Bersih</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:{{ $isProfitNegative ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)' }}">
+                        <svg class="w-4 h-4 {{ $isProfitNegative ? 'text-red-600' : 'text-emerald-600' }}" style="color:{{ $isProfitNegative ? 'var(--warn)' : 'var(--success)' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums {{ $isProfitNegative ? 'text-red-600' : 'text-emerald-600' }}" style="color:{{ $isProfitNegative ? 'var(--warn)' : 'var(--success)' }}">
+                    Rp {{ number_format($today['net_profit'], 0, ',', '.') }}
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Penjualan dikurangi biaya</div>
+            </div>
+
+            {{-- 5. Hutang Baru --}}
+            <div class="bg-white rounded-xl border p-5 card-lift"
+                style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Hutang Baru</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(245,158,11,0.08)">
+                        <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-amber-600" style="color:#F59E0B">
+                    Rp {{ number_format($today['debt'], 0, ',', '.') }}
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Piutang baru tercatat hari ini</div>
+            </div>
 
         </div>
-        {{-- Asset Overview (Superadmin) --}}
-        @if (auth()->user()->role->value === 'superadmin')
-            @php $totalAset = ($assetValue ?? 0) + ($accAssetValue ?? 0); @endphp
-            <div class="bg-white rounded-xl border shadow-sm overflow-hidden" style="border-color:var(--line)">
-                <div class="px-5 py-4 border-b" style="border-color:var(--line);background:var(--bg-soft)">
-                    <h3 class="text-sm font-semibold" style="color:var(--ink)">Ringkasan Aset Stok</h3>
-                    <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Nilai modal yang tertanam di stok HP dan
-                        aksesoris saat ini</p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x"
-                    style="border-color:var(--line)">
-                    <div class="px-6 py-5">
-                        <div class="flex items-center gap-2.5 mb-2">
-                            <span class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                                style="background:rgba(124,58,237,0.08)">
-                                <svg class="w-3.5 h-3.5 text-violet-500" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                            </span>
-                            <span class="text-[10px] font-bold uppercase tracking-widest font-mono text-violet-500">Stok
-                                HP</span>
-                        </div>
-                        <p class="text-xl font-bold font-mono tabular-nums text-violet-600">
-                            Rp {{ number_format($assetValue ?? 0, 0, ',', '.') }}
-                        </p>
-                        <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Nilai beli HP ready di stok</p>
-                    </div>
-                    <div class="px-6 py-5">
-                        <div class="flex items-center gap-2.5 mb-2">
-                            <span class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                                style="background:rgba(14,116,144,0.08)">
-                                <svg class="w-3.5 h-3.5 text-cyan-600" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                </svg>
-                            </span>
-                            <span class="text-[10px] font-bold uppercase tracking-widest font-mono text-cyan-600">Stok
-                                Aksesoris</span>
-                        </div>
-                        <p class="text-xl font-bold font-mono tabular-nums text-cyan-700">
-                            Rp {{ number_format($accAssetValue ?? 0, 0, ',', '.') }}
-                        </p>
-                        <p class="text-[10px] mt-1" style="color:var(--ink-mute)">Nilai modal aksesoris di stok</p>
-                    </div>
-                    <div class="px-6 py-5">
-                        <div class="flex items-center gap-2.5 mb-2">
-                            <span class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                                style="background:rgba(16,128,107,0.1)">
-                                <svg class="w-3.5 h-3.5" style="color:var(--success)" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                </svg>
-                            </span>
-                            <span class="text-[10px] font-bold uppercase tracking-widest font-mono"
-                                style="color:var(--success)">Total Aset Stok</span>
-                        </div>
-                        <p class="text-xl font-bold font-mono tabular-nums" style="color:var(--success)">
-                            Rp {{ number_format($totalAset, 0, ',', '.') }}
-                        </p>
-                        <p class="text-[10px] mt-1" style="color:var(--ink-mute)">HP + Aksesoris gabungan</p>
-                    </div>
-                </div>
-            </div>
-        @endif
 
-        {{-- Capitals and Expenses for Superadmin --}}
-        @if (auth()->user()->role->value === 'superadmin')
+        {{-- Capitals and Expenses for Superadmin and Admin --}}
+        @if (in_array(auth()->user()->role->value, ['superadmin', 'admin']))
             <div class="space-y-6 mt-6">
 
                 {{-- Operational Expenses Log --}}
@@ -362,7 +276,9 @@
                                                 {{ $expense->description }}</td>
                                             <td class="px-5 py-3">
                                                 <span
-                                                    class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-mono text-[9px] capitalize">{{ $expense->category }}</span>
+                                                    class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-mono text-[9px]">
+                                                    {{ $expense->category === 'tarik_owner' ? 'Tarik Saldo Owner' : ($expense->category === 'listrik' ? 'Listrik & Gas' : ucwords($expense->category)) }}
+                                                </span>
                                             </td>
                                             <td class="px-5 py-3">
                                                 @if (($expense->payment_method ?? 'cash') === 'transfer')
@@ -530,6 +446,9 @@
                                         <option value="gaji">Gaji</option>
                                         <option value="sewa">Sewa</option>
                                         <option value="lainnya">Lainnya</option>
+                                        @if (auth()->user()->role->value === 'superadmin')
+                                            <option value="tarik_owner">Tarik Saldo Owner</option>
+                                        @endif
                                     </select>
                                 </div>
                                 <div>
@@ -752,6 +671,9 @@
                                     <option value="gaji">Gaji</option>
                                     <option value="sewa">Sewa</option>
                                     <option value="lainnya">Lainnya</option>
+                                    @if (auth()->user()->role->value === 'superadmin')
+                                        <option value="tarik_owner">Tarik Saldo Owner</option>
+                                    @endif
                                 </select>
                             </div>
                             <div>

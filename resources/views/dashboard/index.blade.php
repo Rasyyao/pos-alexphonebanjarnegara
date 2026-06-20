@@ -194,22 +194,17 @@
         </div> -->
     </div>
 
-    {{-- ── Chart + Analisis Proporsi Stok (3:2 Grid Ratio) ── --}}
-    <div class="grid lg:grid-cols-5 gap-5">
-
-        {{-- Tren Pendapatan dual-line chart (3/5 columns) --}}
-        <div class="lg:col-span-3 bg-white rounded-xl border p-5 flex flex-col" style="border-color:var(--line)">
+    {{-- ── Chart Grid (50:50) ── --}}
+    <div class="grid lg:grid-cols-2 gap-5">
+        <div class="bg-white rounded-xl border p-5 flex flex-col" style="border-color:var(--line)">
             <div class="flex items-start justify-between mb-4">
                 <div>
-                    <div class="text-sm font-semibold" style="color:var(--ink)">Tren Pendapatan (7 Hari Terakhir)</div>
+                    <div class="text-sm font-semibold" style="color:var(--ink)">Tren Laba Bersih (6 Bulan Terakhir)</div>
                     <div class="text-xs font-mono mt-0.5" style="color:var(--ink-mute)">
-                        Visualisasi naik-turun omset kotor berbanding profit bersih toko.
+                        Laba bersih per bulan (penjualan dikurangi biaya, tidak termasuk gaji owner).
                     </div>
                 </div>
                 <div class="flex items-center gap-4 text-[11px] font-mono flex-shrink-0">
-                    <span class="flex items-center gap-1.5" style="color:var(--accent)">
-                        <span class="w-6 h-0.5 inline-block rounded" style="background:var(--accent)"></span>Omset Kotor
-                    </span>
                     <span class="flex items-center gap-1.5" style="color:var(--success)">
                         <span class="w-6 h-0.5 inline-block rounded" style="background:var(--success)"></span>Laba Bersih
                     </span>
@@ -217,175 +212,78 @@
                 </div>
             </div>
 
-            @php
-                $days = collect(range(6,0))->map(fn($i) => now()->subDays($i)->toDateString());
-                $chartLabels = [];
-                $chartRevenue = [];
-                $chartProfit  = [];
-                foreach($days as $day) {
-                    $row = $weeklyRevenue->firstWhere('date', $day);
-                    $chartLabels[]  = \Carbon\Carbon::parse($day)->isoFormat('ddd, D/M');
-                    $chartRevenue[] = $row?->total  ?? 0;
-                    $chartProfit[]  = $row?->profit ?? 0;
-                }
-            @endphp
             <div class="relative w-full flex-1" style="min-height:280px">
                 <canvas id="trendChart"></canvas>
             </div>
-            <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                const ctx = document.getElementById('trendChart').getContext('2d');
-
-                const gradBlue = ctx.createLinearGradient(0, 0, 0, 280);
-                gradBlue.addColorStop(0, 'rgba(37,99,235,0.15)');
-                gradBlue.addColorStop(1, 'rgba(37,99,235,0.00)');
-
-                const gradGreen = ctx.createLinearGradient(0, 0, 0, 280);
-                gradGreen.addColorStop(0, 'rgba(16,128,107,0.12)');
-                gradGreen.addColorStop(1, 'rgba(16,128,107,0.00)');
-
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: {!! json_encode($chartLabels) !!},
-                        datasets: [
-                            {
-                                label: 'Omset Kotor',
-                                data: {!! json_encode($chartRevenue) !!},
-                                borderColor: '#2563EB',
-                                borderWidth: 2,
-                                backgroundColor: gradBlue,
-                                fill: true,
-                                tension: 0.35,
-                                pointBackgroundColor: '#2563EB',
-                                pointBorderColor: '#FFFFFF',
-                                pointBorderWidth: 1.5,
-                                pointRadius: 4,
-                                pointHoverRadius: 6
-                            },
-                            {
-                                label: 'Laba Bersih',
-                                data: {!! json_encode($chartProfit) !!},
-                                borderColor: '#10806B',
-                                borderWidth: 2,
-                                backgroundColor: gradGreen,
-                                fill: true,
-                                tension: 0.35,
-                                pointBackgroundColor: '#10806B',
-                                pointBorderColor: '#FFFFFF',
-                                pointBorderWidth: 1.5,
-                                pointRadius: 4,
-                                pointHoverRadius: 6
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: '#0A2540',
-                                titleColor: '#FFFFFF',
-                                bodyColor: 'rgba(255,255,255,0.75)',
-                                padding: 12,
-                                cornerRadius: 10,
-                                displayColors: true,
-                                callbacks: {
-                                    label: function(ctx) {
-                                        return ' ' + ctx.dataset.label + ': Rp ' + Number(ctx.raw).toLocaleString('id-ID');
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                grid: { display: false },
-                                ticks: { color: '#7A8AA8', font: { family: '"Satoshi", sans-serif', size: 11 } }
-                            },
-                            y: {
-                                grid: { color: '#E4E9F2', drawTicks: false },
-                                ticks: {
-                                    color: '#7A8AA8',
-                                    font: { family: '"Satoshi", sans-serif', size: 11 },
-                                    callback: function(v) {
-                                        if (v >= 1000000) return 'Rp ' + (v / 1000000).toFixed(1) + 'jt';
-                                        if (v >= 1000)    return 'Rp ' + (v / 1000) + 'rb';
-                                        return 'Rp ' + v;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            });
-            </script>
 
             {{-- Chart summary footer --}}
+            @php
+                $avgProfit = count($monthlyNetProfits) > 0 ? array_sum($monthlyNetProfits) / count($monthlyNetProfits) : 0;
+                $maxProfit = count($monthlyNetProfits) > 0 ? max($monthlyNetProfits) : 0;
+                $thisMonthProfit = count($monthlyNetProfits) > 0 ? end($monthlyNetProfits) : 0;
+            @endphp
             <div class="grid grid-cols-3 border-t mt-4 pt-4 divide-x" style="border-color:var(--line)">
                 <div class="pr-4">
-                    <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Total Omzet</span>
-                    <span class="text-sm font-bold font-mono" style="color:var(--ink)">
-                        Rp {{ number_format($weeklyRevenue->sum('total'), 0, ',', '.') }}
+                    <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Rata-rata Laba</span>
+                    <span class="text-sm font-bold font-mono {{ $avgProfit < 0 ? 'text-red-600' : 'text-emerald-600' }}" style="color:{{ $avgProfit < 0 ? 'var(--warn)' : 'var(--success)' }}">
+                        Rp {{ number_format($avgProfit, 0, ',', '.') }}
                     </span>
                 </div>
                 <div class="px-4">
-                    <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--success)">Total Laba</span>
-                    <span class="text-sm font-bold font-mono" style="color:var(--success)">
-                        Rp {{ number_format($weeklyRevenue->sum('profit'), 0, ',', '.') }}
+                    <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Laba Tertinggi</span>
+                    <span class="text-sm font-bold font-mono text-blue-600" style="color:#2563EB">
+                        Rp {{ number_format($maxProfit, 0, ',', '.') }}
                     </span>
                 </div>
                 <div class="pl-4">
-                    <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--accent)">Traffic Penjualan</span>
-                    <span class="text-sm font-bold font-mono" style="color:var(--accent)">
-                        {{ $weeklyRevenue->sum('count') }} Transaksi
+                    <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--success)">Laba Bulan Ini</span>
+                    <span class="text-sm font-bold font-mono {{ $thisMonthProfit < 0 ? 'text-red-600' : 'text-emerald-600' }}" style="color:{{ $thisMonthProfit < 0 ? 'var(--warn)' : 'var(--success)' }}">
+                        Rp {{ number_format($thisMonthProfit, 0, ',', '.') }}
                     </span>
                 </div>
             </div>
         </div>
 
-        {{-- Analisis Proporsi Stok (2/5 columns for perfect 3:2 ratio) --}}
-        <div class="lg:col-span-2 bg-white rounded-xl border p-5 flex flex-col shadow-sm" style="border-color:var(--line)">
+        {{-- Tren Pengeluaran (2/5 columns for perfect 3:2 ratio) --}}
+        <div class="bg-white rounded-xl border p-5 flex flex-col shadow-sm" style="border-color:var(--line)">
             <div class="flex items-center justify-between border-b pb-4 mb-4" style="border-color:var(--line)">
                 <div>
-                    <h3 class="text-sm font-semibold" style="color:var(--ink)">Analisis Proporsi Stok</h3>
-                    <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Proporsi stok handphone.</p>
+                    <h3 class="text-sm font-semibold" style="color:var(--ink)">Tren Pengeluaran (6 Bulan Terakhir)</h3>
+                    <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Biaya operasional (tidak termasuk gaji owner).</p>
                 </div>
-                
-                {{-- Tabs Segmented Controls --}}
-                <div class="flex items-center gap-0.5 bg-gray-100 p-0.5 rounded-lg text-xs font-semibold flex-shrink-0" style="height: 32px;">
-                    <button type="button" id="tab-brand" onclick="switchStockTab('brand')" 
-                            class="px-2.5 rounded-md transition-all text-[10px] h-6 flex items-center justify-center bg-white text-blue-600 font-bold shadow-sm">
-                        Brand
-                    </button>
-                    <button type="button" id="tab-type" onclick="switchStockTab('type')" 
-                            class="px-2.5 rounded-md transition-all text-[10px] h-6 flex items-center justify-center text-gray-500 hover:text-gray-800">
-                        Kondisi
-                    </button>
-                    <button type="button" id="tab-status" onclick="switchStockTab('status')" 
-                            class="px-2.5 rounded-md transition-all text-[10px] h-6 flex items-center justify-center text-gray-500 hover:text-gray-800">
-                        Status
-                    </button>
+                <div class="flex items-center gap-1.5 text-[11px] font-mono flex-shrink-0" style="color:var(--warn)">
+                    <span class="w-3 h-3 inline-block rounded" style="background:#EF4444"></span>Pengeluaran
                 </div>
             </div>
 
-            <div class="flex flex-col items-center flex-1 justify-center">
-                {{-- Doughnut Container --}}
-                <div class="relative flex items-center justify-center mb-4" style="width:200px; height:200px;">
-                    <canvas id="stockPropChart"></canvas>
-                    {{-- Absolute Center text --}}
-                    <div class="absolute flex flex-col items-center justify-center text-center">
-                        <span id="stock-prop-total" class="text-2xl font-extrabold font-mono tracking-tight" style="color:var(--ink)">0</span>
-                        <span class="text-[8px] uppercase tracking-widest font-bold mt-0.5" style="color:var(--ink-mute)">Unit Total</span>
-                    </div>
-                </div>
+            <div class="relative w-full flex-1" style="min-height:280px">
+                <canvas id="expenseChart"></canvas>
+            </div>
 
-                {{-- Custom Legend Container --}}
-                <div class="w-full border-t pt-3 mt-1" style="border-color:var(--line)">
-                    <div id="stock-prop-legend" class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] max-w-md mx-auto">
-                        {{-- Rendered dynamically by JS --}}
-                    </div>
+            {{-- Expense summary footer --}}
+            @php
+                $avgExpense = count($monthlyExpData) > 0 ? array_sum($monthlyExpData) / count($monthlyExpData) : 0;
+                $totalExpense = array_sum($monthlyExpData);
+                $thisMonthExpense = count($monthlyExpData) > 0 ? end($monthlyExpData) : 0;
+            @endphp
+            <div class="grid grid-cols-3 border-t mt-4 pt-4 divide-x" style="border-color:var(--line)">
+                <div class="pr-4">
+                    <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Rata-rata</span>
+                    <span class="text-sm font-bold font-mono text-red-600" style="color:var(--warn)">
+                        Rp {{ number_format($avgExpense, 0, ',', '.') }}
+                    </span>
+                </div>
+                <div class="px-4">
+                    <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Total 6 Bln</span>
+                    <span class="text-sm font-bold font-mono text-red-600" style="color:var(--warn)">
+                        Rp {{ number_format($totalExpense, 0, ',', '.') }}
+                    </span>
+                </div>
+                <div class="pl-4">
+                    <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Bulan Ini</span>
+                    <span class="text-sm font-bold font-mono text-red-600" style="color:var(--warn)">
+                        Rp {{ number_format($thisMonthExpense, 0, ',', '.') }}
+                    </span>
                 </div>
             </div>
         </div>
@@ -393,126 +291,138 @@
     </div>
 
     <script>
-        const stockPalette = [
-            '#2563EB', // Brand active blue
-            '#10806B', // Clean success emerald
-            '#8B5CF6', // Purple/Violet
-            '#F59E0B', // Amber/Orange
-            '#EC4899', // Pink
-            '#14B8A6', // Teal
-            '#F43F5E', // Rose/Red
-            '#6366F1', // Indigo
-            '#84CC16', // Lime
-            '#64748B'  // Slate/Gray
-        ];
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Trend Chart (Net Profit)
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        const gradGreen = ctxTrend.createLinearGradient(0, 0, 0, 280);
+        gradGreen.addColorStop(0, 'rgba(16,128,107,0.15)');
+        gradGreen.addColorStop(1, 'rgba(16,128,107,0.00)');
 
-        const stockPropData = {
-            brand: {!! json_encode($brandData) !!},
-            type: {!! json_encode($typeData) !!},
-            status: {!! json_encode($statusData) !!}
-        };
-
-        let stockPropChart = null;
-
-        function switchStockTab(tab) {
-            // 1. Update buttons styles
-            ['brand', 'type', 'status'].forEach(t => {
-                const btn = document.getElementById('tab-' + t);
-                if (btn) {
-                    if (t === tab) {
-                        btn.className = 'px-2.5 rounded-md transition-all text-[10px] h-6 flex items-center justify-center bg-white text-blue-600 font-bold shadow-sm';
-                    } else {
-                        btn.className = 'px-2.5 rounded-md transition-all text-[10px] h-6 flex items-center justify-center text-gray-500 hover:text-gray-800';
-                    }
-                }
-            });
-
-            // 2. Load dataset
-            const dataset = stockPropData[tab];
-            
-            // Calculate total
-            const total = dataset.reduce((sum, item) => sum + item.count, 0);
-            document.getElementById('stock-prop-total').innerText = total;
-
-            const labels = dataset.map(item => item.label);
-            const counts = dataset.map(item => item.count);
-            const colors = dataset.map((_, i) => stockPalette[i % stockPalette.length]);
-
-            // 3. Render chart
-            const ctx = document.getElementById('stockPropChart').getContext('2d');
-            if (stockPropChart) {
-                stockPropChart.destroy();
-            }
-
-            stockPropChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: counts,
-                        backgroundColor: colors,
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: {!! json_encode($monthlyLabels) !!},
+                datasets: [
+                    {
+                        label: 'Laba Bersih',
+                        data: {!! json_encode($monthlyNetProfits) !!},
+                        borderColor: '#10806B',
                         borderWidth: 2,
-                        borderColor: '#ffffff',
-                        hoverOffset: 4
-                    }]
+                        backgroundColor: gradGreen,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#10806B',
+                        pointBorderColor: '#FFFFFF',
+                        pointBorderWidth: 1.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0A2540',
+                        titleColor: '#FFFFFF',
+                        bodyColor: 'rgba(255,255,255,0.75)',
+                        padding: 12,
+                        cornerRadius: 10,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(ctx) {
+                                return ' ' + ctx.dataset.label + ': Rp ' + Number(ctx.raw).toLocaleString('id-ID');
+                            }
+                        }
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%', // Sleek thin doughnut
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#0A2540',
-                            titleColor: '#FFFFFF',
-                            bodyColor: 'rgba(255,255,255,0.8)',
-                            padding: 10,
-                            cornerRadius: 8,
-                            callbacks: {
-                                label: function(ctx) {
-                                    const val = ctx.raw;
-                                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                                    return ' ' + ctx.label + ': ' + val + ' unit (' + pct + '%)';
-                                }
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#7A8AA8', font: { family: '"Satoshi", sans-serif', size: 11 } }
+                    },
+                    y: {
+                        grid: { color: '#E4E9F2', drawTicks: false },
+                        ticks: {
+                            color: '#7A8AA8',
+                            font: { family: '"Satoshi", sans-serif', size: 11 },
+                            callback: function(v) {
+                                if (v >= 1000000) return 'Rp ' + (v / 1000000).toFixed(1) + 'jt';
+                                if (v >= 1000)    return 'Rp ' + (v / 1000) + 'rb';
+                                return 'Rp ' + v;
                             }
                         }
                     }
                 }
-            });
-
-            // 4. Render legend list
-            const legendContainer = document.getElementById('stock-prop-legend');
-            legendContainer.innerHTML = '';
-            
-            if (dataset.length === 0) {
-                legendContainer.innerHTML = `<div class="col-span-2 text-center text-gray-400 py-4">Tidak ada data stok</div>`;
-                return;
             }
-
-            dataset.forEach((item, idx) => {
-                const color = colors[idx];
-                const pct = total > 0 ? ((item.count / total) * 100).toFixed(1) : 0;
-                
-                const colEl = document.createElement('div');
-                colEl.className = 'flex items-center justify-between py-1 px-1.5 hover:bg-gray-50 rounded transition-colors';
-                colEl.innerHTML = `
-                    <div class="flex items-center gap-1.5 truncate mr-1">
-                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${color}"></span>
-                        <span class="font-medium text-gray-600 truncate text-[10px]">${item.label}</span>
-                    </div>
-                    <div class="font-mono text-gray-950 font-bold flex-shrink-0 text-[10px]">
-                        ${item.count} <span class="text-[9px] text-gray-400 font-normal">(${pct}%)</span>
-                    </div>
-                `;
-                legendContainer.appendChild(colEl);
-            });
-        }
-
-        document.addEventListener("DOMContentLoaded", function() {
-            setTimeout(() => {
-                switchStockTab('brand');
-            }, 100);
         });
+
+        // 2. Expense Chart
+        const ctxExp = document.getElementById('expenseChart').getContext('2d');
+        const gradRed = ctxExp.createLinearGradient(0, 0, 0, 280);
+        gradRed.addColorStop(0, 'rgba(239,68,68,0.22)');
+        gradRed.addColorStop(1, 'rgba(239,68,68,0.02)');
+
+        new Chart(ctxExp, {
+            type: 'bar',
+            data: {
+                labels: {!! json_encode($monthlyLabels) !!},
+                datasets: [
+                    {
+                        label: 'Pengeluaran',
+                        data: {!! json_encode($monthlyExpData) !!},
+                        backgroundColor: gradRed,
+                        borderColor: '#EF4444',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        maxBarThickness: 32
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0A2540',
+                        titleColor: '#FFFFFF',
+                        bodyColor: 'rgba(255,255,255,0.75)',
+                        padding: 12,
+                        cornerRadius: 10,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(ctx) {
+                                return ' ' + ctx.dataset.label + ': Rp ' + Number(ctx.raw).toLocaleString('id-ID');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#7A8AA8', font: { family: '"Satoshi", sans-serif', size: 11 } }
+                    },
+                    y: {
+                        grid: { color: '#E4E9F2', drawTicks: false },
+                        ticks: {
+                            color: '#7A8AA8',
+                            font: { family: '"Satoshi", sans-serif', size: 11 },
+                            callback: function(v) {
+                                if (v >= 1000000) return 'Rp ' + (v / 1000000).toFixed(1) + 'jt';
+                                if (v >= 1000)    return 'Rp ' + (v / 1000) + 'rb';
+                                return 'Rp ' + v;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
     </script>
 
     {{-- ── Daftar Stok HP Terbaru ── --}}

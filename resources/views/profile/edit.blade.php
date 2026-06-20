@@ -22,11 +22,11 @@
             </div>
 
             <div>
-                <label class="field-label" for="email">Email</label>
-                <input id="email" name="email" type="email" value="{{ old('email', $user->email) }}"
+                <label class="field-label" for="username">Username</label>
+                <input id="username" name="username" type="text" value="{{ old('username', $user->username) }}"
                        required autocomplete="username"
-                       class="field-input @error('email') error @enderror" />
-                @error('email')<p class="field-error">{{ $message }}</p>@enderror
+                       class="field-input @error('username') error @enderror" />
+                @error('username')<p class="field-error">{{ $message }}</p>@enderror
             </div>
 
             <div class="flex items-center gap-4 pt-1">
