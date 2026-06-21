@@ -53,14 +53,31 @@ class ReportController extends Controller
             }
         }
 
+        // Stock purchased on this date (superadmin only)
+        $unitsToday        = \App\Models\Unit::with('model.brand')
+                                ->whereDate('purchase_date', $date)
+                                ->orderBy('created_at')
+                                ->get();
+        $accToday          = \App\Models\Accessory::whereDate('created_at', $date)
+                                ->orderBy('name')
+                                ->get();
+        $stockCashOut      = (float) $unitsToday->sum('purchase_cash')
+                           + (float) $accToday->sum(fn($a) => (float)$a->purchase_cash * $a->stock_qty);
+        $stockTransferOut  = (float) $unitsToday->sum('purchase_transfer')
+                           + (float) $accToday->sum(fn($a) => (float)$a->purchase_transfer * $a->stock_qty);
+
         return view('reports.daily', [
-            'date'          => $date,
-            'sales'         => $sales,
-            'total_revenue' => $report['total_revenue'],
-            'total_profit'  => $report['total_profit'],
-            'total_cash'    => $total_cash,
-            'total_transfer'=> $total_transfer,
-            'total_debt'    => $total_debt,
+            'date'            => $date,
+            'sales'           => $sales,
+            'total_revenue'   => $report['total_revenue'],
+            'total_profit'    => $report['total_profit'],
+            'total_cash'      => $total_cash,
+            'total_transfer'  => $total_transfer,
+            'total_debt'      => $total_debt,
+            'unitsToday'      => $unitsToday,
+            'accToday'        => $accToday,
+            'stockCashOut'    => $stockCashOut,
+            'stockTransferOut'=> $stockTransferOut,
         ]);
     }
 
@@ -1547,8 +1564,8 @@ class ReportController extends Controller
         $data = $this->finance->financeSummaryForExport($startDate, $endDate);
         
         $expensesQuery = \App\Models\Expense::with('creator');
-        $exportRole = auth()->user()?->role->value ?? '';
-        if ($exportRole !== 'superadmin') {
+        $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
+        if (!$isSuperAdmin) {
             $expensesQuery->where('category', '!=', 'tarik_owner');
         }
         if ($startDate) {
@@ -1558,6 +1575,46 @@ class ReportController extends Controller
             $expensesQuery->whereDate('expense_date', '<=', $endDate);
         }
         $expensesList = $expensesQuery->latest('expense_date')->get();
+
+        // Fetch units purchased in the filtered range and map to virtual Expense models
+        $unitsListQuery = \App\Models\Unit::with('creator', 'model.brand');
+        if ($startDate) {
+            $unitsListQuery->whereDate('purchase_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $unitsListQuery->whereDate('purchase_date', '<=', $endDate);
+        }
+        $unitsList = $unitsListQuery->latest('purchase_date')->get();
+
+        $virtualExpenses = $unitsList->map(function ($unit) {
+            $brand = $unit->model->brand->name ?? '';
+            $model = $unit->model->name ?? '';
+            $spec = "{$brand} {$model} ({$unit->ram}/{$unit->rom}) - {$unit->color}";
+            $imei = $unit->imei ? " IMEI: {$unit->imei}" : "";
+            $sn = $unit->serial_number ? " SN: {$unit->serial_number}" : "";
+            $paymentMethod = $unit->purchase_payment_method ?? 'cash';
+            
+            $exp = new \App\Models\Expense();
+            $exp->id = null;
+            $exp->is_virtual = true;
+            $exp->unit_id = $unit->id;
+            $exp->expense_date = $unit->purchase_date;
+            $exp->description = "Pembelian Stok HP: {$spec}";
+            $exp->category = "stok_hp";
+            $exp->payment_method = $paymentMethod;
+            $exp->notes = "Kondisi: " . ucfirst($unit->unit_type->value) . ($unit->grade ? " (Grade {$unit->grade})" : "") . $imei . $sn;
+            $exp->amount = $unit->purchase_price;
+            $exp->created_by = $unit->created_by;
+            $exp->setRelation('creator', $unit->creator);
+            return $exp;
+        });
+
+        $expensesList = $expensesList->concat($virtualExpenses)
+            ->sortByDesc(function ($item) {
+                return $item->expense_date instanceof \Carbon\Carbon 
+                    ? $item->expense_date->toDateString() 
+                    : $item->expense_date;
+            });
 
 
 
@@ -1956,7 +2013,8 @@ class ReportController extends Controller
         foreach ($expensesList as $e) {
             $sheet->setCellValue("E{$expRow}", $e->expense_date->format('d/m/Y'));
             $sheet->setCellValue("F{$expRow}", $e->description);
-            $sheet->setCellValue("G{$expRow}", ucfirst($e->category));
+            $categoryLabel = $e->category === 'stok_hp' ? 'Stok HP' : ($e->category === 'tarik_owner' ? 'Tarik Saldo Owner' : ($e->category === 'listrik' ? 'Listrik & Gas' : ucwords($e->category)));
+            $sheet->setCellValue("G{$expRow}", $categoryLabel);
             $sheet->setCellValue("H{$expRow}", $e->amount);
             $sheet->setCellValue("I{$expRow}", $e->notes ?: '—');
             $sheet->setCellValue("J{$expRow}", $e->creator->name ?? '—');

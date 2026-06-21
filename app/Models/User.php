@@ -23,6 +23,18 @@ class User extends Authenticatable
         ];
     }
 
+    public function isSuperAdmin(): bool
+    {
+        $roleStr = is_string($this->role) ? $this->role : ($this->role->value ?? '');
+        return $roleStr === 'superadmin';
+    }
+
+    public function isAdmin(): bool
+    {
+        $roleStr = is_string($this->role) ? $this->role : ($this->role->value ?? '');
+        return $roleStr === 'admin';
+    }
+
     public function units()        { return $this->hasMany(Unit::class, 'created_by'); }
     public function createdSales() { return $this->hasMany(Sale::class, 'created_by'); }
     public function approvedSales(){ return $this->hasMany(Sale::class, 'approved_by'); }

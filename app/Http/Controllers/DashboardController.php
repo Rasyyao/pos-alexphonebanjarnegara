@@ -34,6 +34,10 @@ class DashboardController extends Controller
         $totalProfit      = $this->sales->totalProfit();
         $totalAccessories = $this->accessories->totalStockQty();
         
+        $totalExpExOwner  = (float) \App\Models\Expense::where('category', '!=', 'tarik_owner')->sum('amount');
+        $totalHPPurchases = (float) \App\Models\Unit::sum('purchase_price');
+        $totalNetProfit   = $totalProfit - $totalExpExOwner - $totalHPPurchases;
+        
         $brandDist        = $this->units->brandDistribution();
         $typeDist         = $this->units->typeDistribution();
         $statusDist       = $this->units->statusDistribution();
@@ -55,7 +59,7 @@ class DashboardController extends Controller
         return view('dashboard.index', compact(
             'stockCounts', 'todayStats', 'weekStats', 'monthStats', 'weeklyRevenue',
             'paymentBreakdown', 'latestUnits', 'readyUnits', 'recentSales', 'pendingDebts', 'assetValue',
-            'totalRevenue', 'totalProfit', 'totalAccessories', 'brandDist', 'typeDist', 'statusDist',
+            'totalRevenue', 'totalProfit', 'totalNetProfit', 'totalAccessories', 'brandDist', 'typeDist', 'statusDist',
             'monthlyLabels', 'monthlyNetProfits', 'monthlyExpData'
         ));
     }

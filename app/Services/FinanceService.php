@@ -152,9 +152,9 @@ class FinanceService
         $revenue = (float) $salesQuery->sum('total_price');
         $profit  = (float) $salesQuery->sum('profit');
 
-        $exportRole = auth()->user()?->role->value ?? '';
+        $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
         $expensesQuery = \App\Models\Expense::query();
-        if ($exportRole !== 'superadmin') {
+        if (!$isSuperAdmin) {
             $expensesQuery->where('category', '!=', 'tarik_owner');
         }
         if ($startDate) {
@@ -164,6 +164,15 @@ class FinanceService
             $expensesQuery->whereDate('expense_date', '<=', $endDate);
         }
         $expenses = (float) $expensesQuery->sum('amount');
+
+        $hpExpensesQuery = \App\Models\Unit::query();
+        if ($startDate) {
+            $hpExpensesQuery->whereDate('purchase_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $hpExpensesQuery->whereDate('purchase_date', '<=', $endDate);
+        }
+        $expenses += (float) $hpExpensesQuery->sum('purchase_price');
 
         $capitalsQuery = \App\Models\Capital::whereIn('type', ['initial', 'addition']);
         if ($startDate) {
@@ -204,13 +213,16 @@ class FinanceService
         $todayStats = $this->sales->todayStats();
         
         $user = auth()->user();
-        $role = $user ? (is_string($user->role) ? $user->role : ($user->role->value ?? '')) : '';
+        $isSuperAdmin = $user && $user->isSuperAdmin();
 
         $todayExpensesQuery = \App\Models\Expense::whereDate('expense_date', today());
-        if ($role !== 'superadmin') {
+        if (!$isSuperAdmin) {
             $todayExpensesQuery->where('category', '!=', 'tarik_owner');
         }
         $todayExpenses = (float) $todayExpensesQuery->sum('amount');
+
+        $todayHPStock = (float) \App\Models\Unit::whereDate('purchase_date', today())->sum('purchase_price');
+        $todayExpenses += $todayHPStock;
 
         $todayIncome   = (float) \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
             ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', today()))
@@ -244,7 +256,7 @@ class FinanceService
 
         // 2. Calculate expenses for the filtered date range
         $expensesQuery = \App\Models\Expense::with('creator');
-        if ($role !== 'superadmin') {
+        if (!$isSuperAdmin) {
             $expensesQuery->where('category', '!=', 'tarik_owner');
         }
         if ($startDate) {
@@ -255,7 +267,72 @@ class FinanceService
         }
         
         $totalExpenses = (float) $expensesQuery->sum('amount');
-        $expenses = $expensesQuery->latest('expense_date')->paginate(10, ['*'], 'page_expense')->appends(request()->query());
+
+        $hpExpensesQuery = \App\Models\Unit::query();
+        if ($startDate) {
+            $hpExpensesQuery->whereDate('purchase_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $hpExpensesQuery->whereDate('purchase_date', '<=', $endDate);
+        }
+        $totalHPExpenses = (float) $hpExpensesQuery->sum('purchase_price');
+        $totalExpenses += $totalHPExpenses;
+
+        // Fetch units purchased in the filtered range and map to virtual Expense models
+        $unitsListQuery = \App\Models\Unit::with('creator', 'model.brand');
+        if ($startDate) {
+            $unitsListQuery->whereDate('purchase_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $unitsListQuery->whereDate('purchase_date', '<=', $endDate);
+        }
+        $unitsList = $unitsListQuery->latest('purchase_date')->get();
+
+        $virtualExpenses = $unitsList->map(function ($unit) {
+            $brand = $unit->model->brand->name ?? '';
+            $model = $unit->model->name ?? '';
+            $spec = "{$brand} {$model} ({$unit->ram}/{$unit->rom}) - {$unit->color}";
+            $imei = $unit->imei ? " IMEI: {$unit->imei}" : "";
+            $sn = $unit->serial_number ? " SN: {$unit->serial_number}" : "";
+            $paymentMethod = $unit->purchase_payment_method ?? 'cash';
+            
+            $exp = new \App\Models\Expense();
+            $exp->id = null;
+            $exp->is_virtual = true;
+            $exp->unit_id = $unit->id;
+            $exp->expense_date = $unit->purchase_date;
+            $exp->description = "Pembelian Stok HP: {$spec}";
+            $exp->category = "stok_hp";
+            $exp->payment_method = $paymentMethod;
+            $exp->notes = "Kondisi: " . ucfirst($unit->unit_type->value) . ($unit->grade ? " (Grade {$unit->grade})" : "") . $imei . $sn;
+            $exp->amount = $unit->purchase_price;
+            $exp->created_by = $unit->created_by;
+            $exp->setRelation('creator', $unit->creator);
+            return $exp;
+        });
+
+        $realExpensesList = $expensesQuery->get();
+        $mergedCollection = $realExpensesList->concat($virtualExpenses)
+            ->sortByDesc(function ($item) {
+                return $item->expense_date instanceof \Carbon\Carbon 
+                    ? $item->expense_date->toDateString() 
+                    : $item->expense_date;
+            });
+
+        $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage('page_expense') ?: 1;
+        $perPage = 10;
+        $currentItems = $mergedCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $expenses = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentItems,
+            $mergedCollection->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+                'pageName' => 'page_expense',
+            ]
+        );
+        $expenses->appends(request()->query());
 
         // 3. Calculate capitals for the filtered date range
         $capitalsQuery = \App\Models\Capital::with('creator')->whereIn('type', ['initial', 'addition', 'withdrawal']);

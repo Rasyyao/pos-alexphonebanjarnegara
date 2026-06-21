@@ -78,15 +78,15 @@
         {{-- Total Laba --}}
         <div class="bg-white rounded-xl border p-5 card-lift" style="border-color:var(--line)">
             <div class="flex items-start justify-between mb-3">
-                <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Total Laba</div>
+                <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Laba Bersih</div>
                 <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(16,128,107,.1)">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" style="color:var(--success)"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
                 </div>
             </div>
             <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums" style="color:var(--success)">
-                {{ number_format($totalProfit ?? 0, 0, ',', '.') }}
+                {{ number_format($totalNetProfit ?? 0, 0, ',', '.') }}
             </div>
-            <div class="text-xs" style="color:var(--ink-mute)">Laba bersih terkumpul</div>
+            <div class="text-xs" style="color:var(--ink-mute)">Penjualan dikurangi biaya</div>
         </div>
 
         {{-- Total Aksesoris --}}
@@ -350,9 +350,11 @@
                             color: '#7A8AA8',
                             font: { family: '"Satoshi", sans-serif', size: 11 },
                             callback: function(v) {
-                                if (v >= 1000000) return 'Rp ' + (v / 1000000).toFixed(1) + 'jt';
-                                if (v >= 1000)    return 'Rp ' + (v / 1000) + 'rb';
-                                return 'Rp ' + v;
+                                const absV = Math.abs(v);
+                                const sign = v < 0 ? '-' : '';
+                                if (absV >= 1000000) return sign + 'Rp ' + (absV / 1000000).toFixed(1) + 'jt';
+                                if (absV >= 1000)    return sign + 'Rp ' + (absV / 1000) + 'rb';
+                                return sign + 'Rp ' + absV;
                             }
                         }
                     }
@@ -413,9 +415,11 @@
                             color: '#7A8AA8',
                             font: { family: '"Satoshi", sans-serif', size: 11 },
                             callback: function(v) {
-                                if (v >= 1000000) return 'Rp ' + (v / 1000000).toFixed(1) + 'jt';
-                                if (v >= 1000)    return 'Rp ' + (v / 1000) + 'rb';
-                                return 'Rp ' + v;
+                                const absV = Math.abs(v);
+                                const sign = v < 0 ? '-' : '';
+                                if (absV >= 1000000) return sign + 'Rp ' + (absV / 1000000).toFixed(1) + 'jt';
+                                if (absV >= 1000)    return sign + 'Rp ' + (absV / 1000) + 'rb';
+                                return sign + 'Rp ' + absV;
                             }
                         }
                     }

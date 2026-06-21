@@ -123,6 +123,26 @@
             </p>
         </div>
 
+        {{-- Pengeluaran Stok (superadmin only) --}}
+        @if(auth()->user()->role->value === 'superadmin')
+        @php $stockTotalOut = $stockCashOut + $stockTransferOut; @endphp
+        <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style="background:rgba(124,58,237,0.08)">
+                <svg class="w-4 h-4" style="color:#7C3AED" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 10V11"/>
+                </svg>
+            </div>
+            <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:#7C3AED">Pengeluaran Stok</p>
+            <p class="text-lg font-bold font-mono tabular-nums mt-0.5" style="color:#7C3AED">
+                Rp {{ number_format($stockTotalOut, 0, ',', '.') }}
+            </p>
+            <p class="text-[9px] mt-1 font-mono" style="color:var(--ink-mute)">
+                Tunai: Rp {{ number_format($stockCashOut, 0, ',', '.') }}<br>
+                Transfer: Rp {{ number_format($stockTransferOut, 0, ',', '.') }}
+            </p>
+        </div>
+        @endif
+
     </div>
 
     {{-- Main Content --}}
@@ -260,6 +280,116 @@
         </div>
 
     </div>
+
+    {{-- Stok Masuk Hari Ini (superadmin only) --}}
+    @if(auth()->user()->role->value === 'superadmin' && ($unitsToday->count() > 0 || $accToday->count() > 0))
+    <div class="space-y-4">
+
+        {{-- Unit HP Masuk --}}
+        @if($unitsToday->count() > 0)
+        <div class="bg-white rounded-xl border overflow-hidden shadow-sm" style="border-color:var(--line)">
+            <div class="px-5 py-4 border-b flex items-center justify-between" style="border-color:var(--line)">
+                <div>
+                    <h3 class="text-sm font-semibold" style="color:var(--ink)">Unit HP Masuk Hari Ini</h3>
+                    <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Unit yang purchase_date = {{ \Illuminate\Support\Carbon::parse($date)->isoFormat('D MMMM YYYY') }}</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold font-mono" style="background:rgba(124,58,237,0.08);color:#7C3AED">{{ $unitsToday->count() }} unit</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr style="background:var(--bg-soft);border-bottom:1px solid var(--line)">
+                            <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">No</th>
+                            <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Brand / Model</th>
+                            <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Spesifikasi</th>
+                            <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Metode Beli</th>
+                            <th class="text-right px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Harga Beli</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($unitsToday as $i => $u)
+                        <tr style="border-bottom:1px solid var(--line)">
+                            <td class="px-5 py-2.5 font-mono" style="color:var(--ink-mute)">{{ $i + 1 }}</td>
+                            <td class="px-5 py-2.5">
+                                <div class="font-semibold" style="color:var(--ink)">{{ $u->model->brand->name ?? '—' }} {{ $u->model->name ?? '—' }}</div>
+                                <div class="text-[10px] mt-0.5" style="color:var(--ink-mute)">{{ ucfirst($u->unit_type->value) }}{{ $u->grade ? ' · Grade '.$u->grade : '' }}</div>
+                            </td>
+                            <td class="px-5 py-2.5 font-mono" style="color:var(--ink-soft)">{{ $u->ram }}/{{ $u->rom }} · {{ $u->color }}</td>
+                            <td class="px-5 py-2.5">
+                                @if($u->purchase_payment_method === 'cash')
+                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold font-mono" style="background:#F0FDF4;color:var(--success)">Tunai</span>
+                                @elseif($u->purchase_payment_method === 'transfer')
+                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold font-mono" style="background:#EFF6FF;color:var(--accent)">Transfer</span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold font-mono" style="background:var(--bg-soft);color:var(--ink-soft)">Split</span>
+                                @endif
+                            </td>
+                            <td class="px-5 py-2.5 text-right font-mono font-bold tabular-nums" style="color:#7C3AED">
+                                Rp {{ number_format($u->purchase_price, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                        @endforeach
+                        <tr style="background:var(--bg-soft);border-top:1.5px solid var(--line)">
+                            <td colspan="4" class="px-5 py-2.5 text-right font-bold text-xs" style="color:var(--ink-soft)">TOTAL</td>
+                            <td class="px-5 py-2.5 text-right font-mono font-bold tabular-nums" style="color:#7C3AED">
+                                Rp {{ number_format($unitsToday->sum('purchase_price'), 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+        {{-- Aksesoris Masuk --}}
+        @if($accToday->count() > 0)
+        <div class="bg-white rounded-xl border overflow-hidden shadow-sm" style="border-color:var(--line)">
+            <div class="px-5 py-4 border-b flex items-center justify-between" style="border-color:var(--line)">
+                <div>
+                    <h3 class="text-sm font-semibold" style="color:var(--ink)">Aksesoris Masuk Hari Ini</h3>
+                    <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Aksesoris yang dicatat pada {{ \Illuminate\Support\Carbon::parse($date)->isoFormat('D MMMM YYYY') }}</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold font-mono" style="background:rgba(124,58,237,0.08);color:#7C3AED">{{ $accToday->count() }} jenis</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr style="background:var(--bg-soft);border-bottom:1px solid var(--line)">
+                            <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">No</th>
+                            <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Nama Aksesoris</th>
+                            <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Kategori</th>
+                            <th class="text-center px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Qty</th>
+                            <th class="text-right px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Harga Beli/pcs</th>
+                            <th class="text-right px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Total Modal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($accToday as $i => $a)
+                        <tr style="border-bottom:1px solid var(--line)">
+                            <td class="px-5 py-2.5 font-mono" style="color:var(--ink-mute)">{{ $i + 1 }}</td>
+                            <td class="px-5 py-2.5 font-semibold" style="color:var(--ink)">{{ $a->name }}</td>
+                            <td class="px-5 py-2.5" style="color:var(--ink-soft)">{{ $a->category ?: 'Lain-lain' }}</td>
+                            <td class="px-5 py-2.5 text-center font-mono" style="color:var(--ink)">{{ $a->stock_qty }}</td>
+                            <td class="px-5 py-2.5 text-right font-mono tabular-nums" style="color:var(--ink-soft)">Rp {{ number_format($a->purchase_price, 0, ',', '.') }}</td>
+                            <td class="px-5 py-2.5 text-right font-mono font-bold tabular-nums" style="color:#7C3AED">
+                                Rp {{ number_format((float)$a->purchase_price * $a->stock_qty, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                        @endforeach
+                        <tr style="background:var(--bg-soft);border-top:1.5px solid var(--line)">
+                            <td colspan="5" class="px-5 py-2.5 text-right font-bold text-xs" style="color:var(--ink-soft)">TOTAL MODAL AKSESORIS</td>
+                            <td class="px-5 py-2.5 text-right font-mono font-bold tabular-nums" style="color:#7C3AED">
+                                Rp {{ number_format($accToday->sum(fn($a) => (float)$a->purchase_price * $a->stock_qty), 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+    </div>
+    @endif
 
 </div>
 

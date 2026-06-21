@@ -30,7 +30,6 @@
                         <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Nama</th>
                         <th class="text-left px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Kategori</th>
                         <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Stok</th>
-                        <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Harga Beli</th>
                         <th class="text-right px-4 py-3 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Aksi</th>
                     </tr>
                 </thead>
@@ -44,7 +43,7 @@
                         <td class="px-4 py-3.5 text-xs" style="color:var(--ink-mute)">{{ $acc->category ?? '—' }}</td>
                         <td class="px-4 py-3.5 text-right font-mono font-medium tabular-nums"
                             style="color:{{ $acc->stock_qty <= 3 ? 'var(--warn)' : 'var(--ink)' }}">{{ $acc->stock_qty }}</td>
-                        <td class="px-4 py-3.5 text-right font-mono tabular-nums" style="color:var(--ink-soft)">Rp {{ number_format($acc->purchase_price, 0, ',', '.') }}</td>
+                        <!-- <td class="px-4 py-3.5 text-right font-mono tabular-nums" style="color:var(--ink-soft)">Rp {{ number_format($acc->purchase_price, 0, ',', '.') }}</td> -->
                         <td class="px-4 py-3.5">
                             <div class="flex items-center justify-end gap-1.5">
                                 <a href="{{ route('accessories.show', $acc) }}"

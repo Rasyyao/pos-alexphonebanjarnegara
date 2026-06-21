@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('created_by')->constrained('users');
             $table->string('description', 255);
             $table->decimal('amount', 14, 2);
-            $table->enum('category', ['operasional', 'gaji', 'sewa', 'listrik', 'lainnya'])->default('lainnya');
+            $table->enum('category', ['operasional', 'gaji', 'sewa', 'listrik', 'lainnya', 'tarik_owner'])->default('lainnya');
             $table->date('expense_date');
             $table->string('notes', 500)->nullable();
             $table->timestamps();
