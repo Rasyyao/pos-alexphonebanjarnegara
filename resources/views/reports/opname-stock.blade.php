@@ -132,6 +132,18 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
         <a href="{{ route('reports.stock') }}" class="back-link">
             ← Kembali ke Laporan Stok
         </a>
+
+        {{-- Export type dropdown --}}
+        <div style="display:flex;align-items:center;gap:8px">
+            <label for="opname-type" style="font-size:8.5pt;color:#93C5FD;white-space:nowrap">Tampilkan:</label>
+            <select id="opname-type"
+                onchange="applyOpnameFilter(this.value)"
+                style="background:#0F2D52;color:#fff;border:1px solid #3B6EA8;border-radius:4px;padding:5px 10px;font-size:9pt;cursor:pointer;outline:none">
+                <option value="hp">Unit HP</option>
+                <option value="accessories">Aksesoris</option>
+            </select>
+        </div>
+
         <button onclick="window.print()" class="print-btn">
             <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
             Cetak
@@ -173,6 +185,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
   </div>
 
   {{-- ═══════════════ HP UNITS TABLE ═══════════════ --}}
+  <div id="section-hp">
   <div class="section-title">
     <span>Inventaris Unit Handphone (HP)</span>
     <span class="section-count">{{ $units->count() }} unit total &nbsp;·&nbsp; {{ $readyCount }} ready</span>
@@ -243,8 +256,11 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
       </tr>
     </tbody>
   </table>
+  </div>{{-- end #section-hp --}}
+
 
   {{-- ═══════════════ ACCESSORIES TABLE ═══════════════ --}}
+  <div id="section-accessories">
   @if($accessories->count())
   <div class="section-title" style="margin-top:18px">
     <span>Inventaris Aksesoris</span>
@@ -300,6 +316,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
     </tbody>
   </table>
   @endif
+  </div>{{-- end #section-accessories --}}
 
   {{-- LEGEND --}}
   <div class="legend">
@@ -348,6 +365,23 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
 
 </div>
 
-<script>window.onload = function(){ window.print(); }</script>
+<script>
+function applyOpnameFilter(val) {
+    var hp  = document.getElementById('section-hp');
+    var acc = document.getElementById('section-accessories');
+    if (val === 'hp') {
+        hp.style.display  = '';
+        acc.style.display = 'none';
+    } else if (val === 'accessories') {
+        hp.style.display  = 'none';
+        acc.style.display = '';
+    } else {
+        hp.style.display  = '';
+        acc.style.display = '';
+    }
+}
+// default: show all
+applyOpnameFilter('all');
+</script>
 </body>
 </html>

@@ -15,38 +15,75 @@
             {{-- Export Buttons --}}
             @if (auth()->user()->role->value === 'superadmin')
                 <div class="flex items-center gap-2">
-                    {{-- <a href="{{ route('reports.stock.opname') }}"
-               target="_blank"
-               class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center gap-1.5 border shadow-sm"
-               style="background:#FDF4FF;color:#7E22CE;border-color:#E9D5FF"
-               onmouseenter="this.style.background='#F3E8FF'" onmouseleave="this.style.background='#FDF4FF'">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                </svg>
-                Cetak Stock Opname
-            </a> --}}
-                    <a href="{{ route('reports.pdf', 'stock') }}" target="_blank"
-                        class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center gap-1.5 border shadow-sm"
-                        style="background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE"
-                        onmouseenter="this.style.background='#DBEAFE'" onmouseleave="this.style.background='#EFF6FF'">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            stroke-width="2.2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                        Export Stock Opname PDF
-                    </a>
-                    <a href="{{ route('reports.export', 'stock') }}"
-                        class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center gap-1.5 border shadow-sm"
-                        style="background:#F0FDF4;color:var(--success);border-color:#BBF7D0"
-                        onmouseenter="this.style.background='#DCFCE7'" onmouseleave="this.style.background='#F0FDF4'">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            stroke-width="2.2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Export Stock Opname Excel
-                    </a>
+
+                    {{-- ── PDF Dropdown ── --}}
+                    <div class="relative" id="dd-pdf-wrap">
+                        <button type="button" id="dd-pdf-btn"
+                            onclick="toggleDropdown('dd-pdf')"
+                            class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center gap-1.5 border shadow-sm"
+                            style="background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE"
+                            onmouseenter="this.style.background='#DBEAFE'" onmouseleave="if(!document.getElementById('dd-pdf').classList.contains('dd-open'))this.style.background='#EFF6FF'">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                            Export PDF
+                            <svg class="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div id="dd-pdf"
+                            class="absolute right-0 mt-1 w-48 bg-white border rounded-xl shadow-lg overflow-hidden z-50 hidden"
+                            style="border-color:#BFDBFE">
+                            <a href="{{ route('reports.pdf', 'stock-hp') }}" target="_blank"
+                                class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold hover:bg-blue-50 transition-colors"
+                                style="color:#1D4ED8">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                Unit HP (PDF)
+                            </a>
+                            <div style="height:1px;background:#BFDBFE;margin:0 12px"></div>
+                            <a href="{{ route('reports.pdf', 'stock-accessories') }}" target="_blank"
+                                class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold hover:bg-blue-50 transition-colors"
+                                style="color:#1D4ED8">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                Aksesoris (PDF)
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- ── Excel Dropdown ── --}}
+                    <div class="relative" id="dd-xlsx-wrap">
+                        <button type="button" id="dd-xlsx-btn"
+                            onclick="toggleDropdown('dd-xlsx')"
+                            class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center gap-1.5 border shadow-sm"
+                            style="background:#F0FDF4;color:#059669;border-color:#A7F3D0"
+                            onmouseenter="this.style.background='#DCFCE7'" onmouseleave="if(!document.getElementById('dd-xlsx').classList.contains('dd-open'))this.style.background='#F0FDF4'">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Export Excel
+                            <svg class="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div id="dd-xlsx"
+                            class="absolute right-0 mt-1 w-48 bg-white border rounded-xl shadow-lg overflow-hidden z-50 hidden"
+                            style="border-color:#A7F3D0">
+                            <a href="{{ route('reports.export', 'stock-hp') }}"
+                                class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold hover:bg-green-50 transition-colors"
+                                style="color:#059669">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                Unit HP (.xlsx)
+                            </a>
+                            <div style="height:1px;background:#A7F3D0;margin:0 12px"></div>
+                            <a href="{{ route('reports.export', 'stock-accessories') }}"
+                                class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold hover:bg-green-50 transition-colors"
+                                style="color:#059669">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                Aksesoris (.xlsx)
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
             @endif
         </div>
@@ -502,6 +539,37 @@
 
             // Initial render
             renderChart('brand');
+        });
+    </script>
+
+    <script>
+        // ── Dropdown toggle helpers ──────────────────────────────────────────
+        var dropdowns = ['dd-pdf', 'dd-xlsx'];
+
+        function toggleDropdown(id) {
+            dropdowns.forEach(function(dd) {
+                var el = document.getElementById(dd);
+                if (!el) return;
+                if (dd === id) {
+                    var isOpen = el.classList.contains('dd-open');
+                    el.classList.toggle('hidden', isOpen);
+                    el.classList.toggle('dd-open', !isOpen);
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('dd-open');
+                }
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            dropdowns.forEach(function(dd) {
+                var wrap = document.getElementById(dd + '-wrap');
+                var el   = document.getElementById(dd);
+                if (el && wrap && !wrap.contains(e.target)) {
+                    el.classList.add('hidden');
+                    el.classList.remove('dd-open');
+                }
+            });
         });
     </script>
 @endsection

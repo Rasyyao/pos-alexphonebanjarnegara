@@ -91,8 +91,38 @@
 
                 <div>
                     <label for="password" class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
-                    <input id="password" type="password" name="password" required placeholder="••••••"
-                        class="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm transition-all focus:outline-none focus:border-blue-500 hover:border-slate-300 @error('password') border-red-400 @enderror" />
+                    <div class="relative">
+                        <input id="password" type="password" name="password" required placeholder="••••••"
+                            class="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 pr-12 text-sm transition-all focus:outline-none focus:border-blue-500 hover:border-slate-300 @error('password') border-red-400 @enderror" />
+                        <button type="button" id="toggle-password"
+                            onclick="(function(){
+                                var inp = document.getElementById('password');
+                                var btn = document.getElementById('toggle-password');
+                                var eyeOn  = document.getElementById('eye-on');
+                                var eyeOff = document.getElementById('eye-off');
+                                if (inp.type === 'password') {
+                                    inp.type = 'text';
+                                    eyeOn.classList.add('hidden');
+                                    eyeOff.classList.remove('hidden');
+                                } else {
+                                    inp.type = 'password';
+                                    eyeOn.classList.remove('hidden');
+                                    eyeOff.classList.add('hidden');
+                                }
+                            })()"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+                            aria-label="Tampilkan/Sembunyikan password">
+                            {{-- Eye open --}}
+                            <svg id="eye-on" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            {{-- Eye off --}}
+                            <svg id="eye-off" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.293-3.95M6.634 6.634A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.176 5.166M3 3l18 18" />
+                            </svg>
+                        </button>
+                    </div>
                     @error('password')
                         <p class="text-xs text-red-500 mt-1.5 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

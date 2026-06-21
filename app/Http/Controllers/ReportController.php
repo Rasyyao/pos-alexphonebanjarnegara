@@ -117,10 +117,12 @@ class ReportController extends Controller
     public function pdf(Request $request, string $type)
     {
         $pdf = match ($type) {
-            'stock'   => $this->buildStockPdf(),
-            'finance' => $this->buildFinancePdf($request->start_date, $request->end_date),
-            'sales'   => $this->buildSalesDailyPdf($request->date ?? today()->toDateString()),
-            default   => abort(404),
+            'stock'              => $this->buildStockPdf(),
+            'stock-hp'          => $this->buildStockHpPdf(),
+            'stock-accessories' => $this->buildStockAccessoriesPdf(),
+            'finance'           => $this->buildFinancePdf($request->start_date, $request->end_date),
+            'sales'             => $this->buildSalesDailyPdf($request->date ?? today()->toDateString()),
+            default             => abort(404),
         };
 
         $filename = "laporan-{$type}-" . now()->format('Ymd-His') . ".pdf";
@@ -147,6 +149,49 @@ class ReportController extends Controller
             'accModal'     => $accModal,
             'accQty'       => (int) $accessories->sum('stock_qty'),
             'printedAt'    => now()->isoFormat('D MMMM YYYY, HH:mm') . ' WIB',
+        ];
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf-stock', $data)
+            ->setPaper('a4', 'landscape');
+    }
+
+    private function buildStockHpPdf(): \Barryvdh\DomPDF\PDF
+    {
+        $units      = \App\Models\Unit::with('model.brand')->where('status', '!=', 'sold')->orderBy('status')->get();
+        $readyUnits = $units->filter(fn($u) => $u->status->value === 'ready');
+
+        $data = [
+            'units'       => $units,
+            'accessories' => collect(),
+            'readyCount'  => $readyUnits->count(),
+            'soldCount'   => 0,
+            'assetModal'  => (float) $readyUnits->sum('purchase_price'),
+            'assetJual'   => 0.0,
+            'accModal'    => 0.0,
+            'accQty'      => 0,
+            'printedAt'   => now()->isoFormat('D MMMM YYYY, HH:mm') . ' WIB',
+        ];
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf-stock', $data)
+            ->setPaper('a4', 'landscape');
+    }
+
+    private function buildStockAccessoriesPdf(): \Barryvdh\DomPDF\PDF
+    {
+        $accessories = \App\Models\Accessory::orderBy('category')->orderBy('name')->get();
+        $accQty      = (int) $accessories->sum('stock_qty');
+        $accModal    = (float) $accessories->sum(fn($a) => (float)$a->purchase_price * $a->stock_qty);
+
+        $data = [
+            'units'       => collect(),
+            'accessories' => $accessories,
+            'readyCount'  => 0,
+            'soldCount'   => 0,
+            'assetModal'  => 0.0,
+            'assetJual'   => 0.0,
+            'accModal'    => $accModal,
+            'accQty'      => $accQty,
+            'printedAt'   => now()->isoFormat('D MMMM YYYY, HH:mm') . ' WIB',
         ];
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf-stock', $data)
@@ -220,6 +265,16 @@ class ReportController extends Controller
             $this->buildStockDetailSheet($sheet2);
             $sheet3 = $spreadsheet->createSheet();
             $this->buildAccessoriesStockSheet($sheet3);
+            $spreadsheet->setActiveSheetIndex(0);
+        } elseif ($type === 'stock-hp') {
+            $sheet1 = $spreadsheet->getActiveSheet();
+            $this->buildStockSummarySheet($sheet1);
+            $sheet2 = $spreadsheet->createSheet();
+            $this->buildStockDetailSheet($sheet2);
+            $spreadsheet->setActiveSheetIndex(0);
+        } elseif ($type === 'stock-accessories') {
+            $sheet1 = $spreadsheet->getActiveSheet();
+            $this->buildAccessoriesStockSheet($sheet1);
             $spreadsheet->setActiveSheetIndex(0);
         } elseif ($type === 'finance') {
             $sheet1 = $spreadsheet->getActiveSheet();

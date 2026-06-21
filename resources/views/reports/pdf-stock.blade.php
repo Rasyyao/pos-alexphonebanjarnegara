@@ -1,4 +1,4 @@
-1<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
@@ -78,19 +78,24 @@
 
   {{-- KPI --}}
   <div class="kpi-row">
+    @if($units->count())
     <div class="kpi">
       <div class="kpi-label">Total Unit HP</div>
       <div class="kpi-value">{{ $units->count() }} unit</div>
       <div class="kpi-sub">Ready: {{ $readyCount }} &nbsp;|&nbsp; Retur: {{ $units->count() - $readyCount }}</div>
     </div>
+    @endif
+    @if($accessories->count())
     <div class="kpi">
       <div class="kpi-label">Total Aksesoris</div>
       <div class="kpi-value">{{ $accessories->count() }} jenis</div>
       <div class="kpi-sub">Qty: {{ number_format($accQty, 0, ',', '.') }} pcs</div>
     </div>
+    @endif
   </div>
 
   {{-- HP TABLE --}}
+  @if($units->count())
   <div class="section-title">Inventaris Unit Handphone (HP)</div>
   <table>
     <thead>
@@ -109,7 +114,7 @@
         $groupedUnits = $units->groupBy(fn($u) => $u->model->brand->name ?? 'Lain-lain');
         $no = 1;
       @endphp
-      @forelse($groupedUnits as $brandName => $brandUnits)
+      @foreach($groupedUnits as $brandName => $brandUnits)
         <tr class="brand-row">
           <td colspan="7">
             ◆ BRAND: {{ strtoupper($brandName) }} ({{ $brandUnits->count() }} unit)
@@ -134,14 +139,13 @@
             <td class="c muted">{{ $u->purchase_date ? $u->purchase_date->format('d/m/Y') : '—' }}</td>
           </tr>
         @endforeach
-      @empty
-        <tr><td colspan="7" style="text-align:center;padding:14px;color:#9CA3AF">Tidak ada data unit</td></tr>
-      @endforelse
+      @endforeach
       <tr class="total-row">
         <td colspan="7" style="text-align:right">TOTAL &nbsp;{{ $units->count() }} unit</td>
       </tr>
     </tbody>
   </table>
+  @endif
 
   {{-- ACCESSORIES TABLE --}}
   @if($accessories->count())
