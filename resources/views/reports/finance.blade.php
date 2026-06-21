@@ -14,9 +14,12 @@
             
             <div class="flex items-center gap-2">
                 @php
+                    $isSuperadmin = auth()->user()->role->value === 'superadmin';
                     $viewedDate = (request('start_date') && request('start_date') === request('end_date')) ? request('start_date') : today()->toDateString();
                     $closingRecord = \App\Models\DailyClosing::whereDate('closing_date', $viewedDate)->first();
-                    $isLocked = $closingRecord && in_array($closingRecord->status, ['closed', 'verified']);
+                    $isLocked = $closingRecord && ($isSuperadmin
+                        ? $closingRecord->status === 'verified'
+                        : in_array($closingRecord->status, ['closed', 'verified']));
                 @endphp
 
                 @if ($closingRecord)
@@ -186,7 +189,7 @@
             }
         </script>
 
-        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div class="grid grid-cols-2 {{ $isSuperadmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4' }} gap-3">
 
             {{-- 1. Omzet --}}
             <div class="bg-white rounded-xl border p-5 card-lift"
@@ -243,6 +246,7 @@
             </div>
 
             {{-- 4. Laba Bersih --}}
+            @if ($isSuperadmin)
             @php $isProfitNegative = $today['net_profit'] < 0; @endphp
             <div class="bg-white rounded-xl border p-5 card-lift"
                 style="border-color:var(--line)">
@@ -260,6 +264,7 @@
                 </div>
                 <div class="text-xs" style="color:var(--ink-mute)">Penjualan dikurangi biaya</div>
             </div>
+            @endif
 
             {{-- 5. Hutang Baru --}}
             <div class="bg-white rounded-xl border p-5 card-lift"
@@ -347,6 +352,10 @@
                                                     <span class="px-2 py-0.5 rounded bg-green-100 text-green-800 font-mono text-[9px] font-semibold">
                                                         Penjualan
                                                     </span>
+                                                @elseif ($expense->is_virtual_debt_payment ?? false)
+                                                    <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-mono text-[9px] font-semibold">
+                                                        Pelunasan
+                                                    </span>
                                                 @elseif ($expense->category === 'stok_hp')
                                                     <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-mono text-[9px] font-semibold">
                                                         Stok HP
@@ -370,7 +379,7 @@
                                             </td>
                                             <td class="px-5 py-3" style="color:var(--ink-mute)">{{ $expense->notes ?: '—' }}
                                             </td>
-                                            @if ($expense->is_virtual_sale ?? false)
+                                            @if (($expense->is_virtual_sale ?? false) || ($expense->is_virtual_debt_payment ?? false))
                                                 <td class="px-5 py-3 text-right font-mono font-bold tabular-nums text-emerald-600"
                                                     style="color:var(--success)">
                                                     +Rp {{ number_format($expense->amount, 0, ',', '.') }}
@@ -388,6 +397,14 @@
                                                         style="background:#E6F4EA;color:var(--success)"
                                                         onmouseenter="this.style.background='#D2EBD8'"
                                                         onmouseleave="this.style.background='#E6F4EA'">
+                                                        Lihat Detail
+                                                    </a>
+                                                @elseif ($expense->is_virtual_debt_payment ?? false)
+                                                    <a href="{{ route('sales.show', $expense->sale_id) }}"
+                                                        class="inline-flex items-center justify-center px-2 py-1 rounded-lg transition-colors text-[10px] font-semibold"
+                                                        style="background:#FFF8E1;color:#B45309"
+                                                        onmouseenter="this.style.background='#FDE68A'"
+                                                        onmouseleave="this.style.background='#FFF8E1'">
                                                         Lihat Detail
                                                     </a>
                                                 @elseif ($expense->is_virtual ?? false)
@@ -727,7 +744,10 @@
                             document.getElementById('closing-gas-income').innerText = formatRupiah(data.gas_income);
                             document.getElementById('closing-hp-purchase').innerText = formatRupiah(data.hp_purchase);
                             document.getElementById('closing-hp-sale').innerText = formatRupiah(data.hp_sale);
-                            document.getElementById('closing-laba').innerText = formatRupiah(data.laba);
+                            const closingLaba = document.getElementById('closing-laba');
+                            if (closingLaba) {
+                                closingLaba.innerText = formatRupiah(data.laba);
+                            }
                             document.getElementById('closing-cash-system').innerText = formatRupiah(data.cash_system);
                             document.getElementById('closing-atm-system').innerText = formatRupiah(data.atm_system);
                             document.getElementById('closing-transfer-income').innerText = formatRupiah(data.transfer_income);
@@ -924,7 +944,7 @@
                         @csrf
                         <input type="hidden" name="closing_date" id="closing-date-input" />
 
-                        <div class="bg-gray-50 rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                        <div class="bg-gray-50 rounded-xl p-4 grid grid-cols-2 {{ $isSuperadmin ? 'md:grid-cols-4' : 'md:grid-cols-3' }} gap-4 text-xs">
                             <div>
                                 <div class="text-gray-500 font-semibold mb-0.5">Tanggal Buku</div>
                                 <div class="font-bold text-gray-800" id="closing-date-display">-</div>
@@ -937,10 +957,12 @@
                                 <div class="text-gray-500 font-semibold mb-0.5">Penjualan HP</div>
                                 <div class="font-bold text-gray-800" id="closing-hp-sale">-</div>
                             </div>
-                            <div>
-                                <div class="text-gray-500 font-semibold mb-0.5">Laba Bersih</div>
-                                <div class="font-bold text-emerald-600" id="closing-laba">-</div>
-                            </div>
+                            @if ($isSuperadmin)
+                                <div>
+                                    <div class="text-gray-500 font-semibold mb-0.5">Laba Bersih</div>
+                                    <div class="font-bold text-emerald-600" id="closing-laba">-</div>
+                                </div>
+                            @endif
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

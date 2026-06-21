@@ -116,17 +116,20 @@ class StockFilterTest extends TestCase
             'payment_method' => 'transfer',
         ]);
 
-        $response = $this->actingAs($admin)->post(route('units.store'), [
-            'brand_name' => 'Apple',
-            'model_name' => 'iPhone 16 Pro',
-            'unit_type' => 'baru',
-            'purchase_price' => '20.000.000',
-            'purchase_date' => now()->toDateString(),
-            'purchase_cash' => '10.000.000',
-            'purchase_transfer' => '10.000.000',
-            'purchase_payment_method' => 'split',
-            'imei' => '999998888877777',
-        ]);
+        $response = $this->withSession(['_token' => 'test-token'])
+            ->actingAs($admin)
+            ->post(route('units.store'), [
+                '_token' => 'test-token',
+                'brand_name' => 'Apple',
+                'model_name' => 'iPhone 16 Pro',
+                'unit_type' => 'baru',
+                'purchase_price' => '20.000.000',
+                'purchase_date' => now()->toDateString(),
+                'purchase_cash' => '10.000.000',
+                'purchase_transfer' => '10.000.000',
+                'purchase_payment_method' => 'split',
+                'imei' => '999998888877777',
+            ]);
 
         $response->assertRedirect(route('units.index'));
         $this->assertDatabaseHas('units', [
@@ -134,6 +137,90 @@ class StockFilterTest extends TestCase
             'purchase_cash' => 10000000,
             'purchase_transfer' => 10000000,
             'imei' => '999998888877777',
+        ]);
+    }
+
+    public function test_can_edit_existing_split_unit_payment(): void
+    {
+        $admin = User::create([
+            'name' => 'Super Admin',
+            'username' => 'superadmin-edit-split',
+            'password' => bcrypt('password'),
+            'role' => 'superadmin',
+            'is_active' => true,
+        ]);
+
+        \App\Models\Capital::create([
+            'created_by' => $admin->id,
+            'description' => 'Initial Capital Cash',
+            'amount' => 50000000,
+            'type' => 'initial',
+            'entry_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+        ]);
+        \App\Models\Capital::create([
+            'created_by' => $admin->id,
+            'description' => 'Initial Capital Transfer',
+            'amount' => 50000000,
+            'type' => 'initial',
+            'entry_date' => now()->toDateString(),
+            'payment_method' => 'transfer',
+        ]);
+
+        $brand = ProductBrand::create(['name' => 'Samsung']);
+        $model = ProductModel::create(['brand_id' => $brand->id, 'name' => 'Galaxy S26']);
+        $unit = Unit::create([
+            'model_id' => $model->id,
+            'created_by' => $admin->id,
+            'unit_type' => 'baru',
+            'grade' => 'A',
+            'ram' => '8GB',
+            'rom' => '256GB',
+            'color' => 'Black',
+            'imei' => '111112222233333',
+            'serial_number' => 'SN-SPLIT-1',
+            'purchase_price' => 20000000,
+            'purchase_date' => now()->toDateString(),
+            'purchase_payment_method' => 'cash',
+            'purchase_cash' => 10000000,
+            'purchase_transfer' => 10000000,
+            'status' => 'ready',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('units.edit', $unit))
+            ->assertOk()
+            ->assertSee('value="split" class="accent-blue-600" checked', false)
+            ->assertSee('id="split-inputs" style=""', false);
+
+        $response = $this->withSession(['_token' => 'test-token'])
+            ->actingAs($admin)
+            ->put(route('units.update', $unit), [
+                '_token' => 'test-token',
+                'brand_name' => 'Samsung',
+                'model_name' => 'Galaxy S26',
+                'unit_type' => 'baru',
+                'grade' => 'A',
+                'ram' => '8GB',
+                'rom' => '256GB',
+                'color' => 'Black',
+                'imei' => '111112222233333',
+                'serial_number' => 'SN-SPLIT-1',
+                'purchase_price' => '20.000.000',
+                'purchase_date' => now()->toDateString(),
+                'purchase_payment_method' => 'split',
+                'purchase_cash' => '12.000.000',
+                'purchase_transfer' => '8.000.000',
+                'status' => 'ready',
+            ]);
+
+        $response->assertRedirect(route('units.index'));
+        $this->assertDatabaseHas('units', [
+            'id' => $unit->id,
+            'purchase_price' => 20000000,
+            'purchase_payment_method' => 'cash',
+            'purchase_cash' => 12000000,
+            'purchase_transfer' => 8000000,
         ]);
     }
 }

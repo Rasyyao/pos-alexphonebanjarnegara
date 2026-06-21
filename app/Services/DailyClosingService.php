@@ -122,10 +122,17 @@ class DailyClosingService
     {
         return DB::transaction(function () use ($date, $cashPhysical, $atmPhysical, $notes, $actor) {
             $existing = DailyClosing::whereDate('closing_date', $date)->first();
-            if ($existing && $existing->status === 'verified') {
-                throw ValidationException::withMessages([
-                    'date' => 'Laporan keuangan harian untuk tanggal ini sudah diverifikasi dan dikunci.',
-                ]);
+            if ($existing) {
+                if ($existing->status === 'verified') {
+                    throw ValidationException::withMessages([
+                        'date' => 'Laporan keuangan harian untuk tanggal ini sudah diverifikasi dan dikunci.',
+                    ]);
+                }
+                if ($existing->status === 'closed' && !$actor->isSuperAdmin()) {
+                    throw ValidationException::withMessages([
+                        'date' => 'Laporan harian untuk tanggal ini sudah ditutup dan sedang menunggu verifikasi Super Admin.',
+                    ]);
+                }
             }
 
             $isSuperadmin = $actor->isSuperAdmin();
@@ -147,7 +154,13 @@ class DailyClosingService
                 $attributes['status'] = 'closed';
             }
 
-            return DailyClosing::updateOrCreate(['closing_date' => $date], $attributes);
+            $closing = DailyClosing::whereDate('closing_date', $date)->first();
+            if ($closing) {
+                $closing->update($attributes);
+                return $closing->fresh();
+            }
+
+            return DailyClosing::create(array_merge(['closing_date' => $date], $attributes));
         });
     }
 

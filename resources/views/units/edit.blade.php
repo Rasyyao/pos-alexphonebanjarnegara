@@ -143,9 +143,10 @@
                         </div>
                         {{-- Payment Method --}}
                         @php
-                            $payMethod = old('purchase_payment_method',
-                                ($unit->purchase_cash > 0 && $unit->purchase_transfer > 0)
-                                    ? 'split' : ($unit->purchase_payment_method ?? 'cash'));
+                            $savedPayMethod = ((float) $unit->purchase_cash > 0 && (float) $unit->purchase_transfer > 0)
+                                ? 'split'
+                                : ($unit->purchase_payment_method ?? 'cash');
+                            $payMethod = old('purchase_payment_method', $savedPayMethod);
                         @endphp
                         <div>
                             <label class="field-label">Bayar Dari <span style="color:var(--warn)">*</span></label>

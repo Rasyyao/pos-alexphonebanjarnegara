@@ -132,12 +132,13 @@
         {{-- Right: Payments & Debt --}}
         <div class="space-y-5">
             {{-- Estimasi Margin --}}
-            @php
-                $margin = $sale->profit;
-                $marginPct = $sale->total_price > 0 ? round(($margin / $sale->total_price) * 100) : 0;
-                $marginColor = $margin >= 0 ? 'var(--success)' : 'var(--warn)';
-                $barWidth = max(0, min(100, $marginPct));
-            @endphp
+            @if(auth()->user()->role->value === 'superadmin')
+                @php
+                    $margin = $sale->profit;
+                    $marginPct = $sale->total_price > 0 ? round(($margin / $sale->total_price) * 100) : 0;
+                    $marginColor = $margin >= 0 ? 'var(--success)' : 'var(--warn)';
+                    $barWidth = max(0, min(100, $marginPct));
+                @endphp
             <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
                 <div class="px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
                     <span class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Estimasi Margin</span>
@@ -154,21 +155,38 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             {{-- Payments --}}
             <div class="bg-white rounded-xl border p-5" style="border-color:var(--line)">
-                <h3 class="text-sm font-semibold mb-4" style="color:var(--ink)">Rincian Pembayaran</h3>
+                <div class="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="text-sm font-semibold" style="color:var(--ink)">Rincian Pembayaran</h3>
+                        <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">
+                            {{ $sale->payments->count() > 1 ? 'Split ' . $sale->payments->count() . ' sumber' : '1 sumber pembayaran' }}
+                        </p>
+                    </div>
+                    @if(auth()->user()->role->value === 'superadmin')
+                    <a href="{{ route('sales.edit', $sale) }}"
+                       class="text-xs font-semibold"
+                       style="color:var(--accent)">Edit Split</a>
+                    @endif
+                </div>
                 <div class="space-y-2">
                     @foreach($sale->payments as $payment)
                     <div class="flex items-center justify-between py-3 px-4 rounded-xl"
                          style="{{ $payment->method->value === 'utang' ? 'background:#FFF5F5;border:1px solid #FFE4E4' : 'background:var(--bg-soft);border:1px solid var(--line)' }}">
-                        <span class="text-sm font-medium capitalize" style="color:var(--ink)">{{ $payment->method->value }}</span>
+                        <span class="text-sm font-medium" style="color:var(--ink)">Bayar dari <span class="capitalize">{{ $payment->method->value }}</span></span>
                         <span class="font-semibold font-mono tabular-nums"
                               style="color:{{ $payment->method->value === 'utang' ? 'var(--warn)' : 'var(--ink)' }}">
                             Rp {{ number_format($payment->amount, 0, ',', '.') }}
                         </span>
                     </div>
                     @endforeach
+                </div>
+                <div class="flex items-center justify-between mt-3 pt-3 text-sm" style="border-top:1px solid var(--line)">
+                    <span class="font-medium" style="color:var(--ink-soft)">Total Dibayar</span>
+                    <span class="font-bold font-mono tabular-nums" style="color:var(--ink)">Rp {{ number_format($sale->payments->sum('amount'), 0, ',', '.') }}</span>
                 </div>
             </div>
 

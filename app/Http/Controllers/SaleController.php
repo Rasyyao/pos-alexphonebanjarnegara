@@ -6,6 +6,7 @@ use App\Repositories\Contracts\SaleRepositoryInterface;
 use App\Services\SaleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SaleController extends Controller
 {
@@ -74,6 +75,9 @@ class SaleController extends Controller
             'description'           => ['nullable', 'string', 'max:1000'],
             'items'                 => ['required', 'array'],
             'items.*.selling_price' => ['required', 'numeric', 'min:0'],
+            'payments'              => ['required', 'array', 'min:1'],
+            'payments.*.method'     => ['required', 'in:cash,transfer,utang'],
+            'payments.*.amount'     => ['required', 'numeric', 'min:1'],
         ]);
 
         DB::transaction(function () use ($request, $sale) {
@@ -90,12 +94,63 @@ class SaleController extends Controller
             $sale->load('items');
             $total  = $sale->items->sum('subtotal');
             $profit = $sale->items->sum(fn($i) => ($i->selling_price - $i->purchase_price) * $i->quantity);
+            $payments = collect($request->input('payments'))
+                ->map(fn($payment) => [
+                    'method' => $payment['method'],
+                    'amount' => (float) $payment['amount'],
+                ])
+                ->values();
+            $paid = $payments->sum('amount');
+
+            if ($paid < $total) {
+                throw ValidationException::withMessages([
+                    'payments' => 'Total pembayaran tidak boleh kurang dari total penjualan.',
+                ]);
+            }
+
+            $utangTotal = $payments->where('method', 'utang')->sum('amount');
+            $debt = $sale->debt()->lockForUpdate()->first();
+            $currentPayments = $sale->payments()
+                ->get()
+                ->map(fn($payment) => [
+                    'method' => $payment->method->value ?? $payment->method,
+                    'amount' => (float) $payment->amount,
+                ])
+                ->values();
+
+            if ($debt && (float) $debt->paid_amount > 0 && $currentPayments->toArray() !== $payments->toArray()) {
+                throw ValidationException::withMessages([
+                    'payments' => 'Split pembayaran tidak bisa diubah karena utang transaksi ini sudah pernah dicicil.',
+                ]);
+            }
+
+            if ($debt && (float) $debt->paid_amount > $utangTotal) {
+                throw ValidationException::withMessages([
+                    'payments' => 'Nominal utang tidak boleh lebih kecil dari utang yang sudah dibayar.',
+                ]);
+            }
+
             $sale->update([
                 'sale_date'   => $request->sale_date,
                 'description' => $request->description ?: null,
                 'total_price' => $total,
+                'total_paid'  => $paid,
                 'profit'      => $profit,
             ]);
+
+            $sale->payments()->delete();
+            $payments->each(fn($payment) => $sale->payments()->create($payment));
+
+            if ($utangTotal > 0) {
+                $paidAmount = $debt ? (float) $debt->paid_amount : 0;
+                $status = $paidAmount >= $utangTotal ? 'paid' : ($paidAmount > 0 ? 'partial' : 'unpaid');
+                $sale->debt()->updateOrCreate(
+                    ['sale_id' => $sale->id],
+                    ['amount' => $utangTotal, 'paid_amount' => $paidAmount, 'status' => $status]
+                );
+            } elseif ($debt) {
+                $debt->delete();
+            }
         });
 
         return redirect()->route('sales.show', $sale)->with('success', 'Transaksi berhasil diperbarui.');

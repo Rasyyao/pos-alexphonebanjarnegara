@@ -231,7 +231,16 @@ class ReportController extends Controller
                . ($endDate ? \Carbon\Carbon::parse($endDate)->isoFormat('D MMM Y') : 'Sekarang'))
             : 'Semua Periode';
 
-        $data = compact('summary', 'sales', 'periodStr', 'startDate', 'endDate');
+        $debtPaymentsQuery = \App\Models\SalePayment::with(['sale.creator'])
+            ->whereIn('method', ['cash', 'transfer'])
+            ->whereNotNull('created_at')
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
+            ->whereRaw('DATE(sale_payments.created_at) > (SELECT sale_date FROM sales WHERE sales.id = sale_payments.sale_id)');
+        if ($startDate) $debtPaymentsQuery->whereDate('created_at', '>=', $startDate);
+        if ($endDate)   $debtPaymentsQuery->whereDate('created_at', '<=', $endDate);
+        $debtPayments = $debtPaymentsQuery->get();
+
+        $data = compact('summary', 'sales', 'debtPayments', 'periodStr', 'startDate', 'endDate');
         $data['printedAt'] = now()->isoFormat('D MMMM YYYY, HH:mm') . ' WIB';
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf-finance', $data)

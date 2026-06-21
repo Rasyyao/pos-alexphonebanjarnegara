@@ -2,6 +2,15 @@
 @section('title', 'Edit Transaksi — ' . $sale->invoice_number)
 
 @section('content')
+@php
+    $paymentRows = old('payments', $sale->payments->map(fn($payment) => [
+        'method' => $payment->method->value ?? $payment->method,
+        'amount' => (int) $payment->amount,
+    ])->values()->toArray());
+    if (empty($paymentRows)) {
+        $paymentRows = [['method' => 'cash', 'amount' => (int) $sale->total_price]];
+    }
+@endphp
 <div class="w-full">
 
     {{-- Header --}}
@@ -141,22 +150,76 @@
             {{-- Right: payments summary + actions --}}
             <div class="space-y-5">
 
-                {{-- Pembayaran (read-only) --}}
-                <div class="bg-white rounded-xl border p-5" style="border-color:var(--line)">
-                    <h3 class="text-sm font-semibold mb-4" style="color:var(--ink)">Rincian Pembayaran</h3>
-                    <div class="space-y-2">
-                        @foreach($sale->payments as $payment)
-                        <div class="flex items-center justify-between py-2.5 px-3 rounded-xl"
-                             style="{{ $payment->method->value === 'utang' ? 'background:#FFF5F5;border:1px solid #FFE4E4' : 'background:var(--bg-soft);border:1px solid var(--line)' }}">
-                            <span class="text-sm font-medium capitalize" style="color:var(--ink)">{{ $payment->method->value }}</span>
-                            <span class="font-semibold font-mono tabular-nums text-sm"
-                                  style="color:{{ $payment->method->value === 'utang' ? 'var(--warn)' : 'var(--ink)' }}">
-                                Rp {{ number_format($payment->amount, 0, ',', '.') }}
-                            </span>
+                {{-- Pembayaran --}}
+                <div class="bg-white rounded-xl border overflow-hidden" style="border-color:var(--line)">
+                    <div class="flex items-center justify-between px-5 py-3.5" style="border-bottom:1px solid var(--line);background:var(--bg-soft)">
+                        <div>
+                            <h3 class="text-sm font-semibold" style="color:var(--ink)">Rincian Pembayaran</h3>
+                            <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Edit nominal dan sumber pembayaran split.</p>
+                        </div>
+                        <button type="button" id="add-payment" class="btn-secondary" style="height:32px;padding:0 12px;font-size:12px">+ Split</button>
+                    </div>
+
+                    <div class="p-5 space-y-3" id="payment-list">
+                        @foreach($paymentRows as $i => $payment)
+                        <div class="payment-row rounded-xl p-3"
+                             style="background:var(--bg-soft);border:1px solid var(--line)"
+                             data-index="{{ $i }}">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-1">
+                                    <label class="field-label">Dari</label>
+                                    <select name="payments[{{ $i }}][method]" class="field-input payment-method">
+                                        @foreach(['cash' => 'Cash', 'transfer' => 'Transfer', 'utang' => 'Utang'] as $value => $label)
+                                            <option value="{{ $value }}" @selected(($payment['method'] ?? 'cash') === $value)>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('payments.'.$i.'.method')<p class="field-error">{{ $message }}</p>@enderror
+                                </div>
+                                <div class="flex-1">
+                                    <label class="field-label">Bayar</label>
+                                    <div class="money-wrap">
+                                        <span class="rp-prefix">Rp</span>
+                                        <input type="text"
+                                               name="payments[{{ $i }}][amount]"
+                                               class="field-input money-input payment-amount"
+                                               value="{{ $payment['amount'] ?? 0 }}"
+                                               inputmode="numeric" />
+                                    </div>
+                                    @error('payments.'.$i.'.amount')<p class="field-error">{{ $message }}</p>@enderror
+                                </div>
+                                <div class="pt-6">
+                                    <button type="button"
+                                            class="remove-payment w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+                                            style="color:var(--ink-mute)"
+                                            onmouseenter="this.style.color='var(--warn)';this.style.background='#FFF5F5'"
+                                            onmouseleave="this.style.color='var(--ink-mute)';this.style.background='transparent'"
+                                            aria-label="Hapus split pembayaran">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         @endforeach
                     </div>
-                    <p class="text-xs mt-3" style="color:var(--ink-mute)">Pembayaran tidak dapat diubah melalui form ini.</p>
+
+                    @error('payments')<p class="field-error px-5 pb-3">{{ $message }}</p>@enderror
+
+                    <div class="px-5 py-4 space-y-2" style="border-top:1px solid var(--line)">
+                        <div class="flex items-center justify-between text-sm">
+                            <span style="color:var(--ink-soft)">Total Item</span>
+                            <span class="font-semibold font-mono tabular-nums" id="payment-total-item" style="color:var(--ink)">Rp {{ number_format($sale->total_price, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span style="color:var(--ink-soft)">Total Dibayar</span>
+                            <span class="font-semibold font-mono tabular-nums" id="payment-total-paid" style="color:var(--ink)">Rp {{ number_format(collect($paymentRows)->sum('amount'), 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm pt-2" style="border-top:1px solid var(--line)">
+                            <span class="font-semibold" id="payment-balance-label" style="color:var(--ink-soft)">Sisa</span>
+                            <span class="font-bold font-mono tabular-nums" id="payment-balance" style="color:var(--ink)">Rp 0</span>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Actions --}}
@@ -178,6 +241,63 @@
     function rawVal(el) {
         return parseInt((el.value || '').replace(/[^0-9]/g, ''), 10) || 0;
     }
+    function money(value) {
+        return 'Rp ' + value.toLocaleString('id-ID');
+    }
+    function updatePaymentIndexes() {
+        document.querySelectorAll('.payment-row').forEach(function (row, index) {
+            row.dataset.index = index;
+            var method = row.querySelector('.payment-method');
+            var amount = row.querySelector('.payment-amount');
+            if (method) method.name = 'payments[' + index + '][method]';
+            if (amount) amount.name = 'payments[' + index + '][amount]';
+        });
+    }
+    function updateRemoveButtons() {
+        var rows = document.querySelectorAll('.payment-row');
+        rows.forEach(function (row) {
+            var button = row.querySelector('.remove-payment');
+            if (button) button.style.display = rows.length > 1 ? 'flex' : 'none';
+        });
+    }
+    function formatPaymentInput(el) {
+        if (el.dataset.rpBound) return;
+        el.dataset.editRpBound = '1';
+        el.addEventListener('input', function () {
+            var raw = (this.value || '').replace(/[^0-9]/g, '');
+            this.value = raw ? parseInt(raw, 10).toLocaleString('id-ID') : '';
+        });
+    }
+    function recalcPayments(total) {
+        var paid = 0;
+        document.querySelectorAll('.payment-amount').forEach(function (el) {
+            paid += rawVal(el);
+        });
+
+        var balance = paid - total;
+        var labelEl = document.getElementById('payment-balance-label');
+        var balanceEl = document.getElementById('payment-balance');
+
+        document.getElementById('payment-total-item').textContent = money(total);
+        document.getElementById('payment-total-paid').textContent = money(paid);
+
+        if (balance < 0) {
+            labelEl.textContent = 'Kurang Bayar';
+            labelEl.style.color = 'var(--warn)';
+            balanceEl.textContent = money(Math.abs(balance));
+            balanceEl.style.color = 'var(--warn)';
+        } else if (balance > 0) {
+            labelEl.textContent = 'Kembalian';
+            labelEl.style.color = 'var(--success)';
+            balanceEl.textContent = money(balance);
+            balanceEl.style.color = 'var(--success)';
+        } else {
+            labelEl.textContent = 'Pas';
+            labelEl.style.color = 'var(--success)';
+            balanceEl.textContent = money(0);
+            balanceEl.style.color = 'var(--success)';
+        }
+    }
     function recalc() {
         var total = 0;
         document.querySelectorAll('tbody tr[data-qty]').forEach(function (row) {
@@ -187,12 +307,75 @@
             var sell      = rawVal(sellEl);
             var subtotal  = sell * qty;
             total += subtotal;
-            subtotEl.textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
+            subtotEl.textContent = money(subtotal);
         });
-        document.getElementById('total-display').textContent = 'Rp ' + total.toLocaleString('id-ID');
+        document.getElementById('total-display').textContent = money(total);
+        recalcPayments(total);
+    }
+    function bindPaymentRow(row) {
+        var amount = row.querySelector('.payment-amount');
+        var method = row.querySelector('.payment-method');
+        if (amount && !amount.dataset.editPayBound) {
+            amount.dataset.editPayBound = '1';
+            formatPaymentInput(amount);
+            amount.addEventListener('input', recalc);
+        }
+        if (method && !method.dataset.editPayBound) {
+            method.dataset.editPayBound = '1';
+            method.addEventListener('change', recalc);
+        }
+        var remove = row.querySelector('.remove-payment');
+        if (remove && !remove.dataset.editPayBound) {
+            remove.dataset.editPayBound = '1';
+            remove.addEventListener('click', function () {
+                row.remove();
+                updatePaymentIndexes();
+                updateRemoveButtons();
+                recalc();
+            });
+        }
     }
     document.querySelectorAll('.item-sell').forEach(function (el) {
         el.addEventListener('input', recalc);
+    });
+    document.querySelectorAll('.payment-row').forEach(bindPaymentRow);
+    updateRemoveButtons();
+    recalc();
+
+    document.getElementById('add-payment').addEventListener('click', function () {
+        var list = document.getElementById('payment-list');
+        var index = list.querySelectorAll('.payment-row').length;
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = ''
+            + '<div class="payment-row rounded-xl p-3" style="background:var(--bg-soft);border:1px solid var(--line)" data-index="' + index + '">'
+            + '  <div class="flex items-start gap-3">'
+            + '    <div class="flex-1">'
+            + '      <label class="field-label">Dari</label>'
+            + '      <select name="payments[' + index + '][method]" class="field-input payment-method">'
+            + '        <option value="cash">Cash</option>'
+            + '        <option value="transfer">Transfer</option>'
+            + '        <option value="utang">Utang</option>'
+            + '      </select>'
+            + '    </div>'
+            + '    <div class="flex-1">'
+            + '      <label class="field-label">Bayar</label>'
+            + '      <div class="money-wrap">'
+            + '        <span class="rp-prefix">Rp</span>'
+            + '        <input type="text" name="payments[' + index + '][amount]" class="field-input money-input payment-amount" value="" inputmode="numeric" />'
+            + '      </div>'
+            + '    </div>'
+            + '    <div class="pt-6">'
+            + '      <button type="button" class="remove-payment w-9 h-9 rounded-lg flex items-center justify-center transition-colors" style="color:var(--ink-mute)" aria-label="Hapus split pembayaran">'
+            + '        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
+            + '      </button>'
+            + '    </div>'
+            + '  </div>'
+            + '</div>';
+        var row = wrapper.firstElementChild;
+        list.appendChild(row);
+        bindPaymentRow(row);
+        updateRemoveButtons();
+        recalc();
     });
 })();
 </script>

@@ -80,20 +80,24 @@
   {{-- KPI --}}
   <div class="kpi-row">
     <div class="kpi">
-      <div class="kpi-label">Total Omzet</div>
+      <div class="kpi-label">Omzet</div>
       <div class="kpi-value">Rp {{ number_format($summary['revenue'], 0, ',', '.') }}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Laba Kotor</div>
-      <div class="kpi-value {{ $summary['profit'] >= 0 ? 'green' : 'red' }}">Rp {{ number_format($summary['profit'], 0, ',', '.') }}</div>
+      <div class="kpi-label">Pendapatan</div>
+      <div class="kpi-value green">Rp {{ number_format($summary['income'] ?? 0, 0, ',', '.') }}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Pengeluaran</div>
-      <div class="kpi-value">Rp {{ number_format($summary['expenses'], 0, ',', '.') }}</div>
+      <div class="kpi-value red">Rp {{ number_format($summary['expenses'], 0, ',', '.') }}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Laba Bersih</div>
       <div class="kpi-value {{ $summary['net'] >= 0 ? 'green' : 'red' }}">Rp {{ number_format($summary['net'], 0, ',', '.') }}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Hutang Aktif</div>
+      <div class="kpi-value {{ ($summary['unpaidDebts'] ?? 0) > 0 ? 'red' : '' }}">Rp {{ number_format($summary['unpaidDebts'] ?? 0, 0, ',', '.') }}</div>
     </div>
   </div>
 
@@ -148,6 +152,46 @@
       @endif
     </tbody>
   </table>
+
+  {{-- DEBT PAYMENTS TABLE --}}
+  @if(isset($debtPayments) && $debtPayments->count() > 0)
+  <div class="section-title" style="margin-top:16px">Rincian Pelunasan Hutang</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:24px">No</th>
+        <th>Invoice</th>
+        <th class="center">Tgl. Penjualan</th>
+        <th class="center">Tgl. Pelunasan</th>
+        <th>Kasir</th>
+        <th>Metode</th>
+        <th class="right">Jumlah</th>
+      </tr>
+    </thead>
+    <tbody>
+      @php $no = 1; $tDebt = 0; @endphp
+      @foreach($debtPayments as $p)
+        @php
+          $tDebt += (float)$p->amount;
+          $method = $p->method instanceof \BackedEnum ? $p->method->value : $p->method;
+        @endphp
+        <tr>
+          <td class="center muted">{{ $no++ }}</td>
+          <td style="font-family:'Courier New',monospace;font-size:7.5pt">{{ $p->sale->invoice_number ?? '—' }}</td>
+          <td class="center muted">{{ $p->sale->sale_date->format('d/m/Y') }}</td>
+          <td class="center muted">{{ \Carbon\Carbon::parse($p->created_at)->format('d/m/Y') }}</td>
+          <td class="muted">{{ $p->sale->creator->name ?? '—' }}</td>
+          <td class="muted">{{ $method === 'cash' ? 'Tunai' : 'Transfer' }}</td>
+          <td class="right green">Rp {{ number_format($p->amount, 0, ',', '.') }}</td>
+        </tr>
+      @endforeach
+      <tr class="total-row">
+        <td colspan="6" style="text-align:right">TOTAL PELUNASAN:</td>
+        <td class="right green">Rp {{ number_format($tDebt, 0, ',', '.') }}</td>
+      </tr>
+    </tbody>
+  </table>
+  @endif
 
   <div class="footer">Dokumen dicetak otomatis oleh sistem POS Alex Phone &mdash; {{ $printedAt }}</div>
 </div>

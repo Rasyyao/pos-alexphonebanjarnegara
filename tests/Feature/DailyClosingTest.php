@@ -174,4 +174,41 @@ class DailyClosingTest extends TestCase
         ]);
         $response->assertSessionHasErrors('date');
     }
+
+    public function test_admin_cannot_overwrite_closed_closing_but_superadmin_can(): void
+    {
+        // 1. Create a closed closing
+        DailyClosing::create([
+            'closing_date'  => $this->testDate,
+            'status'        => 'closed',
+            'cash_physical' => 5000000,
+            'cash_system'   => 5000000,
+            'atm_physical'  => 5000000,
+            'atm_system'    => 5000000,
+            'closed_by'     => $this->admin->id,
+            'closed_at'     => now(),
+        ]);
+
+        // 2. Admin tries to re-submit closing for that date -> blocked
+        $response = $this->actingAs($this->admin)->post(route('daily-closings.store'), [
+            'closing_date'  => $this->testDate,
+            'cash_physical' => '6.000.000',
+            'atm_physical'  => '6.000.000',
+            'notes'         => 'Try edit closing as admin',
+        ]);
+        $response->assertSessionHasErrors('date');
+
+        // 3. Superadmin tries to submit/edit closing for that date -> allowed
+        $response = $this->actingAs($this->superadmin)->post(route('daily-closings.store'), [
+            'closing_date'  => $this->testDate,
+            'cash_physical' => '7.000.000',
+            'atm_physical'  => '7.000.000',
+            'notes'         => 'Superadmin edit closing',
+        ]);
+        $response->assertRedirect();
+        
+        $closing = DailyClosing::whereDate('closing_date', $this->testDate)->first();
+        $this->assertEquals(7000000, (float)$closing->cash_physical);
+        $this->assertEquals(7000000, (float)$closing->atm_physical);
+    }
 }

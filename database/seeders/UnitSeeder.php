@@ -27,24 +27,24 @@ class UnitSeeder extends Seeder
             ['brand' => 'Vivo',    'model' => 'V30',              'type' => 'baru',   'ram' => '8GB',  'rom' => '256GB', 'color' => 'Peacock Green', 'price' => 4500000, 'grade' => 'A', 'imei' => '359281002938480', 'sn' => 'SN-V30GRN01'],
         ];
 
-        foreach ($units as $u) {
-            $model = $models->first(fn($m) => $m->brand->name === $u['brand'] && $m->name === $u['model']);
-            if (!$model) continue;
+        // foreach ($units as $u) {
+        //     $model = $models->first(fn($m) => $m->brand->name === $u['brand'] && $m->name === $u['model']);
+        //     if (!$model) continue;
 
-            Unit::create([
-                'model_id'       => $model->id,
-                'created_by'     => $admin->id,
-                'unit_type'      => $u['type'],
-                'grade'          => $u['grade'],
-                'ram'            => $u['ram'],
-                'rom'            => $u['rom'],
-                'color'          => $u['color'],
-                'imei'           => $u['imei'],
-                'serial_number'  => $u['sn'],
-                'purchase_price' => $u['price'],
-                'purchase_date'  => now()->subDays(rand(1, 30))->toDateString(),
-                'status'         => 'ready',
-            ]);
-        }
+        //     Unit::create([
+        //         'model_id'       => $model->id,
+        //         'created_by'     => $admin->id,
+        //         'unit_type'      => $u['type'],
+        //         'grade'          => $u['grade'],
+        //         'ram'            => $u['ram'],
+        //         'rom'            => $u['rom'],
+        //         'color'          => $u['color'],
+        //         'imei'           => $u['imei'],
+        //         'serial_number'  => $u['sn'],
+        //         'purchase_price' => $u['price'],
+        //         'purchase_date'  => now()->subDays(rand(1, 30))->toDateString(),
+        //         'status'         => 'ready',
+        //     ]);
+        // }
     }
 }

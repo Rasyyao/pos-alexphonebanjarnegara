@@ -152,6 +152,21 @@ class FinanceService
         $revenue = (float) $salesQuery->sum('total_price');
         $profit  = (float) $salesQuery->sum('profit');
 
+        // Pendapatan = cash/transfer actually received: initial payments for sales in period + debt payments received in period
+        $incomeInitial = (float) \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->whereHas('sale', function ($sq) use ($startDate, $endDate) {
+                $sq->where('status', 'approved');
+                if ($startDate) $sq->whereDate('sale_date', '>=', $startDate);
+                if ($endDate)   $sq->whereDate('sale_date', '<=', $endDate);
+            })->sum('amount');
+        $incomeDebtQuery = \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->whereNotNull('created_at')
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
+            ->whereRaw('DATE(sale_payments.created_at) > (SELECT sale_date FROM sales WHERE sales.id = sale_payments.sale_id)');
+        if ($startDate) $incomeDebtQuery->whereDate('created_at', '>=', $startDate);
+        if ($endDate)   $incomeDebtQuery->whereDate('created_at', '<=', $endDate);
+        $income = $incomeInitial + (float) $incomeDebtQuery->sum('amount');
+
         $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
         $expensesQuery = \App\Models\Expense::query();
         if (!$isSuperAdmin) {
@@ -163,7 +178,7 @@ class FinanceService
         if ($endDate) {
             $expensesQuery->whereDate('expense_date', '<=', $endDate);
         }
-        $expenses = (float) $expensesQuery->sum('amount');
+        $operationalExpenses = (float) $expensesQuery->sum('amount');
 
         $hpExpensesQuery = \App\Models\Unit::query();
         if ($startDate) {
@@ -172,7 +187,9 @@ class FinanceService
         if ($endDate) {
             $hpExpensesQuery->whereDate('purchase_date', '<=', $endDate);
         }
-        $expenses += (float) $hpExpensesQuery->sum('purchase_price');
+        $hpPurchaseTotal = (float) $hpExpensesQuery->sum('purchase_price');
+        // Total pengeluaran untuk display (kas keluar); HP cost sudah masuk COGS via profit
+        $expenses = $operationalExpenses + $hpPurchaseTotal;
 
         $capitalsQuery = \App\Models\Capital::whereIn('type', ['initial', 'addition']);
         if ($startDate) {
@@ -197,9 +214,10 @@ class FinanceService
         return [
             'revenue'      => $revenue,
             'profit'       => $profit,
+            'income'       => $income,
             'capital'      => $capital,
             'expenses'     => $expenses,
-            'net'          => $profit - $expenses,
+            'net'          => $profit - $operationalExpenses,
             'unpaidDebts'  => $this->debts->unpaidSum(),
             'assetValue'   => $this->units->assetValue(),
             'modalAwal'    => $modalAwal,
@@ -225,7 +243,16 @@ class FinanceService
         $todayExpenses += $todayHPStock;
 
         $todayIncome   = (float) \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
-            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', today()))
+            ->where(function ($q) {
+                // Initial payments for today's sales
+                $q->whereHas('sale', fn($sq) => $sq->approved()->whereDate('sale_date', today()))
+                  // OR debt payments received today for older sales (identified by created_at)
+                  ->orWhere(function ($sq) {
+                      $sq->whereNotNull('created_at')
+                         ->whereDate('created_at', today())
+                         ->whereHas('sale', fn($ssq) => $ssq->approved()->whereDate('sale_date', '<', today()));
+                  });
+            })
             ->sum('amount');
         $todayDebt     = (float) \App\Models\Debt::whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', today()))
             ->sum('amount');
@@ -369,8 +396,39 @@ class FinanceService
             return $exp;
         });
 
+        // Debt payments received in the filtered period for sales made before that period
+        $debtPaymentsQuery = \App\Models\SalePayment::with(['sale.creator'])
+            ->whereIn('method', ['cash', 'transfer'])
+            ->whereNotNull('created_at')
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
+            ->whereRaw('DATE(sale_payments.created_at) > (SELECT sale_date FROM sales WHERE sales.id = sale_payments.sale_id)');
+        if ($startDate) $debtPaymentsQuery->whereDate('created_at', '>=', $startDate);
+        if ($endDate)   $debtPaymentsQuery->whereDate('created_at', '<=', $endDate);
+
+        $virtualDebtPayments = $debtPaymentsQuery->get()->map(function ($payment) {
+            $sale      = $payment->sale;
+            $invoice   = $sale->invoice_number ?? '—';
+            $methodStr = $payment->method instanceof \BackedEnum ? $payment->method->value : $payment->method;
+            $methodLabel = $methodStr === 'cash' ? 'Tunai' : 'Transfer';
+
+            $exp = new \App\Models\Expense();
+            $exp->id = null;
+            $exp->is_virtual = true;
+            $exp->is_virtual_debt_payment = true;
+            $exp->sale_id = $sale->id;
+            $exp->expense_date = \Carbon\Carbon::parse($payment->created_at);
+            $exp->description = "Pelunasan Hutang {$invoice}";
+            $exp->category = 'pelunasan_hutang';
+            $exp->payment_method = $methodStr;
+            $exp->notes = "Bayar {$methodLabel} — tgl. penjualan: {$sale->sale_date->format('d/m/Y')}";
+            $exp->amount = $payment->amount;
+            $exp->created_by = $sale->created_by;
+            $exp->setRelation('creator', $sale->creator);
+            return $exp;
+        });
+
         $realExpensesList = $expensesQuery->get();
-        $mergedCollection = $realExpensesList->concat($virtualExpenses)->concat($virtualSales)
+        $mergedCollection = $realExpensesList->concat($virtualExpenses)->concat($virtualSales)->concat($virtualDebtPayments)
             ->sortByDesc(function ($item) {
                 $dateVal = $item->expense_date;
                 if ($dateVal instanceof \Carbon\Carbon) {
