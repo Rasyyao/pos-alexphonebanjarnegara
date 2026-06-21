@@ -29,12 +29,18 @@ class SaleController extends Controller
     public function verify()
     {
         abort_unless(auth()->user()->role->value === 'superadmin', 403);
-        
-        $pending = $this->sales->pendingPaginate(10, 'page_sale')->withQueryString();
-        $pendingUnits = $this->units->paginate(['status' => \App\Enums\UnitStatus::Pending], 10, 'page_unit')->withQueryString();
-        $pendingAccessories = $this->accessories->paginate(['status' => \App\Enums\AccessoryStatus::Pending], 10, 'page_accessory')->withQueryString();
 
-        return view('sales.verify', compact('pending', 'pendingUnits', 'pendingAccessories'));
+        $pending            = $this->sales->pendingPaginate(10, 'page_sale')->withQueryString();
+        $pendingUnits       = $this->units->paginate(['status' => \App\Enums\UnitStatus::Pending], 10, 'page_unit')->withQueryString();
+        $pendingAccessories = $this->accessories->paginate(['status' => \App\Enums\AccessoryStatus::Pending], 10, 'page_accessory')->withQueryString();
+        $pendingClosings    = \App\Models\DailyClosing::where('status', 'closed')
+            ->orderBy('closing_date', 'desc')
+            ->paginate(10, ['*'], 'page_closing')
+            ->withQueryString();
+
+        $isSuperadmin = true;
+
+        return view('sales.verify', compact('pending', 'pendingUnits', 'pendingAccessories', 'pendingClosings', 'isSuperadmin'));
     }
 
     public function store(\App\Http\Requests\StoreSaleRequest $request)
@@ -71,6 +77,8 @@ class SaleController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $sale) {
+            \App\Services\DailyClosingService::assertDateNotLocked($sale->sale_date->toDateString());
+            \App\Services\DailyClosingService::assertDateNotLocked($request->sale_date);
             foreach ($request->input('items') as $itemId => $data) {
                 $item = $sale->items()->findOrFail($itemId);
                 $price = (float) $data['selling_price'];
@@ -122,6 +130,7 @@ class SaleController extends Controller
         $invoice = $sale->invoice_number;
 
         DB::transaction(function () use ($sale) {
+            \App\Services\DailyClosingService::assertDateNotLocked($sale->sale_date->toDateString());
             if ($sale->status->value === 'approved') {
                 foreach ($sale->items()->with(['unit', 'accessory'])->get() as $item) {
                     if ($item->unit_id) $item->unit->update(['status' => 'ready']);

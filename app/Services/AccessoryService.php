@@ -15,6 +15,7 @@ class AccessoryService
 
     public function store(array $validated, User $actor): Accessory
     {
+        \App\Services\DailyClosingService::assertDateNotLocked(today()->toDateString());
         $validated['status'] = $actor->role === UserRole::Superadmin
             ? AccessoryStatus::Approved
             : AccessoryStatus::Pending;
@@ -24,6 +25,7 @@ class AccessoryService
 
     public function approve(Accessory $accessory, User $actor): Accessory
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($accessory->created_at->toDateString());
         if ($accessory->status !== AccessoryStatus::Pending) {
             throw new \LogicException('Hanya aksesoris pending yang bisa di-approve.');
         }
@@ -38,11 +40,13 @@ class AccessoryService
 
     public function update(Accessory $accessory, array $validated): Accessory
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($accessory->created_at->toDateString());
         return $this->accessories->update($accessory, $validated);
     }
 
     public function destroy(Accessory $accessory): void
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($accessory->created_at->toDateString());
         $this->accessories->delete($accessory);
     }
 }

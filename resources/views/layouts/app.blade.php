@@ -365,7 +365,7 @@
                         <a href="{{ route('reports.finance') }}"
                             class="flex items-center py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors"
                             style="color: {{ $financeActive ? 'var(--accent)' : 'var(--ink-mute)' }}; background: {{ $financeActive ? 'var(--bg-soft)' : 'transparent' }}">
-                            Laporan Keuangan
+                            Laporan Harian
                         </a>
 
                         {{-- Laporan Stok --}}
@@ -401,7 +401,8 @@
                         $pendingSales      = \App\Models\Sale::where('status', 'pending')->count();
                         $pendingUnitsCount = \App\Models\Unit::where('status', 'pending')->count();
                         $pendingAccCount   = \App\Models\Accessory::where('status', 'pending')->count();
-                        $pendingTotal      = $pendingSales + $pendingUnitsCount + $pendingAccCount;
+                        $pendingClosingsCount = \App\Models\DailyClosing::where('status', 'closed')->count();
+                        $pendingTotal      = $pendingSales + $pendingUnitsCount + $pendingAccCount + $pendingClosingsCount;
                     @endphp
                     <div class="pt-4 pb-1 px-3">
                         <span class="text-[10px] font-medium uppercase tracking-widest font-mono"
@@ -429,7 +430,7 @@
                         @endif
                     </a>
 
-                    @foreach ([['route' => 'admin-users.index', 'label' => 'Kelola Admin', 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z']] as $item)
+                @foreach ([['route' => 'admin-users.index', 'label' => 'Kelola Admin', 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z']] as $item)
                         @php $active = request()->routeIs(str_replace('.index','',$item['route']).'*'); @endphp
                         <a href="{{ route($item['route']) }}"
                             class="group flex items-center gap-3 py-2 pr-3 rounded-r-lg text-sm font-medium transition-colors duration-150"

@@ -8,22 +8,33 @@
     <div class="flex items-center justify-between">
         <div>
             <h2 class="text-xl font-bold" style="color:var(--ink)">Verifikasi Data</h2>
-            <p class="text-xs mt-0.5" style="color:var(--ink-mute)">Kelola persetujuan transaksi penjualan, stok handphone baru, dan aksesoris yang diinput oleh admin.</p>
+            <p class="text-xs mt-0.5" style="color:var(--ink-mute)">
+                @if($isSuperadmin)
+                    Kelola persetujuan transaksi penjualan, stok handphone baru, aksesoris, dan tutup buku harian.
+                @else
+                    Lihat status pengajuan tutup buku harian yang menunggu persetujuan superadmin.
+                @endif
+            </p>
         </div>
     </div>
 
     @php
-        $activeTab = request('tab', 'sales');
+        $activeTab = $isSuperadmin ? request('tab', 'sales') : 'closings';
     @endphp
 
     {{-- Tabs --}}
     <div class="flex items-center gap-0" style="border-bottom:2px solid var(--line)">
         @php
-            $tabs = [
-                ['key' => 'sales',       'label' => 'Penjualan', 'count' => $pending->total()],
-                ['key' => 'units',       'label' => 'Stok HP',   'count' => $pendingUnits->total()],
-                ['key' => 'accessories', 'label' => 'Aksesoris', 'count' => $pendingAccessories->total()],
-            ];
+            $tabs = $isSuperadmin
+                ? [
+                    ['key' => 'sales',       'label' => 'Penjualan', 'count' => $pending->total()],
+                    ['key' => 'units',       'label' => 'Stok HP',   'count' => $pendingUnits->total()],
+                    ['key' => 'accessories', 'label' => 'Aksesoris', 'count' => $pendingAccessories->total()],
+                    ['key' => 'closings',    'label' => 'Tutup Buku', 'count' => $pendingClosings->total()],
+                  ]
+                : [
+                    ['key' => 'closings', 'label' => 'Tutup Buku', 'count' => $pendingClosings->total()],
+                  ];
         @endphp
         @foreach($tabs as $tab)
             @php $isActive = $activeTab === $tab['key']; @endphp
@@ -50,7 +61,7 @@
     {{-- Content Table based on active tab --}}
     <div class="bg-white rounded-xl border overflow-hidden shadow-sm" style="border-color:var(--line)">
         <div class="overflow-x-auto">
-            @if($activeTab === 'sales')
+            @if($isSuperadmin && $activeTab === 'sales')
                 {{-- Penjualan Table --}}
                 <table class="w-full text-sm">
                     <thead>
@@ -132,7 +143,7 @@
                                     Rp {{ number_format($sale->total_price, 0, ',', '.') }}
                                 </div>
                                 <div class="text-[11px] font-mono font-semibold mt-1" style="color:var(--success)">
-                                    Est. Laba: Rp {{ number_format($sale->profit, 0, ',', '.') }}
+                                    Laba: Rp {{ number_format($sale->profit, 0, ',', '.') }}
                                 </div>
                             </td>
 
@@ -187,7 +198,7 @@
                         @endforelse
                     </tbody>
                 </table>
-            @elseif($activeTab === 'units')
+            @elseif($isSuperadmin && $activeTab === 'units')
                 {{-- Stok HP Table --}}
                 <table class="w-full text-sm">
                     <thead>
@@ -292,7 +303,7 @@
                         @endforelse
                     </tbody>
                 </table>
-            @elseif($activeTab === 'accessories')
+            @elseif($isSuperadmin && $activeTab === 'accessories')
                 {{-- Aksesoris Table --}}
                 <table class="w-full text-sm">
                     <thead>
@@ -377,11 +388,144 @@
                         @endforelse
                     </tbody>
                 </table>
+            @elseif($activeTab === 'closings')
+                {{-- Tutup Buku Table --}}
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr style="background:var(--bg-soft); border-bottom:1px solid var(--line)">
+                            <th class="text-left px-5 py-3.5 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Tanggal</th>
+                            <th class="text-right px-4 py-3.5 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Laba Bersih</th>
+                            <th class="text-center px-4 py-3.5 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Selisih Kas</th>
+                            <th class="text-center px-4 py-3.5 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Selisih ATM</th>
+                            <th class="text-left px-4 py-3.5 text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Catatan</th>
+                            <th class="w-44 px-5 py-3.5 text-center text-[11px] font-medium uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($pendingClosings as $closing)
+                        @php
+                            $diffCash = $closing->cash_physical - $closing->cash_system;
+                            $diffAtm  = $closing->atm_physical  - $closing->atm_system;
+                        @endphp
+                        <tr class="transition-colors" style="border-bottom:1px solid var(--line)"
+                            onmouseenter="this.style.background='var(--bg-soft)'" onmouseleave="this.style.background=''">
+
+                            {{-- Tanggal --}}
+                            <td class="px-5 py-4 align-middle">
+                                <div class="font-semibold text-[13px]" style="color:var(--ink)">
+                                    {{ \Carbon\Carbon::parse($closing->closing_date)->isoFormat('D MMM YYYY') }}
+                                </div>
+                                <div class="flex items-center gap-1 mt-1">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background:#FEF3C7;color:#92400E">Pending</span>
+                                </div>
+                                <div class="text-[11px] mt-1.5" style="color:var(--ink-mute)">
+                                    oleh {{ $closing->closedBy->name ?? 'Admin' }} · {{ $closing->closed_at->format('H:i') }}
+                                </div>
+                            </td>
+
+                            {{-- Laba Bersih --}}
+                            <td class="px-4 py-4 align-middle text-right">
+                                <div class="font-mono font-bold text-[13px]" style="color:var(--success)">
+                                    Rp {{ number_format($closing->laba, 0, ',', '.') }}
+                                </div>
+                                <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-mute)">
+                                    omzet Rp {{ number_format($closing->total_income, 0, ',', '.') }}
+                                </div>
+                            </td>
+
+                            {{-- Selisih Kas --}}
+                            <td class="px-4 py-4 align-middle text-center">
+                                @if ($diffCash == 0)
+                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold" style="background:#D1FAE5;color:#065F46">Klop</span>
+                                @elseif ($diffCash > 0)
+                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold font-mono" style="background:#D1FAE5;color:#065F46">+Rp {{ number_format($diffCash, 0, ',', '.') }}</span>
+                                @else
+                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold font-mono" style="background:#FEE2E2;color:#991B1B">−Rp {{ number_format(abs($diffCash), 0, ',', '.') }}</span>
+                                @endif
+                                <div class="text-[10px] font-mono mt-1" style="color:var(--ink-mute)">
+                                    fisik Rp {{ number_format($closing->cash_physical, 0, ',', '.') }}
+                                </div>
+                            </td>
+
+                            {{-- Selisih ATM --}}
+                            <td class="px-4 py-4 align-middle text-center">
+                                @if ($diffAtm == 0)
+                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold" style="background:#D1FAE5;color:#065F46">Klop</span>
+                                @elseif ($diffAtm > 0)
+                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold font-mono" style="background:#D1FAE5;color:#065F46">+Rp {{ number_format($diffAtm, 0, ',', '.') }}</span>
+                                @else
+                                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold font-mono" style="background:#FEE2E2;color:#991B1B">−Rp {{ number_format(abs($diffAtm), 0, ',', '.') }}</span>
+                                @endif
+                                <div class="text-[10px] font-mono mt-1" style="color:var(--ink-mute)">
+                                    fisik Rp {{ number_format($closing->atm_physical, 0, ',', '.') }}
+                                </div>
+                            </td>
+
+                            {{-- Catatan --}}
+                            <td class="px-4 py-4 align-middle text-xs max-w-[160px]" style="color:var(--ink-mute)">
+                                <span class="line-clamp-2">{{ $closing->notes ?: '—' }}</span>
+                            </td>
+
+                            {{-- Aksi --}}
+                            <td class="px-5 py-4 align-middle">
+                                <div class="flex flex-col gap-1.5">
+                                    <button type="button"
+                                            data-date="{{ $closing->closing_date->toDateString() }}"
+                                            data-cash="{{ $closing->cash_physical }}"
+                                            data-atm="{{ $closing->atm_physical }}"
+                                            data-notes="{{ $closing->notes }}"
+                                            onclick="openEditClosingModal(this)"
+                                            class="btn-secondary w-full flex items-center justify-center gap-1.5"
+                                            style="height:32px;font-size:12px;border-radius:8px">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    @if($isSuperadmin)
+                                    <form method="POST" action="{{ route('daily-closings.verify', $closing) }}" class="w-full">
+                                        @csrf
+                                        <button type="submit" class="btn-primary w-full flex items-center justify-center gap-1.5" style="height:32px;font-size:12px;border-radius:8px;background:var(--success)">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                            </svg>
+                                            Verifikasi
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('daily-closings.revert', $closing) }}" class="w-full"
+                                          onsubmit="return confirm('Kembalikan laporan ini ke draft? Tanggal transaksi akan dibuka kembali.')">
+                                        @csrf
+                                        <button type="submit" class="w-full flex items-center justify-center gap-1.5 text-[11px] font-medium" style="height:28px;color:var(--ink-mute)">
+                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 10v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                            </svg>
+                                            Buka Kembali
+                                        </button>
+                                    </form>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="px-5 py-14 text-center">
+                                <div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3" style="background:#EFF6FF;color:var(--accent)">
+                                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <p class="text-sm font-medium" style="color:var(--ink)">Tidak ada laporan menunggu verifikasi</p>
+                                <p class="text-xs mt-1" style="color:var(--ink-mute)">Semua laporan keuangan harian sudah diverifikasi & dikunci.</p>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             @endif
         </div>
 
         {{-- Pagination footer --}}
-        @if($activeTab === 'sales')
+        @if($isSuperadmin && $activeTab === 'sales')
             <div class="px-5 py-3 flex items-center justify-between" style="border-top:1px solid var(--line);background:var(--bg-soft)">
                 <span class="text-xs font-mono" style="color:var(--ink-mute)">
                     @if($pending->total() > 0)
@@ -392,7 +536,7 @@
                 </span>
                 {{ $pending->links() }}
             </div>
-        @elseif($activeTab === 'units')
+        @elseif($isSuperadmin && $activeTab === 'units')
             <div class="px-5 py-3 flex items-center justify-between" style="border-top:1px solid var(--line);background:var(--bg-soft)">
                 <span class="text-xs font-mono" style="color:var(--ink-mute)">
                     @if($pendingUnits->total() > 0)
@@ -403,7 +547,7 @@
                 </span>
                 {{ $pendingUnits->links() }}
             </div>
-        @elseif($activeTab === 'accessories')
+        @elseif($isSuperadmin && $activeTab === 'accessories')
             <div class="px-5 py-3 flex items-center justify-between" style="border-top:1px solid var(--line);background:var(--bg-soft)">
                 <span class="text-xs font-mono" style="color:var(--ink-mute)">
                     @if($pendingAccessories->total() > 0)
@@ -414,8 +558,145 @@
                 </span>
                 {{ $pendingAccessories->links() }}
             </div>
+        @elseif($activeTab === 'closings')
+            <div class="px-5 py-3 flex items-center justify-between" style="border-top:1px solid var(--line);background:var(--bg-soft)">
+                <span class="text-xs font-mono" style="color:var(--ink-mute)">
+                    @if($pendingClosings->total() > 0)
+                        Menampilkan {{ $pendingClosings->firstItem() }}–{{ $pendingClosings->lastItem() }} dari {{ $pendingClosings->total() }} laporan
+                    @else
+                        0 laporan
+                    @endif
+                </span>
+                {{ $pendingClosings->links() }}
+            </div>
         @endif
     </div>
 
+    {{-- ========== MODAL: Edit Tutup Buku ========== --}}
+    <div id="modal-edit-closing" class="fixed inset-0 z-[120] hidden overflow-y-auto"
+        onclick="if(event.target===this){closeEditClosingModal()}">
+        <div class="fixed inset-0" style="background:rgba(10,37,64,.5)"></div>
+        <div class="relative min-h-full flex items-center justify-center px-4 pt-12 pb-12">
+            <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden modal-pop animate-fade-in"
+                onclick="event.stopPropagation()">
+                
+                {{-- Modal Header --}}
+                <div class="flex items-start justify-between px-6 py-5 border-b" style="border-color:var(--line)">
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-50 text-blue-600">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </span>
+                        <div>
+                            <h3 class="text-base font-semibold leading-none text-gray-900">Edit Data Penutupan Buku</h3>
+                            <p class="text-xs text-gray-500 mt-1.5">Ubah realisasi kas fisik dan saldo ATM untuk tanggal terpilih</p>
+                        </div>
+                    </div>
+                    <button onclick="closeEditClosingModal()"
+                        class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Form --}}
+                <form id="edit-closing-form" method="POST" action="{{ route('daily-closings.store') }}" class="p-6 space-y-5">
+                    @csrf
+                    <input type="hidden" name="closing_date" id="edit-closing-date-input" />
+
+                    <div class="bg-gray-50 rounded-xl p-4 text-xs">
+                        <div class="text-gray-500 font-semibold mb-0.5">Tanggal Buku</div>
+                        <div class="font-bold text-gray-800 text-sm" id="edit-closing-date-display">-</div>
+                    </div>
+
+                    <div>
+                        <label class="field-label text-[11px] font-semibold text-gray-700">Realisasi Uang Cash Fisik <span style="color:var(--warn)">*</span></label>
+                        <div class="money-wrap mt-1">
+                            <span class="rp-prefix">Rp</span>
+                            <input type="text" name="cash_physical" id="edit-closing-cash-physical" required placeholder="0"
+                                class="field-input money-input font-mono font-bold" inputmode="numeric"
+                                style="height:44px;font-size:15px" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="field-label text-[11px] font-semibold text-gray-700">Realisasi Saldo ATM Fisik <span style="color:var(--warn)">*</span></label>
+                        <div class="money-wrap mt-1">
+                            <span class="rp-prefix">Rp</span>
+                            <input type="text" name="atm_physical" id="edit-closing-atm-physical" required placeholder="0"
+                                class="field-input money-input font-mono font-bold" inputmode="numeric"
+                                style="height:44px;font-size:15px" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="field-label text-[11px] font-semibold text-gray-700">Catatan Penutupan Buku</label>
+                        <textarea name="notes" id="edit-closing-notes" rows="3" class="field-input mt-1" placeholder="Tuliskan catatan rekonsiliasi atau selisih jika ada..."></textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-3 border-t" style="border-color:var(--line)">
+                        <button type="submit" class="btn-primary flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold">
+                            Simpan Perubahan
+                        </button>
+                        <button type="button" onclick="closeEditClosingModal()" class="btn-secondary px-6">
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+@include('components.money-format')
+
+<script>
+    function openEditClosingModal(btn) {
+        const date = btn.dataset.date;
+        const cash = parseFloat(btn.dataset.cash || 0);
+        const atm = parseFloat(btn.dataset.atm || 0);
+        const notes = btn.dataset.notes || '';
+        
+        document.getElementById('edit-closing-date-input').value = date;
+        
+        // Format date nicely
+        const dateObj = new Date(date);
+        const formattedDate = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('edit-closing-date-display').innerText = formattedDate;
+        
+        const cashInput = document.getElementById('edit-closing-cash-physical');
+        const atmInput = document.getElementById('edit-closing-atm-physical');
+        const notesInput = document.getElementById('edit-closing-notes');
+        
+        cashInput.value = Math.round(cash).toLocaleString('id-ID');
+        atmInput.value = Math.round(atm).toLocaleString('id-ID');
+        notesInput.value = notes;
+        
+        // Trigger input event to format
+        cashInput.dispatchEvent(new Event('input', { bubbles: true }));
+        atmInput.dispatchEvent(new Event('input', { bubbles: true }));
+        
+        const modal = document.getElementById('modal-edit-closing');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => cashInput.focus(), 100);
+    }
+
+    function closeEditClosingModal() {
+        const modal = document.getElementById('modal-edit-closing');
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            closeEditClosingModal();
+        }
+    });
+</script>
 @endsection

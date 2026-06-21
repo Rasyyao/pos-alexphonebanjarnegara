@@ -15,6 +15,10 @@ class FundTransferService
 
     public function store(array $validated, User $actor): FundTransfer
     {
+        if (isset($validated['transfer_date'])) {
+            \App\Services\DailyClosingService::assertDateNotLocked($validated['transfer_date']);
+        }
+
         $validated['created_by'] = $actor->id;
 
         $transfer = $this->transfers->create($validated);
@@ -31,6 +35,10 @@ class FundTransferService
 
     public function destroy(FundTransfer $transfer): void
     {
+        if ($transfer->transfer_date) {
+            \App\Services\DailyClosingService::assertDateNotLocked($transfer->transfer_date->toDateString());
+        }
+
         $finance = app(\App\Services\FinanceService::class);
         $saldo = $finance->saldoSplit();
 

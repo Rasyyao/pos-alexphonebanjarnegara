@@ -11,6 +11,7 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\FundTransferController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\DailyClosingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => view('welcome'));
@@ -42,6 +43,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
         Route::get('reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
         Route::get('reports/pdf/{type}', [ReportController::class, 'pdf'])->name('reports.pdf');
+        Route::post('daily-closings', [DailyClosingController::class, 'store'])->name('daily-closings.store');
+        Route::get('daily-closings/data', [DailyClosingController::class, 'getClosingData'])->name('daily-closings.data');
     });
 
     Route::middleware('role:superadmin')->group(function () {
@@ -56,6 +59,8 @@ Route::middleware('auth')->group(function () {
         Route::post('fund-transfers', [FundTransferController::class, 'store'])->name('fund-transfers.store');
         Route::delete('fund-transfers/{fundTransfer}', [FundTransferController::class, 'destroy'])->name('fund-transfers.destroy');
         Route::get('fund-transfers', [FundTransferController::class, 'index'])->name('fund-transfers.index');
+        Route::post('daily-closings/{dailyClosing}/verify', [DailyClosingController::class, 'verify'])->name('daily-closings.verify');
+        Route::post('daily-closings/{dailyClosing}/revert', [DailyClosingController::class, 'revert'])->name('daily-closings.revert');
     });
 });
 

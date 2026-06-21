@@ -311,12 +311,72 @@ class FinanceService
             return $exp;
         });
 
+        // Fetch approved sales in the filtered range
+        $salesListQuery = \App\Models\Sale::with(['creator', 'items.unit.model.brand', 'items.accessory', 'payments']);
+        if ($startDate) {
+            $salesListQuery->whereDate('sale_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $salesListQuery->whereDate('sale_date', '<=', $endDate);
+        }
+        $salesList = $salesListQuery->where('status', 'approved')->get();
+
+        $virtualSales = $salesList->map(function ($sale) {
+            $itemNames = [];
+            foreach ($sale->items as $item) {
+                if ($item->unit) {
+                    $brand = $item->unit->model->brand->name ?? '';
+                    $model = $item->unit->model->name ?? '';
+                    $itemNames[] = "{$brand} {$model} ({$item->unit->ram}/{$item->unit->rom})";
+                } elseif ($item->accessory) {
+                    $itemNames[] = "{$item->accessory->name} (x{$item->quantity})";
+                }
+            }
+            $itemsSummary = count($itemNames) > 0 ? implode(', ', $itemNames) : 'Produk';
+            $invoice = $sale->invoice_number;
+            
+            $exp = new \App\Models\Expense();
+            $exp->id = null;
+            $exp->is_virtual = true;
+            $exp->is_virtual_sale = true;
+            $exp->sale_id = $sale->id;
+            $exp->expense_date = $sale->sale_date;
+            $exp->description = "Penjualan {$invoice}: {$itemsSummary}";
+            $exp->category = "penjualan";
+            
+            // Map payment methods to string format
+            $methods = $sale->payments->pluck('method')->map(function ($m) {
+                return $m instanceof \BackedEnum ? $m->value : $m;
+            })->unique();
+            
+            if ($methods->count() === 1) {
+                $exp->payment_method = $methods->first();
+            } else {
+                $exp->payment_method = 'split';
+            }
+            
+            // Detail payment methods in notes
+            $paymentDetails = $sale->payments->map(function ($p) {
+                $methodStr = $p->method instanceof \BackedEnum ? $p->method->value : $p->method;
+                $methodLabel = $methodStr === 'cash' ? 'Tunai' : ($methodStr === 'transfer' ? 'Transfer' : 'Utang');
+                return "{$methodLabel}: Rp " . number_format($p->amount, 0, ',', '.');
+            })->join(', ');
+            
+            $exp->notes = "Metode: {$paymentDetails}" . ($sale->description ? " | " . $sale->description : "");
+            $exp->amount = $sale->total_price;
+            $exp->created_by = $sale->created_by;
+            $exp->setRelation('creator', $sale->creator);
+            return $exp;
+        });
+
         $realExpensesList = $expensesQuery->get();
-        $mergedCollection = $realExpensesList->concat($virtualExpenses)
+        $mergedCollection = $realExpensesList->concat($virtualExpenses)->concat($virtualSales)
             ->sortByDesc(function ($item) {
-                return $item->expense_date instanceof \Carbon\Carbon 
-                    ? $item->expense_date->toDateString() 
-                    : $item->expense_date;
+                $dateVal = $item->expense_date;
+                if ($dateVal instanceof \Carbon\Carbon) {
+                    return $dateVal->toDateString();
+                }
+                return $dateVal;
             });
 
         $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage('page_expense') ?: 1;

@@ -7,12 +7,72 @@
         {{-- Title and Header --}}
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h2 class="text-xl font-bold" style="color:var(--ink)">Laporan Keuangan</h2>
+                <h2 class="text-xl font-bold" style="color:var(--ink)">Laporan Harian</h2>
                 <p class="text-xs mt-0.5" style="color:var(--ink-mute)">Analisis profitabilitas, arus kas operasional, dan
                     pengelolaan modal usaha</p>
             </div>
+            
+            <div class="flex items-center gap-2">
+                @php
+                    $viewedDate = (request('start_date') && request('start_date') === request('end_date')) ? request('start_date') : today()->toDateString();
+                    $closingRecord = \App\Models\DailyClosing::whereDate('closing_date', $viewedDate)->first();
+                    $isLocked = $closingRecord && in_array($closingRecord->status, ['closed', 'verified']);
+                @endphp
 
+                @if ($closingRecord)
+                    @if ($closingRecord->status === 'closed')
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Tutup Buku (Pending)
+                        </span>
+                    @elseif ($closingRecord->status === 'verified')
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            Tutup Buku (Verified)
+                        </span>
+                    @endif
+                @else
+                    <button type="button" onclick="openClosingModal('{{ $viewedDate }}')"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all shadow-sm"
+                        style="background:var(--accent)"
+                        onmouseenter="this.style.filter='brightness(0.95)'"
+                        onmouseleave="this.style.filter='none'">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Tutup Buku
+                    </button>
+                @endif
+            </div>
         </div>
+
+        @if ($isLocked)
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 shadow-sm">
+                <div class="p-2 rounded-lg bg-amber-100 text-amber-800 flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-amber-900">Laporan Keuangan Terkunci (Tutup Buku)</h4>
+                    @if ($closingRecord->status === 'closed')
+                        <p class="text-xs text-amber-800 mt-1">
+                            Laporan keuangan untuk tanggal <strong>{{ \Carbon\Carbon::parse($viewedDate)->format('d/m/Y') }}</strong> telah ditutup oleh <strong>{{ $closingRecord->closedBy->name ?? 'Admin' }}</strong> pada {{ $closingRecord->closed_at->format('d/m/Y H:i') }}.
+                            Semua mutasi transaksi pada tanggal ini dikunci dan tidak dapat diubah kecuali oleh Super Admin.
+                        </p>
+                    @else
+                        <p class="text-xs text-amber-800 mt-1">
+                            Laporan keuangan untuk tanggal <strong>{{ \Carbon\Carbon::parse($viewedDate)->format('d/m/Y') }}</strong> telah diverifikasi oleh Super Admin <strong>{{ $closingRecord->verifiedBy->name ?? 'Super Admin' }}</strong> pada {{ $closingRecord->verified_at->format('d/m/Y H:i') }}.
+                            Semua data transaksi bersifat read-only.
+                        </p>
+                    @endif
+                </div>
+            </div>
+        @endif
 
         {{-- Advanced Period Filter Bar --}}
         <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
@@ -234,16 +294,25 @@
                                 dan pembelian stok HP toko yang mengurangi kas/ATM</p>
                         </div>
 
-                        <button onclick="openExpenseModal()"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-                            style="background:#FFF5F5;color:var(--warn)" onmouseenter="this.style.background='#FEE2E2'"
-                            onmouseleave="this.style.background='#FFF5F5'">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Tambah Pengeluaran
-                        </button>
+                        @if (!$isLocked)
+                            <button onclick="openExpenseModal()"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                                style="background:#FFF5F5;color:var(--warn)" onmouseenter="this.style.background='#FEE2E2'"
+                                onmouseleave="this.style.background='#FFF5F5'">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Tambah Pengeluaran
+                            </button>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-400">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                Terkunci
+                            </span>
+                        @endif
                     </div>
 
                     <div class="overflow-x-auto max-h-[300px]">
@@ -274,7 +343,11 @@
                                             <td class="px-5 py-3 font-medium" style="color:var(--ink)">
                                                 {{ $expense->description }}</td>
                                             <td class="px-5 py-3">
-                                                @if ($expense->category === 'stok_hp')
+                                                @if ($expense->is_virtual_sale ?? false)
+                                                    <span class="px-2 py-0.5 rounded bg-green-100 text-green-800 font-mono text-[9px] font-semibold">
+                                                        Penjualan
+                                                    </span>
+                                                @elseif ($expense->category === 'stok_hp')
                                                     <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-mono text-[9px] font-semibold">
                                                         Stok HP
                                                     </span>
@@ -287,18 +360,37 @@
                                             <td class="px-5 py-3">
                                                 @if (($expense->payment_method ?? 'cash') === 'transfer')
                                                     <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-mono text-[9px] font-semibold">Transfer</span>
-                                                @else
+                                                @elseif (($expense->payment_method ?? 'cash') === 'cash')
                                                     <span class="px-2 py-0.5 rounded-full bg-green-50 text-green-600 font-mono text-[9px] font-semibold">Tunai</span>
+                                                @elseif (($expense->payment_method ?? 'cash') === 'utang')
+                                                    <span class="px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-mono text-[9px] font-semibold">Utang</span>
+                                                @else
+                                                    <span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-mono text-[9px] font-semibold">Split</span>
                                                 @endif
                                             </td>
                                             <td class="px-5 py-3" style="color:var(--ink-mute)">{{ $expense->notes ?: '—' }}
                                             </td>
-                                            <td class="px-5 py-3 text-right font-mono font-bold tabular-nums"
-                                                style="color:var(--warn)">
-                                                Rp {{ number_format($expense->amount, 0, ',', '.') }}
-                                            </td>
+                                            @if ($expense->is_virtual_sale ?? false)
+                                                <td class="px-5 py-3 text-right font-mono font-bold tabular-nums text-emerald-600"
+                                                    style="color:var(--success)">
+                                                    +Rp {{ number_format($expense->amount, 0, ',', '.') }}
+                                                </td>
+                                            @else
+                                                <td class="px-5 py-3 text-right font-mono font-bold tabular-nums text-red-600"
+                                                    style="color:var(--warn)">
+                                                    -Rp {{ number_format($expense->amount, 0, ',', '.') }}
+                                                </td>
+                                            @endif
                                             <td class="px-5 py-3 text-center">
-                                                @if ($expense->is_virtual ?? false)
+                                                @if ($expense->is_virtual_sale ?? false)
+                                                    <a href="{{ route('sales.show', $expense->sale_id) }}"
+                                                        class="inline-flex items-center justify-center px-2 py-1 rounded-lg transition-colors text-[10px] font-semibold"
+                                                        style="background:#E6F4EA;color:var(--success)"
+                                                        onmouseenter="this.style.background='#D2EBD8'"
+                                                        onmouseleave="this.style.background='#E6F4EA'">
+                                                        Lihat Detail
+                                                    </a>
+                                                @elseif ($expense->is_virtual ?? false)
                                                     <a href="{{ route('units.show', $expense->unit_id) }}"
                                                         class="inline-flex items-center justify-center px-2 py-1 rounded-lg transition-colors text-[10px] font-semibold"
                                                         style="background:#EFF6FF;color:var(--accent)"
@@ -307,36 +399,40 @@
                                                         Lihat Unit
                                                     </a>
                                                 @else
-                                                    <div class="flex items-center justify-center gap-1.5">
-                                                        <button type="button"
-                                                            onclick="openEditExpenseModal({{ $expense->id }}, '{{ addslashes($expense->description) }}', {{ $expense->amount }}, '{{ $expense->category }}', '{{ $expense->expense_date->format('Y-m-d') }}', '{{ addslashes($expense->notes ?? '') }}', '{{ $expense->payment_method ?? 'cash' }}')"
-                                                            title="Edit"
-                                                            class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                                                            style="background:#EFF6FF;color:var(--accent)"
-                                                            onmouseenter="this.style.background='#DBEAFE'"
-                                                            onmouseleave="this.style.background='#EFF6FF'">
-                                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
-                                                                stroke="currentColor" stroke-width="2">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                            </svg>
-                                                        </button>
-                                                        <form method="POST" action="{{ route('expenses.destroy', $expense) }}"
-                                                            onsubmit="return confirm('Hapus pengeluaran ini?')">
-                                                            @csrf @method('DELETE')
-                                                            <button type="submit" title="Hapus"
+                                                    @if (!$isLocked)
+                                                        <div class="flex items-center justify-center gap-1.5">
+                                                            <button type="button"
+                                                                onclick="openEditExpenseModal({{ $expense->id }}, '{{ addslashes($expense->description) }}', {{ $expense->amount }}, '{{ $expense->category }}', '{{ $expense->expense_date->format('Y-m-d') }}', '{{ addslashes($expense->notes ?? '') }}', '{{ $expense->payment_method ?? 'cash' }}')"
+                                                                title="Edit"
                                                                 class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                                                                style="background:#FFF5F5;color:var(--warn)"
-                                                                onmouseenter="this.style.background='#FEE2E2'"
-                                                                onmouseleave="this.style.background='#FFF5F5'">
+                                                                style="background:#EFF6FF;color:var(--accent)"
+                                                                onmouseenter="this.style.background='#DBEAFE'"
+                                                                onmouseleave="this.style.background='#EFF6FF'">
                                                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
                                                                     stroke="currentColor" stroke-width="2">
                                                                     <path stroke-linecap="round" stroke-linejoin="round"
-                                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                                 </svg>
                                                             </button>
-                                                        </form>
-                                                    </div>
+                                                            <form method="POST" action="{{ route('expenses.destroy', $expense) }}"
+                                                                onsubmit="return confirm('Hapus pengeluaran ini?')">
+                                                                @csrf @method('DELETE')
+                                                                <button type="submit" title="Hapus"
+                                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                                                                    style="background:#FFF5F5;color:var(--warn)"
+                                                                    onmouseenter="this.style.background='#FEE2E2'"
+                                                                    onmouseleave="this.style.background='#FFF5F5'">
+                                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                                                                        stroke="currentColor" stroke-width="2">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                    </svg>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-xs text-gray-400 italic font-medium">Terkunci</span>
+                                                    @endif
                                                 @endif
                                             </td>
                                         </tr>
@@ -598,8 +694,85 @@
                     if (e.key === 'Escape') {
                         closeExpenseModal();
                         closeEditExpenseModal();
+                        closeClosingModal();
                     }
                 });
+
+                function openClosingModal(date) {
+                    const modal = document.getElementById('modal-tutup-buku');
+                    const loading = document.getElementById('closing-modal-loading');
+                    const form = document.getElementById('closing-form');
+                    
+                    if (!modal) return;
+                    modal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    
+                    loading.classList.remove('hidden');
+                    form.classList.add('hidden');
+                    
+                    // Fetch date metrics
+                    fetch(`/daily-closings/data?date=${date}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById('closing-date-input').value = date;
+                            
+                            // Format date nicely
+                            const dateObj = new Date(date);
+                            const formattedDate = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                            document.getElementById('closing-date-display').innerText = formattedDate;
+                            
+                            const formatRupiah = (val) => 'Rp ' + Math.round(val).toLocaleString('id-ID');
+                            
+                            document.getElementById('closing-total-income').innerText = formatRupiah(data.total_income);
+                            document.getElementById('closing-gas-income').innerText = formatRupiah(data.gas_income);
+                            document.getElementById('closing-hp-purchase').innerText = formatRupiah(data.hp_purchase);
+                            document.getElementById('closing-hp-sale').innerText = formatRupiah(data.hp_sale);
+                            document.getElementById('closing-laba').innerText = formatRupiah(data.laba);
+                            document.getElementById('closing-cash-system').innerText = formatRupiah(data.cash_system);
+                            document.getElementById('closing-atm-system').innerText = formatRupiah(data.atm_system);
+                            document.getElementById('closing-transfer-income').innerText = formatRupiah(data.transfer_income);
+                            document.getElementById('closing-debt-amount').innerText = formatRupiah(data.debt_amount);
+                            
+                            // If physical cash was already submitted previously (draft / edit)
+                            const cashPhysicalInput = document.getElementById('closing-cash-physical');
+                            cashPhysicalInput.value = data.cash_physical > 0 ? Math.round(data.cash_physical).toLocaleString('id-ID') : '';
+                            
+                            // Trigger input event to format if it has value
+                            if (cashPhysicalInput.value) {
+                                const event = new Event('input', { bubbles: true });
+                                cashPhysicalInput.dispatchEvent(event);
+                            }
+
+                            // If physical ATM was already submitted previously (draft / edit)
+                            const atmPhysicalInput = document.getElementById('closing-atm-physical');
+                            atmPhysicalInput.value = data.atm_physical > 0 ? Math.round(data.atm_physical).toLocaleString('id-ID') : '';
+                            
+                            // Trigger input event to format if it has value
+                            if (atmPhysicalInput.value) {
+                                const event = new Event('input', { bubbles: true });
+                                atmPhysicalInput.dispatchEvent(event);
+                            }
+                            
+                            const notesTextarea = form.querySelector('textarea[name="notes"]');
+                            if (notesTextarea) notesTextarea.value = data.notes || '';
+                            
+                            loading.classList.add('hidden');
+                            form.classList.remove('hidden');
+                            setTimeout(() => cashPhysicalInput.focus(), 100);
+                        })
+                        .catch(err => {
+                            alert('Gagal mengambil data keuangan harian.');
+                            closeClosingModal();
+                        });
+                }
+
+                function closeClosingModal() {
+                    const modal = document.getElementById('modal-tutup-buku');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        document.body.style.overflow = '';
+                    }
+                }
             </script>
 
         {{-- ========== MODAL: Edit Pengeluaran ========== --}}
@@ -702,6 +875,158 @@
                         <div class="flex gap-3 pt-1">
                             <button type="submit" class="btn-primary flex-1" style="background:var(--accent)">Simpan Perubahan</button>
                             <button type="button" onclick="closeEditExpenseModal()" class="btn-secondary" style="padding:0 24px">Batal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- ========== MODAL: Tutup Buku ========== --}}
+        <div id="modal-tutup-buku" class="fixed inset-0 z-[120] hidden overflow-y-auto"
+            onclick="if(event.target===this){closeClosingModal()}">
+            <div class="fixed inset-0" style="background:rgba(10,37,64,.5)"></div>
+            <div class="relative min-h-full flex items-center justify-center px-4 pt-12 pb-12">
+                <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden modal-pop animate-fade-in"
+                    onclick="event.stopPropagation()">
+                    
+                    {{-- Modal Header --}}
+                    <div class="flex items-start justify-between px-6 py-5 border-b" style="border-color:var(--line)">
+                        <div class="flex items-center gap-3">
+                            <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-50 text-blue-600">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-semibold leading-none text-gray-900">Tutup Buku Harian</h3>
+                                <p class="text-xs text-gray-500 mt-1.5">Kunci transaksi & hitung realisasi kas fisik harian</p>
+                            </div>
+                        </div>
+                        <button onclick="closeClosingModal()"
+                            class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {{-- Loading State --}}
+                    <div id="closing-modal-loading" class="p-12 flex flex-col items-center justify-center space-y-3">
+                        <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="text-xs text-gray-500 font-medium">Memuat data keuangan harian...</p>
+                    </div>
+
+                    {{-- Form --}}
+                    <form id="closing-form" method="POST" action="{{ route('daily-closings.store') }}" class="p-6 space-y-6 hidden">
+                        @csrf
+                        <input type="hidden" name="closing_date" id="closing-date-input" />
+
+                        <div class="bg-gray-50 rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                            <div>
+                                <div class="text-gray-500 font-semibold mb-0.5">Tanggal Buku</div>
+                                <div class="font-bold text-gray-800" id="closing-date-display">-</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500 font-semibold mb-0.5">Total Uang Masuk</div>
+                                <div class="font-bold text-blue-600" id="closing-total-income">-</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500 font-semibold mb-0.5">Penjualan HP</div>
+                                <div class="font-bold text-gray-800" id="closing-hp-sale">-</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500 font-semibold mb-0.5">Laba Bersih</div>
+                                <div class="font-bold text-emerald-600" id="closing-laba">-</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {{-- Metrics Details --}}
+                            <div class="space-y-3">
+                                <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider font-mono">Detail Transaksi Sistem</h4>
+                                <div class="border rounded-xl divide-y text-xs">
+                                    <div class="flex justify-between p-2.5 bg-white">
+                                        <span class="text-gray-600">Pendapatan Gas</span>
+                                        <span class="font-semibold text-gray-800" id="closing-gas-income">-</span>
+                                    </div>
+                                    <div class="flex justify-between p-2.5 bg-white">
+                                        <span class="text-gray-600">Pembelian HP (Stok)</span>
+                                        <span class="font-semibold text-red-600" id="closing-hp-purchase">-</span>
+                                    </div>
+                                    <div class="flex justify-between p-2.5 bg-white">
+                                        <span class="text-gray-600">Transfer Masuk</span>
+                                        <span class="font-semibold text-gray-800" id="closing-transfer-income">-</span>
+                                    </div>
+                                    <div class="flex justify-between p-2.5 bg-white">
+                                        <span class="text-gray-600">Piutang / Utang</span>
+                                        <span class="font-semibold text-amber-600" id="closing-debt-amount">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Reconciliation --}}
+                            <div class="space-y-4">
+                                <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider font-mono">Reorganisasi Kas & ATM</h4>
+                                
+                                <!-- KAS TUNAI -->
+                                <div class="space-y-2 pb-3 border-b" style="border-color:var(--line)">
+                                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 flex justify-between items-center text-xs">
+                                        <div>
+                                            <span class="text-blue-800 font-semibold block">Kas Sistem</span>
+                                            <span class="text-[10px] text-blue-600 block mt-0.5">Uang masuk tunai - biaya tunai</span>
+                                        </div>
+                                        <span class="text-sm font-bold text-blue-700 font-mono" id="closing-cash-system">-</span>
+                                    </div>
+
+                                    <div>
+                                        <label class="field-label text-[11px] font-semibold">Realisasi Uang Cash Fisik <span style="color:var(--warn)">*</span></label>
+                                        <div class="money-wrap mt-1">
+                                            <span class="rp-prefix">Rp</span>
+                                            <input type="text" name="cash_physical" id="closing-cash-physical" required placeholder="0"
+                                                class="field-input money-input font-mono font-bold" inputmode="numeric"
+                                                style="height:40px;font-size:14px" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ATM / TRANSFER -->
+                                <div class="space-y-2">
+                                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 flex justify-between items-center text-xs">
+                                        <div>
+                                            <span class="text-purple-800 font-semibold block">ATM Sistem</span>
+                                            <span class="text-[10px] text-purple-600 block mt-0.5">Uang masuk transfer - biaya transfer</span>
+                                        </div>
+                                        <span class="text-sm font-bold text-purple-700 font-mono" id="closing-atm-system">-</span>
+                                    </div>
+
+                                    <div>
+                                        <label class="field-label text-[11px] font-semibold">Realisasi Saldo ATM Fisik <span style="color:var(--warn)">*</span></label>
+                                        <div class="money-wrap mt-1">
+                                            <span class="rp-prefix">Rp</span>
+                                            <input type="text" name="atm_physical" id="closing-atm-physical" required placeholder="0"
+                                                class="field-input money-input font-mono font-bold" inputmode="numeric"
+                                                style="height:40px;font-size:14px" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="field-label">Catatan Penutupan Buku</label>
+                            <textarea name="notes" rows="2" class="field-input mt-1" placeholder="Tuliskan catatan rekonsiliasi atau catatan selisih jika ada..."></textarea>
+                        </div>
+
+                        <div class="flex gap-3 pt-2 border-t" style="border-color:var(--line)">
+                            <button type="submit" class="btn-primary flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold">
+                                Konfirmasi &amp; Tutup Buku
+                            </button>
+                            <button type="button" onclick="closeClosingModal()" class="btn-secondary px-6">
+                                Batal
+                            </button>
                         </div>
                     </form>
                 </div>

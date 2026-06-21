@@ -14,6 +14,7 @@ class UnitService
 
     public function store(array $validated, User $actor): Unit
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($validated['purchase_date']);
         $validated['model_id'] = $this->resolveModelId($validated['brand_name'], $validated['model_name']);
         unset($validated['brand_name'], $validated['model_name']);
 
@@ -27,6 +28,7 @@ class UnitService
 
     public function approve(Unit $unit, User $actor): Unit
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($unit->purchase_date->toDateString());
         if ($unit->status !== \App\Enums\UnitStatus::Pending) {
             throw new \LogicException('Hanya unit pending yang bisa di-approve.');
         }
@@ -41,6 +43,8 @@ class UnitService
 
     public function update(Unit $unit, array $validated): Unit
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($unit->purchase_date->toDateString());
+        \App\Services\DailyClosingService::assertDateNotLocked($validated['purchase_date']);
         $validated['model_id'] = $this->resolveModelId($validated['brand_name'], $validated['model_name']);
         unset($validated['brand_name'], $validated['model_name']);
 
@@ -56,6 +60,7 @@ class UnitService
 
     public function destroy(Unit $unit): void
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($unit->purchase_date->toDateString());
         if ($unit->status->value === 'sold') {
             throw new \LogicException('Unit yang sudah terjual tidak dapat dihapus.');
         }

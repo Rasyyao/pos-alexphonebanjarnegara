@@ -15,6 +15,7 @@ class ExpenseService
 
     public function store(array $validated, User $actor): Expense
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($validated['expense_date']);
         // Normalize the amount: strip thousand-separator dots, replace comma decimal
         $validated['amount']         = (float) str_replace(['.', ','], ['', '.'], $validated['amount']);
         $validated['payment_method'] = $validated['payment_method'] ?? 'cash';
@@ -34,6 +35,8 @@ class ExpenseService
 
     public function update(Expense $expense, array $validated): Expense
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($expense->expense_date->toDateString());
+        \App\Services\DailyClosingService::assertDateNotLocked($validated['expense_date']);
         $validated['amount']         = (float) str_replace(['.', ','], ['', '.'], $validated['amount']);
         $validated['payment_method'] = $validated['payment_method'] ?? 'cash';
 
@@ -59,6 +62,7 @@ class ExpenseService
 
     public function destroy(Expense $expense): void
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($expense->expense_date->toDateString());
         $this->expenses->delete($expense);
     }
 }

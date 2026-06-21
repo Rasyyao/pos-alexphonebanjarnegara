@@ -21,6 +21,7 @@ class SaleService
 
     public function create(array $data, User $actor): Sale
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($data['sale_date']);
         $this->validateItems($data['items']);
         $this->validatePayments($data['items'], $data['payments']);
 
@@ -81,6 +82,7 @@ class SaleService
 
     public function approve(Sale $sale, User $actor): Sale
     {
+        \App\Services\DailyClosingService::assertDateNotLocked($sale->sale_date->toDateString());
         if ($sale->status->value !== 'pending') {
             throw new \LogicException('Hanya transaksi pending yang bisa di-approve.');
         }
