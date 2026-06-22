@@ -1,18 +1,15 @@
 <claude-mem-context>
 # Memory Context
 
-# [alexphonebanjarnegara] recent context, 2026-06-21 6:55pm GMT+7
+# [alexphonebanjarnegara] recent context, 2026-06-22 2:11pm GMT+7
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (17,525t read) | 553,676t work | 97% savings
+Stats: 50 obs (17,543t read) | 334,034t work | 95% savings
 
-### Jun 13, 2026
-S25 Debounce Added to All Stock Filter Inputs in Livewire Component (Jun 13 at 11:10 PM)
 ### Jun 14, 2026
-S26 Brand Management Modal Added to Units Index Page (Jun 14 at 11:19 AM)
 S27 Capital Distribution Tracker Implemented in cashflow.blade.php (Jun 14 at 11:23 AM)
 S28 Stock Add Bug — setVal Fallback Empty String Prevented Form Submission (Jun 14 at 11:42 AM)
 ### Jun 15, 2026
@@ -20,33 +17,12 @@ S30 Harga Modal Removal — Partial Completion Status Across Report Views (Jun 1
 ### Jun 20, 2026
 S31 Decided to Remove Aset Bulan Lalu and Peningkatan Aset from Asset Excel Report (Jun 20 at 2:25 PM)
 S32 Harga Beli (Purchase Price) Fully Removed from All UI Views (Jun 20 at 2:32 PM)
-263 11:17p ⚖️ Harga Beli (Purchase Price) Field Removed from Sales Module
-264 " ✅ Harga Beli Column Removed from Stock Filter Table (Partial)
-265 11:18p ✅ Harga Beli (Purchase Price) Fully Removed from All UI Views
 S33 Bug fix: Indonesian money input fields saving wrong values (100 juta stored as 1 juta) — root cause found and fixed in edit forms (Jun 20 at 11:18 PM)
-266 11:23p 🔵 Currency Input Truncation Bug — 100 Juta Saved as 1 Juta
-267 11:24p 🔵 Indonesian Number Formatting Handler in StoreUnitRequest — cleanMoney()
-268 11:25p 🔵 Payment Method Splitting Logic in UnitController.resolveSplit()
-269 " 🔵 Frontend Number Formatting Pattern in create.blade.php — calcCreateMargin()
-270 11:26p 🔵 Database Schema for Units Table — purchase_price Field Definition
-271 11:27p 🔵 Unit Model Casts purchase_price as 'decimal:2' — No Truncation at Model Layer
-272 11:28p 🔵 UnitService.store() Passes Validated Data Directly to Repository
-273 11:30p 🔴 Root Cause Found: Eloquent decimal:2 Cast Renders Decimal Point in Money Input Fields
 S34 Accessories Verify Table Replaced "Harga Jual" Column with "Inputter" (Date + Time) (Jun 20 at 11:31 PM)
-276 11:58p 🔵 Sales Verify View Missing Stock Input Display
 ### Jun 21, 2026
-277 12:00a 🔵 SaleController.verify() Passes Unit and Accessory Data to View
-279 12:02a 🔵 Units Verification Tab Missing Stock Quantity Display
-280 12:04a 🔵 UnitService Auto-Approves Units Created by Superadmin, Bypassing Verification
-281 12:07a 🔵 Unit Model Missing stock_qty Field Unlike Accessory Model
-282 12:10a 🟣 Pending Stock Verification Banners Added to HP and Accessory Index Views
-283 " 🟣 Sidebar Verify Badge Now Shows Combined Pending Count (Sales + Units + Accessories)
-284 " 🟣 Role-Aware Success Messages Added to Unit and Accessory Store Actions
-285 " 🟣 Accessories Verify Table Replaced "Harga Jual" Column with "Inputter" (Date + Time)
-286 12:22a ⚖️ Role-Based Sales Verification Bypass for Superadmin
-287 " 🟣 SaleService Updated to Support Role-Based Verification Bypass
+S35 Superadmin Sales Auto-Approval Implemented in SaleService (Jun 21 at 12:10 AM)
 288 12:23a 🟣 Superadmin Sales Auto-Approval Implemented in SaleService
-S35 Superadmin Sales Auto-Approval Implemented in SaleService (Jun 21 at 12:23 AM)
+S37 FinanceService.php Confirmed Exists and Syntax-Valid During Laba Bersih Debug (Jun 21 at 12:23 AM)
 289 12:32a ⚖️ Role-Based Daily Sales Report Edit Access Control — Tutup Buku Policy
 290 12:33a 🔵 Existing Role Gates in Sales Views — Delete Already Superadmin-Only, Edit Not Date-Gated
 360 6:05p 🟣 Estimasi Margin Hidden from Admin, Split Payment Edit Fix Requested
@@ -74,6 +50,30 @@ S35 Superadmin Sales Auto-Approval Implemented in SaleService (Jun 21 at 12:23 A
 382 " 🔵 SaleController::update() Crashes on null toDateString() — Line 84 Bug Found
 383 6:50p 🟣 Sales Show Page — Split Payment Display & Edit Support Requested
 384 6:51p 🔴 SaleController Guards Against Split Payment Changes on Partially-Paid Debts
+385 6:56p ✅ Laba Bersih Hidden from Admin Role in Finance Report
+386 6:57p 🟣 Laba Bersih Hidden from Admin Role in Finance Report
+387 " ✅ Laba Bersih Hidden from Admin Role in Finance Report
+389 7:03p 🔵 Debt Payment Recording Architecture — Current System Investigation
+390 " 🔵 Finance Report Bug — Debt Payments Not Showing for Previous-Day Buyers
+391 7:05p 🔵 Finance Report Missing Debt Payment Records — Timing & Recording Bug
+392 7:08p 🔴 Finance Report Daily Income Misses Debt Payments From Prior-Day Sales
+393 7:09p 🔵 Finance Report Missing Debt Payment Records — Same-Day vs Previous-Day Issue
+394 " 🔵 Finance Report Missing Debt Payment Records for Unreconciled Prior-Day Buyers
+396 7:19p 🔵 Finance Report — Net Profit (Laba Bersih) Still Shows Negative Value
+397 " 🔵 FinanceService.php Confirmed Exists and Syntax-Valid During Laba Bersih Debug
+398 7:22p 🔵 Finance Report — Two Bugs Found in Tutup Buku (Book Closing) Flow
+399 7:23p 🔵 Finance Report Tutup Buku — Two Role-Based Access Bugs Identified
+### Jun 22, 2026
+400 1:45p ⚖️ Cashflow Report Should Exclude Stock Purchase Expenses
+401 1:46p ⚖️ Cashflow Report Excludes Stock Purchases — Operational Expenses Only
+402 " ⚖️ Cashflow Report Excludes Stock Purchases — Operational Expenses Only
+403 1:47p ⚖️ Cashflow Report — Exclude Stock Purchases, Show Only Operational Expenses
+404 " 🔴 FinanceService — HP Stock Purchases Removed from Expense Calculations
+405 1:48p ⚖️ Cashflow Report — Stock Purchases Excluded from Pengeluaran (Expenses)
+406 " ⚖️ Cashflow Report — Exclude Stock Purchases from Pengeluaran (Expenses)
+407 2:00p 🔴 HP Unit Purchase Costs Double-Counted in Finance Reports — Removed from FinanceService
+408 2:01p 🟣 HP Purchases Added to Finance PDF Report Data
+S38 HP Purchases Added to Finance PDF Report Data (Jun 22 at 2:01 PM)
 
-Access 554k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 334k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

@@ -22,7 +22,21 @@ class DailyClosingService
     {
         // 1. Total Income (Cash + Transfer payments of approved sales)
         $totalIncome = (float) SalePayment::whereIn('method', ['cash', 'transfer'])
-            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', $date))
+            ->where(function ($q) use ($date) {
+                $q->where(function ($initial) use ($date) {
+                    $initial
+                        ->where('source', 'sale')
+                        ->whereHas('sale', fn($sq) => $sq->approved()->whereDate('sale_date', $date));
+                })->orWhere(function ($repayment) use ($date) {
+                    $repayment
+                        ->whereDate('created_at', $date)
+                        ->where(function ($source) {
+                            $source->where('source', 'debt_payment')
+                                ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+                        })
+                        ->whereHas('sale', fn($sq) => $sq->approved());
+                });
+            })
             ->sum('amount');
 
         // 2. Gas Income (Accessories category 'Gas' or containing 'gas' in name)
@@ -47,7 +61,21 @@ class DailyClosingService
 
         // 6. Cash System (Received Cash from Sales - Cash Expenses - Cash HP Purchases)
         $cashSystemSales = (float) SalePayment::where('method', 'cash')
-            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', $date))
+            ->where(function ($q) use ($date) {
+                $q->where(function ($initial) use ($date) {
+                    $initial
+                        ->where('source', 'sale')
+                        ->whereHas('sale', fn($sq) => $sq->approved()->whereDate('sale_date', $date));
+                })->orWhere(function ($repayment) use ($date) {
+                    $repayment
+                        ->whereDate('created_at', $date)
+                        ->where(function ($source) {
+                            $source->where('source', 'debt_payment')
+                                ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+                        })
+                        ->whereHas('sale', fn($sq) => $sq->approved());
+                });
+            })
             ->sum('amount');
         $cashExpenses = (float) Expense::where('payment_method', 'cash')
             ->whereDate('expense_date', $date)
@@ -58,7 +86,21 @@ class DailyClosingService
 
         // 7. Transfer Income
         $transferIncome = (float) SalePayment::where('method', 'transfer')
-            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', $date))
+            ->where(function ($q) use ($date) {
+                $q->where(function ($initial) use ($date) {
+                    $initial
+                        ->where('source', 'sale')
+                        ->whereHas('sale', fn($sq) => $sq->approved()->whereDate('sale_date', $date));
+                })->orWhere(function ($repayment) use ($date) {
+                    $repayment
+                        ->whereDate('created_at', $date)
+                        ->where(function ($source) {
+                            $source->where('source', 'debt_payment')
+                                ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+                        })
+                        ->whereHas('sale', fn($sq) => $sq->approved());
+                });
+            })
             ->sum('amount');
 
         // ATM/Transfer System calculation (Sales Transfer In - Expenses Transfer Out - HP Transfer Purchases Out + Cash to ATM transfers - ATM to Cash transfers)
@@ -108,6 +150,10 @@ class DailyClosingService
      */
     public static function assertDateNotLocked(string $date): void
     {
+        if (auth()->check() && auth()->user()->isSuperAdmin()) {
+            return;
+        }
+
         if (self::isDateLocked($date)) {
             throw ValidationException::withMessages([
                 'date' => 'Transaksi tidak dapat diubah karena laporan keuangan harian untuk tanggal ' . Carbon::parse($date)->format('d/m/Y') . ' sudah ditutup / diverifikasi.',

@@ -117,7 +117,7 @@ class DailyClosingTest extends TestCase
         ]);
     }
 
-    public function test_locked_dates_block_mutations(): void
+    public function test_locked_dates_block_mutations_for_admin(): void
     {
         // 1. Create verified closing to lock the date
         DailyClosing::create([
@@ -125,6 +125,8 @@ class DailyClosingTest extends TestCase
             'status'        => 'verified',
             'cash_physical' => 5000000,
             'cash_system'   => 5000000,
+            'atm_physical'  => 5000000,
+            'atm_system'    => 5000000,
             'closed_by'     => $this->admin->id,
             'closed_at'     => now(),
             'verified_by'   => $this->superadmin->id,
@@ -132,7 +134,7 @@ class DailyClosingTest extends TestCase
         ]);
 
         // 2. Try creating an expense on the locked date
-        $response = $this->actingAs($this->superadmin)->post(route('expenses.store'), [
+        $response = $this->actingAs($this->admin)->post(route('expenses.store'), [
             'description'    => 'Sewa Toko',
             'amount'         => '1.500.000',
             'category'       => 'sewa',
@@ -142,7 +144,7 @@ class DailyClosingTest extends TestCase
         $response->assertSessionHasErrors('date');
 
         // 3. Try creating a unit on the locked date
-        $response = $this->actingAs($this->superadmin)->post(route('units.store'), [
+        $response = $this->actingAs($this->admin)->post(route('units.store'), [
             'brand_name' => 'Xiaomi',
             'model_name' => 'Redmi Note 13',
             'unit_type' => 'baru',
@@ -154,7 +156,7 @@ class DailyClosingTest extends TestCase
         $response->assertSessionHasErrors('date');
 
         // 4. Try creating an accessory on the locked date
-        $response = $this->actingAs($this->superadmin)->post(route('accessories.store'), [
+        $response = $this->actingAs($this->admin)->post(route('accessories.store'), [
             'name' => 'Charger Typc C Anker',
             'category' => 'Charger',
             'stock_qty' => 10,
@@ -165,14 +167,42 @@ class DailyClosingTest extends TestCase
         ]);
         $response->assertSessionHasErrors('date');
 
-        // 5. Try creating a fund transfer on the locked date
-        $response = $this->actingAs($this->superadmin)->post(route('fund-transfers.store'), [
+        // 5. Try creating a fund transfer on the locked date -> blocked by role middleware (403)
+        $response = $this->actingAs($this->admin)->post(route('fund-transfers.store'), [
             'direction' => 'cash_to_atm',
             'amount' => 500000,
             'transfer_date' => $this->testDate,
             'description' => 'Transfer Kas ke Bank',
         ]);
-        $response->assertSessionHasErrors('date');
+        $response->assertStatus(403);
+    }
+
+    public function test_locked_dates_allow_mutations_for_superadmin(): void
+    {
+        // 1. Create verified closing to lock the date
+        DailyClosing::create([
+            'closing_date'  => $this->testDate,
+            'status'        => 'verified',
+            'cash_physical' => 5000000,
+            'cash_system'   => 5000000,
+            'atm_physical'  => 5000000,
+            'atm_system'    => 5000000,
+            'closed_by'     => $this->admin->id,
+            'closed_at'     => now(),
+            'verified_by'   => $this->superadmin->id,
+            'verified_at'   => now(),
+        ]);
+
+        // 2. Try creating an expense on the locked date -> allowed
+        $response = $this->actingAs($this->superadmin)->post(route('expenses.store'), [
+            'description'    => 'Sewa Toko',
+            'amount'         => '1.500.000',
+            'category'       => 'sewa',
+            'expense_date'   => $this->testDate,
+            'payment_method' => 'cash',
+        ]);
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
     }
 
     public function test_admin_cannot_overwrite_closed_closing_but_superadmin_can(): void
@@ -203,10 +233,10 @@ class DailyClosingTest extends TestCase
             'closing_date'  => $this->testDate,
             'cash_physical' => '7.000.000',
             'atm_physical'  => '7.000.000',
-            'notes'         => 'Superadmin edit closing',
+            'notes' => 'Superadmin edit closing',
         ]);
         $response->assertRedirect();
-        
+
         $closing = DailyClosing::whereDate('closing_date', $this->testDate)->first();
         $this->assertEquals(7000000, (float)$closing->cash_physical);
         $this->assertEquals(7000000, (float)$closing->atm_physical);

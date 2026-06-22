@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class SalePayment extends Model
 {
     public $timestamps = false;
-    protected $fillable = ['sale_id', 'method', 'amount', 'created_at'];
+    protected $fillable = ['sale_id', 'method', 'amount', 'source', 'created_at'];
 
     protected function casts(): array
     {
         return [
             'method'     => PaymentMethod::class,
             'amount'     => 'decimal:2',
+            'source'     => 'string',
             'created_at' => 'datetime',
         ];
     }

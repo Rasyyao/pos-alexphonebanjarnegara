@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Capital;
+use App\Models\Sale;
 use App\Models\ProductBrand;
 use App\Models\ProductModel;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Expense;
+use Illuminate\Support\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -39,7 +41,7 @@ class FinanceReportTest extends TestCase
         ]);
     }
 
-    public function test_hp_stock_purchases_are_included_in_expenses_calculations(): void
+    public function test_hp_stock_purchases_are_excluded_from_operational_expenses(): void
     {
         // 1. Initially, expenses should be 0
         $response = $this->actingAs($this->superadmin)->get(route('reports.finance'));
@@ -73,14 +75,14 @@ class FinanceReportTest extends TestCase
             'payment_method' => 'cash',
         ]);
 
-        // 3. Now get reports again. Total expenses should be 3.500.000 (3.000.000 + 500.000)
+        // 3. Now get reports again. Operational expenses should remain 500.000.
         $response = $this->actingAs($this->superadmin)->get(route('reports.finance'));
         $response->assertStatus(200);
         $response->assertViewHas('today', function ($today) {
-            return $today['expenses'] == 3500000;
+            return $today['expenses'] == 500000;
         });
 
-        // 4. Verify that the expenses table contains the virtual stok HP row
+        // 4. Verify that the stock purchase is still visible in the finance log, but not counted as operational expense.
         $response->assertSee('Pembelian Stok HP: Xiaomi Redmi Note 13');
         $response->assertSee('Listrik Toko');
     }
@@ -98,6 +100,76 @@ class FinanceReportTest extends TestCase
         $response = $this->actingAs($admin)->get(route('reports.finance'));
         $response->assertStatus(200);
         $response->assertDontSee('Tarik Saldo Owner');
+    }
+
+    public function test_daily_income_counts_sale_payment_and_debt_repayment_on_their_actual_dates(): void
+    {
+        $saleDate = '2026-06-20';
+        $repaymentDate = '2026-06-21';
+
+        $sale = Sale::create([
+            'created_by'     => $this->superadmin->id,
+            'approved_by'    => $this->superadmin->id,
+            'invoice_number' => 'INV-20260620-0001',
+            'customer_name'  => 'Pembeli Test',
+            'sale_date'      => $saleDate,
+            'total_price'    => 5500000,
+            'total_paid'     => 5500000,
+            'profit'         => 1000000,
+            'status'         => 'approved',
+        ]);
+        $sale->forceFill([
+            'created_at' => Carbon::parse("{$saleDate} 10:00:00"),
+            'updated_at' => Carbon::parse("{$saleDate} 10:00:00"),
+        ])->save();
+
+        $sale->payments()->create([
+            'method'     => 'transfer',
+            'amount'     => 5000000,
+            'source'     => 'sale',
+            'created_at' => Carbon::parse("{$saleDate} 10:00:00"),
+        ]);
+        $sale->payments()->create([
+            'method'     => 'utang',
+            'amount'     => 500000,
+            'source'     => 'sale',
+            'created_at' => Carbon::parse("{$saleDate} 10:00:00"),
+        ]);
+        $sale->debt()->create([
+            'amount'      => 500000,
+            'paid_amount' => 500000,
+            'status'      => 'paid',
+        ]);
+        $sale->payments()->create([
+            'method'     => 'cash',
+            'amount'     => 500000,
+            'source'     => 'debt_payment',
+            'created_at' => Carbon::parse("{$repaymentDate} 11:00:00"),
+        ]);
+
+        $saleDateResponse = $this->actingAs($this->superadmin)->get(route('reports.finance', [
+            'start_date' => $saleDate,
+            'end_date'   => $saleDate,
+        ]));
+        $saleDateResponse->assertStatus(200);
+        $saleDateResponse->assertViewHas('today', function ($today) {
+            return (float) $today['income'] === 5000000.0
+                && (float) $today['transfer'] === 5000000.0
+                && (float) $today['cash'] === 0.0
+                && (float) $today['debt'] === 500000.0;
+        });
+
+        $repaymentDateResponse = $this->actingAs($this->superadmin)->get(route('reports.finance', [
+            'start_date' => $repaymentDate,
+            'end_date'   => $repaymentDate,
+        ]));
+        $repaymentDateResponse->assertStatus(200);
+        $repaymentDateResponse->assertViewHas('today', function ($today) {
+            return (float) $today['income'] === 500000.0
+                && (float) $today['cash'] === 500000.0
+                && (float) $today['transfer'] === 0.0
+                && (float) $today['debt'] === 0.0;
+        });
     }
 
     public function test_dashboard_monthly_trends_calculation(): void
@@ -141,16 +213,16 @@ class FinanceReportTest extends TestCase
         $response = $this->actingAs($this->superadmin)->get(route('dashboard'));
         $response->assertStatus(200);
         
-        // Expense trend should be 3.500.000 (Unit 3M + Listrik 500k, excluding Tarik Saldo 1.5M)
+        // Expense trend should be 500.000 (operational expense only, excluding stock purchase and owner withdrawal)
         $response->assertViewHas('monthlyExpData', function ($expData) {
             $currentMonthExpense = end($expData);
-            return $currentMonthExpense == 3500000;
+            return $currentMonthExpense == 500000;
         });
 
-        // Net profit trend should be -3.500.000 (since sales is 0 and expenses is 3.5M)
+        // Net profit trend should be -500.000 (since sales is 0 and operational expenses are 500k)
         $response->assertViewHas('monthlyNetProfits', function ($netProfits) {
             $currentMonthNetProfit = end($netProfits);
-            return $currentMonthNetProfit == -3500000;
+            return $currentMonthNetProfit == -500000;
         });
     }
 }

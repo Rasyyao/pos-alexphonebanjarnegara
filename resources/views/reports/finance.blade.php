@@ -7,7 +7,7 @@
         {{-- Title and Header --}}
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h2 class="text-xl font-bold" style="color:var(--ink)">Laporan Harian</h2>
+                <h2 class="text-xl font-bold" style="color:var(--ink)">Laporan Harian {{ $today['date_label'] ?? now()->format('d/m/Y') }}</h2>
                 <p class="text-xs mt-0.5" style="color:var(--ink-mute)">Analisis profitabilitas, arus kas operasional, dan
                     pengelolaan modal usaha</p>
             </div>
@@ -17,9 +17,7 @@
                     $isSuperadmin = auth()->user()->role->value === 'superadmin';
                     $viewedDate = (request('start_date') && request('start_date') === request('end_date')) ? request('start_date') : today()->toDateString();
                     $closingRecord = \App\Models\DailyClosing::whereDate('closing_date', $viewedDate)->first();
-                    $isLocked = $closingRecord && ($isSuperadmin
-                        ? $closingRecord->status === 'verified'
-                        : in_array($closingRecord->status, ['closed', 'verified']));
+                    $isLocked = !$isSuperadmin && $closingRecord && in_array($closingRecord->status, ['closed', 'verified']);
                 @endphp
 
                 @if ($closingRecord)
@@ -53,7 +51,7 @@
             </div>
         </div>
 
-        @if ($isLocked)
+        @if ($closingRecord && in_array($closingRecord->status, ['closed', 'verified']))
             <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 shadow-sm">
                 <div class="p-2 rounded-lg bg-amber-100 text-amber-800 flex-shrink-0">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -65,12 +63,16 @@
                     @if ($closingRecord->status === 'closed')
                         <p class="text-xs text-amber-800 mt-1">
                             Laporan keuangan untuk tanggal <strong>{{ \Carbon\Carbon::parse($viewedDate)->format('d/m/Y') }}</strong> telah ditutup oleh <strong>{{ $closingRecord->closedBy->name ?? 'Admin' }}</strong> pada {{ $closingRecord->closed_at->format('d/m/Y H:i') }}.
-                            Semua mutasi transaksi pada tanggal ini dikunci dan tidak dapat diubah kecuali oleh Super Admin.
+                            Semua mutasi transaksi pada tanggal ini dikunci dan tidak dapat diubah kecuali oleh Super Admin. @if($isSuperadmin)<strong>(Anda login sebagai Super Admin dan tetap dapat melakukan pengeditan)</strong>@endif
                         </p>
                     @else
                         <p class="text-xs text-amber-800 mt-1">
                             Laporan keuangan untuk tanggal <strong>{{ \Carbon\Carbon::parse($viewedDate)->format('d/m/Y') }}</strong> telah diverifikasi oleh Super Admin <strong>{{ $closingRecord->verifiedBy->name ?? 'Super Admin' }}</strong> pada {{ $closingRecord->verified_at->format('d/m/Y H:i') }}.
-                            Semua data transaksi bersifat read-only.
+                            @if ($isSuperadmin)
+                                Semua data transaksi dikunci untuk Admin, tetapi sebagai <strong>Super Admin</strong> Anda tetap dapat melakukan pengeditan.
+                            @else
+                                Semua data transaksi bersifat read-only.
+                            @endif
                         </p>
                     @endif
                 </div>
@@ -206,7 +208,7 @@
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-blue-600" style="color:#2563EB">
                     Rp {{ number_format($today['revenue'], 0, ',', '.') }}
                 </div>
-                <div class="text-xs" style="color:var(--ink-mute)">Penjualan disetujui hari ini</div>
+                <div class="text-xs" style="color:var(--ink-mute)">Penjualan disetujui tanggal {{ $today['date_label'] }}</div>
             </div>
 
             {{-- 2. Pendapatan --}}
@@ -224,7 +226,21 @@
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-emerald-600" style="color:var(--success)">
                     Rp {{ number_format($today['income'], 0, ',', '.') }}
                 </div>
-                <div class="text-xs" style="color:var(--ink-mute)">Uang masuk (Tunai & Transfer)</div>
+                <!-- <div class="grid grid-cols-2 gap-2 mt-3">
+                    <div class="rounded-lg px-2.5 py-2" style="background:#F0FDF4">
+                        <div class="text-[10px] font-bold uppercase tracking-wider font-mono text-emerald-700">Cash</div>
+                        <div class="text-xs font-bold font-mono tabular-nums text-emerald-700">
+                            Rp {{ number_format($today['cash'], 0, ',', '.') }}
+                        </div>
+                    </div>
+                    <div class="rounded-lg px-2.5 py-2" style="background:#EFF6FF">
+                        <div class="text-[10px] font-bold uppercase tracking-wider font-mono text-blue-700">ATM</div>
+                        <div class="text-xs font-bold font-mono tabular-nums text-blue-700">
+                            Rp {{ number_format($today['transfer'], 0, ',', '.') }}
+                        </div>
+                    </div>
+                </div> -->
+    <div class="text-xs mt-2" style="color:var(--ink-mute)">Uang masuk tanggal {{ $today['date_label'] }}</div>
             </div>
 
             {{-- 3. Pengeluaran --}}
@@ -242,7 +258,7 @@
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-red-600" style="color:var(--warn)">
                     Rp {{ number_format($today['expenses'], 0, ',', '.') }}
                 </div>
-                <div class="text-xs" style="color:var(--ink-mute)">Operasional & biaya hari ini</div>
+                <div class="text-xs" style="color:var(--ink-mute)">Operasional & biaya tanggal {{ $today['date_label'] }}</div>
             </div>
 
             {{-- 4. Laba Bersih --}}
@@ -281,7 +297,7 @@
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-amber-600" style="color:#F59E0B">
                     Rp {{ number_format($today['debt'], 0, ',', '.') }}
                 </div>
-                <div class="text-xs" style="color:var(--ink-mute)">Piutang baru tercatat hari ini</div>
+                <div class="text-xs" style="color:var(--ink-mute)">Piutang baru tanggal {{ $today['date_label'] }}</div>
             </div>
 
         </div>

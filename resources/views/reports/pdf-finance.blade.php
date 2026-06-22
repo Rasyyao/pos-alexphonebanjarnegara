@@ -193,6 +193,54 @@
   </table>
   @endif
 
+  {{-- HP STOCK PURCHASES TABLE --}}
+  @if(isset($hpPurchases) && $hpPurchases->count() > 0)
+  <div class="section-title" style="margin-top:16px">Pembelian Stok HP</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:24px">No</th>
+        <th class="center">Tanggal</th>
+        <th>Nama HP</th>
+        <th>IMEI / SN</th>
+        <th>Kondisi</th>
+        <th>Metode</th>
+        <th>Inputter</th>
+        <th class="right">Harga Beli</th>
+      </tr>
+    </thead>
+    <tbody>
+      @php $no = 1; $tHP = 0; @endphp
+      @foreach($hpPurchases as $u)
+        @php
+          $tHP += (float)$u->purchase_price;
+          $brand = $u->model->brand->name ?? '';
+          $model = $u->model->name ?? '';
+          $spec  = trim("{$brand} {$model} ({$u->ram}/{$u->rom}) - {$u->color}");
+          $imeiSn = collect([$u->imei ? 'IMEI: '.$u->imei : null, $u->serial_number ? 'SN: '.$u->serial_number : null])->filter()->join(' | ');
+          $kondisi = ucfirst($u->unit_type->value ?? '') . ($u->grade ? ' Grade '.$u->grade : '');
+          $method = $u->purchase_payment_method ?? 'cash';
+          $methodLabel = $method === 'transfer' ? 'Transfer' : 'Tunai';
+        @endphp
+        <tr>
+          <td class="center muted">{{ $no++ }}</td>
+          <td class="center muted">{{ \Carbon\Carbon::parse($u->purchase_date)->format('d/m/Y') }}</td>
+          <td>{{ $spec }}</td>
+          <td class="muted" style="font-size:7pt">{{ $imeiSn ?: '—' }}</td>
+          <td class="muted">{{ $kondisi }}</td>
+          <td class="muted">{{ $methodLabel }}</td>
+          <td class="muted">{{ $u->creator->name ?? '—' }}</td>
+          <td class="right red">Rp {{ number_format($u->purchase_price, 0, ',', '.') }}</td>
+        </tr>
+      @endforeach
+      <tr class="total-row">
+        <td colspan="7" style="text-align:right">TOTAL PEMBELIAN STOK HP:</td>
+        <td class="right red">Rp {{ number_format($tHP, 0, ',', '.') }}</td>
+      </tr>
+    </tbody>
+  </table>
+  @endif
+
   <div class="footer">Dokumen dicetak otomatis oleh sistem POS Alex Phone &mdash; {{ $printedAt }}</div>
 </div>
 </body>

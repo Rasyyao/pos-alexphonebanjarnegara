@@ -235,12 +235,20 @@ class ReportController extends Controller
             ->whereIn('method', ['cash', 'transfer'])
             ->whereNotNull('created_at')
             ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
-            ->whereRaw('DATE(sale_payments.created_at) > (SELECT sale_date FROM sales WHERE sales.id = sale_payments.sale_id)');
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            });
         if ($startDate) $debtPaymentsQuery->whereDate('created_at', '>=', $startDate);
         if ($endDate)   $debtPaymentsQuery->whereDate('created_at', '<=', $endDate);
         $debtPayments = $debtPaymentsQuery->get();
 
-        $data = compact('summary', 'sales', 'debtPayments', 'periodStr', 'startDate', 'endDate');
+        $hpPurchasesQuery = \App\Models\Unit::with(['model.brand', 'creator']);
+        if ($startDate) $hpPurchasesQuery->whereDate('purchase_date', '>=', $startDate);
+        if ($endDate)   $hpPurchasesQuery->whereDate('purchase_date', '<=', $endDate);
+        $hpPurchases = $hpPurchasesQuery->latest('purchase_date')->get();
+
+        $data = compact('summary', 'sales', 'debtPayments', 'hpPurchases', 'periodStr', 'startDate', 'endDate');
         $data['printedAt'] = now()->isoFormat('D MMMM YYYY, HH:mm') . ' WIB';
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf-finance', $data)
@@ -1638,17 +1646,39 @@ class ReportController extends Controller
         $salesList = $salesQuery->get();
         $txCount = $salesList->count();
         
-        $penerimaanCash = 0;
-        $penerimaanTransfer = 0;
+        $initialPaymentsInPeriod = \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->where('source', 'sale')
+            ->whereHas('sale', function ($q) use ($startDate, $endDate) {
+                $q->where('status', 'approved');
+                if ($startDate) $q->whereDate('sale_date', '>=', $startDate);
+                if ($endDate)   $q->whereDate('sale_date', '<=', $endDate);
+            })
+            ->selectRaw('method, SUM(amount) as total')
+            ->groupBy('method')
+            ->pluck('total', 'method');
+        $debtPaymentsInPeriodQuery = \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->whereNotNull('created_at')
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            });
+        if ($startDate) $debtPaymentsInPeriodQuery->whereDate('created_at', '>=', $startDate);
+        if ($endDate)   $debtPaymentsInPeriodQuery->whereDate('created_at', '<=', $endDate);
+        $debtPaymentsInPeriod = $debtPaymentsInPeriodQuery
+            ->selectRaw('method, SUM(amount) as total')
+            ->groupBy('method')
+            ->pluck('total', 'method');
+
+        $penerimaanCash = (float) ($initialPaymentsInPeriod['cash'] ?? 0)
+            + (float) ($debtPaymentsInPeriod['cash'] ?? 0);
+        $penerimaanTransfer = (float) ($initialPaymentsInPeriod['transfer'] ?? 0)
+            + (float) ($debtPaymentsInPeriod['transfer'] ?? 0);
         $piutang = 0;
         foreach ($salesList as $sale) {
             foreach ($sale->payments as $payment) {
                 $method = $payment->method->value ?? $payment->method;
-                if ($method === 'cash') {
-                    $penerimaanCash += $payment->amount;
-                } elseif ($method === 'transfer') {
-                    $penerimaanTransfer += $payment->amount;
-                } elseif ($method === 'utang') {
+                if ($method === 'utang') {
                     $piutang += $payment->amount;
                 }
             }

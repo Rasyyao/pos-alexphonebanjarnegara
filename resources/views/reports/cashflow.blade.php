@@ -169,7 +169,7 @@
             {{-- 4. Pengeluaran --}}
             <div class="bg-white rounded-xl border p-5 card-lift" style="border-color:var(--line)">
                 <div class="flex items-start justify-between mb-3">
-                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Pengeluaran</div>
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Pengeluaran Operasional</div>
                     <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style="background:rgba(194,65,12,0.08)">
                         <svg class="w-4 h-4" style="color:var(--warn)" fill="none" viewBox="0 0 24 24"
@@ -181,7 +181,7 @@
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-orange-600" style="color:var(--warn)">
                     Rp {{ number_format($cashflow['outflow'], 0, ',', '.') }}
                 </div>
-                <div class="text-xs" style="color:var(--ink-mute)">Total pengeluaran periode ini</div>
+                <div class="text-xs" style="color:var(--ink-mute)">Biaya operasional periode ini</div>
             </div>
 
             {{-- 5. Piutang Aktif --}}
@@ -439,7 +439,7 @@
                             @endif
                             <div class="flex items-center justify-between text-xs py-1.5 border-b"
                                 style="border-color:var(--line)">
-                                <span style="color:var(--ink-soft)">Total Pengeluaran</span>
+                                <span style="color:var(--ink-soft)">Total Pengeluaran Operasional</span>
                                 <span class="font-bold font-mono text-red-600" style="color:var(--warn)">− Rp
                                     {{ number_format($lifetimeExpenses, 0, ',', '.') }}</span>
                             </div>
@@ -454,7 +454,7 @@
                                 </span>
                             </div>
                             <p class="text-[9px] font-mono text-center pt-1" style="color:var(--ink-mute)">
-                                = Modal + Laba{{ $totalWithdrawal > 0 ? ' − Penarikan' : '' }} − Pengeluaran
+                                = Modal + Laba{{ $totalWithdrawal > 0 ? ' − Penarikan' : '' }} − Pengeluaran Operasional
                             </p>
                         </div>
                     </div>

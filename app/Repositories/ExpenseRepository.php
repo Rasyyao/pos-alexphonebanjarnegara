@@ -48,9 +48,6 @@ class ExpenseRepository implements ExpenseRepositoryInterface
             ->where('expense_date', '>=', $startDate)
             ->get();
 
-        $hpExpenses = \App\Models\Unit::where('purchase_date', '>=', $startDate)
-            ->get();
-
         $result = collect();
         for ($i = $months - 1; $i >= 0; $i--) {
             $date = now()->subMonths($i);
@@ -60,14 +57,10 @@ class ExpenseRepository implements ExpenseRepositoryInterface
                 return $exp->expense_date->format('Y-m') === $yearMonth;
             });
 
-            $monthlyHp = $hpExpenses->filter(function ($unit) use ($yearMonth) {
-                return $unit->purchase_date->format('Y-m') === $yearMonth;
-            });
-
             $result->push((object)[
                 'year_month' => $yearMonth,
                 'label'      => $date->isoFormat('MMMM Y'),
-                'total'      => (float) ($monthlyExp->sum('amount') + $monthlyHp->sum('purchase_price')),
+                'total'      => (float) $monthlyExp->sum('amount'),
             ]);
         }
 

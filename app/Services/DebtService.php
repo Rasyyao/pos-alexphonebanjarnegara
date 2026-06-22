@@ -25,6 +25,7 @@ class DebtService
             $debt->sale->payments()->create([
                 'method' => $paymentMethod,
                 'amount' => $remaining,
+                'source' => 'debt_payment',
             ]);
             return $updated;
         });
@@ -65,6 +66,7 @@ class DebtService
             $updatedDebt->sale->payments()->create([
                 'method' => $paymentMethod,
                 'amount' => $payAmount,
+                'source' => 'debt_payment',
             ]);
 
             Log::info('Debt payment recorded', [

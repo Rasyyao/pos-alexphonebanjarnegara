@@ -154,6 +154,7 @@ class FinanceService
 
         // Pendapatan = cash/transfer actually received: initial payments for sales in period + debt payments received in period
         $incomeInitial = (float) \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->where('source', 'sale')
             ->whereHas('sale', function ($sq) use ($startDate, $endDate) {
                 $sq->where('status', 'approved');
                 if ($startDate) $sq->whereDate('sale_date', '>=', $startDate);
@@ -162,7 +163,10 @@ class FinanceService
         $incomeDebtQuery = \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
             ->whereNotNull('created_at')
             ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
-            ->whereRaw('DATE(sale_payments.created_at) > (SELECT sale_date FROM sales WHERE sales.id = sale_payments.sale_id)');
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            });
         if ($startDate) $incomeDebtQuery->whereDate('created_at', '>=', $startDate);
         if ($endDate)   $incomeDebtQuery->whereDate('created_at', '<=', $endDate);
         $income = $incomeInitial + (float) $incomeDebtQuery->sum('amount');
@@ -180,16 +184,7 @@ class FinanceService
         }
         $operationalExpenses = (float) $expensesQuery->sum('amount');
 
-        $hpExpensesQuery = \App\Models\Unit::query();
-        if ($startDate) {
-            $hpExpensesQuery->whereDate('purchase_date', '>=', $startDate);
-        }
-        if ($endDate) {
-            $hpExpensesQuery->whereDate('purchase_date', '<=', $endDate);
-        }
-        $hpPurchaseTotal = (float) $hpExpensesQuery->sum('purchase_price');
-        // Total pengeluaran untuk display (kas keluar); HP cost sudah masuk COGS via profit
-        $expenses = $operationalExpenses + $hpPurchaseTotal;
+        $expenses = $operationalExpenses;
 
         $capitalsQuery = \App\Models\Capital::whereIn('type', ['initial', 'addition']);
         if ($startDate) {
@@ -228,41 +223,70 @@ class FinanceService
     /** Compile statistics for the unified reports hub page. */
     public function reportSummary(?string $startDate = null, ?string $endDate = null): array
     {
-        $todayStats = $this->sales->todayStats();
-        
         $user = auth()->user();
         $isSuperAdmin = $user && $user->isSuperAdmin();
 
-        $todayExpensesQuery = \App\Models\Expense::whereDate('expense_date', today());
+        $dailySummaryDate = ($startDate && $endDate && $startDate === $endDate)
+            ? $startDate
+            : today()->toDateString();
+
+        $todayStatsRow = \App\Models\Sale::approved()
+            ->whereDate('sale_date', $dailySummaryDate)
+            ->selectRaw('SUM(total_price) as revenue, SUM(profit) as profit, COUNT(*) as count')
+            ->first();
+        $todayStats = [
+            'revenue' => (float) ($todayStatsRow->revenue ?? 0),
+            'profit'  => (float) ($todayStatsRow->profit ?? 0),
+            'count'   => (int) ($todayStatsRow->count ?? 0),
+        ];
+
+        $todayExpensesQuery = \App\Models\Expense::whereDate('expense_date', $dailySummaryDate);
         if (!$isSuperAdmin) {
             $todayExpensesQuery->where('category', '!=', 'tarik_owner');
         }
         $todayExpenses = (float) $todayExpensesQuery->sum('amount');
 
-        $todayHPStock = (float) \App\Models\Unit::whereDate('purchase_date', today())->sum('purchase_price');
-        $todayExpenses += $todayHPStock;
-
-        $todayIncome   = (float) \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
-            ->where(function ($q) {
-                // Initial payments for today's sales
-                $q->whereHas('sale', fn($sq) => $sq->approved()->whereDate('sale_date', today()))
-                  // OR debt payments received today for older sales (identified by created_at)
-                  ->orWhere(function ($sq) {
+        $dailyIncomeByMethod = \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->where(function ($q) use ($dailySummaryDate) {
+                // Initial payments for sales on the viewed date
+                $q->where(function ($initial) use ($dailySummaryDate) {
+                    $initial
+                        ->where('source', 'sale')
+                        ->whereHas('sale', fn($sq) => $sq->approved()->whereDate('sale_date', $dailySummaryDate));
+                })
+                  // OR debt payments received on the viewed date after the sale was created
+                  ->orWhere(function ($sq) use ($dailySummaryDate) {
                       $sq->whereNotNull('created_at')
-                         ->whereDate('created_at', today())
-                         ->whereHas('sale', fn($ssq) => $ssq->approved()->whereDate('sale_date', '<', today()));
+                         ->whereDate('created_at', $dailySummaryDate)
+                         ->where(function ($repayment) {
+                             $repayment->where('source', 'debt_payment')
+                                 ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+                         })
+                         ->whereHas('sale', fn($ssq) => $ssq->approved());
                   });
             })
-            ->sum('amount');
-        $todayDebt     = (float) \App\Models\Debt::whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', today()))
+            ->selectRaw('method, SUM(amount) as total')
+            ->groupBy('method')
+            ->pluck('total', 'method');
+
+        $todayCash     = (float) ($dailyIncomeByMethod['cash'] ?? 0);
+        $todayTransfer = (float) ($dailyIncomeByMethod['transfer'] ?? 0);
+        $todayIncome   = $todayCash + $todayTransfer;
+        $todayDebt     = (float) \App\Models\SalePayment::where('method', 'utang')
+            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', $dailySummaryDate))
             ->sum('amount');
 
         $today = [
+            'date'       => $dailySummaryDate,
+            'date_label' => \Carbon\Carbon::parse($dailySummaryDate)->format('d/m/Y'),
+            'is_today'   => $dailySummaryDate === today()->toDateString(),
             'revenue'    => $todayStats['revenue'],
             'profit'     => $todayStats['profit'],
             'count'      => $todayStats['count'],
             'expenses'   => $todayExpenses,
             'income'     => $todayIncome,
+            'cash'       => $todayCash,
+            'transfer'   => $todayTransfer,
             'debt'       => $todayDebt,
             'net_profit' => $todayStats['profit'] - $todayExpenses,
         ];
@@ -294,16 +318,6 @@ class FinanceService
         }
         
         $totalExpenses = (float) $expensesQuery->sum('amount');
-
-        $hpExpensesQuery = \App\Models\Unit::query();
-        if ($startDate) {
-            $hpExpensesQuery->whereDate('purchase_date', '>=', $startDate);
-        }
-        if ($endDate) {
-            $hpExpensesQuery->whereDate('purchase_date', '<=', $endDate);
-        }
-        $totalHPExpenses = (float) $hpExpensesQuery->sum('purchase_price');
-        $totalExpenses += $totalHPExpenses;
 
         // Fetch units purchased in the filtered range and map to virtual Expense models
         $unitsListQuery = \App\Models\Unit::with('creator', 'model.brand');
@@ -401,7 +415,10 @@ class FinanceService
             ->whereIn('method', ['cash', 'transfer'])
             ->whereNotNull('created_at')
             ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
-            ->whereRaw('DATE(sale_payments.created_at) > (SELECT sale_date FROM sales WHERE sales.id = sale_payments.sale_id)');
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            });
         if ($startDate) $debtPaymentsQuery->whereDate('created_at', '>=', $startDate);
         if ($endDate)   $debtPaymentsQuery->whereDate('created_at', '<=', $endDate);
 
@@ -483,12 +500,23 @@ class FinanceService
         $totalAccessoryPurchases = $accAssetValue + $accSoldCost;
         $modalSekarang           = $modalAwalNonSales - $totalWithdrawal + $lifetimeRevenue - $totalHPPurchases - $totalAccessoryPurchases - $lifetimeExpenses;
 
-        $saldoAtm = (float) \App\Models\SalePayment::where('method', 'transfer')
+        $initialTransferInPeriod = (float) \App\Models\SalePayment::where('method', 'transfer')
+            ->where('source', 'sale')
             ->whereHas('sale', function ($q) use ($startDate, $endDate) {
                 $q->where('status', 'approved');
                 if ($startDate) $q->whereDate('sale_date', '>=', $startDate);
                 if ($endDate)   $q->whereDate('sale_date', '<=', $endDate);
             })->sum('amount');
+        $transferDebtPaymentsQuery = \App\Models\SalePayment::where('method', 'transfer')
+            ->whereNotNull('created_at')
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            });
+        if ($startDate) $transferDebtPaymentsQuery->whereDate('created_at', '>=', $startDate);
+        if ($endDate)   $transferDebtPaymentsQuery->whereDate('created_at', '<=', $endDate);
+        $saldoAtm = $initialTransferInPeriod + (float) $transferDebtPaymentsQuery->sum('amount');
 
         // ── Lifetime real balances split by payment method ──────────────────
         // Capital deposited: split by payment_method (exclude sale-based capitals to prevent double-counting with revenueCash/revenueTransfer)
@@ -572,4 +600,3 @@ class FinanceService
         ];
     }
 }
-

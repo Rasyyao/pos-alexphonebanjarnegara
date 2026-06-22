@@ -98,6 +98,7 @@ class SaleController extends Controller
                 ->map(fn($payment) => [
                     'method' => $payment['method'],
                     'amount' => (float) $payment['amount'],
+                    'source' => 'sale',
                 ])
                 ->values();
             $paid = $payments->sum('amount');

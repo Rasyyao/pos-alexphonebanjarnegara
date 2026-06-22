@@ -67,7 +67,7 @@ class SaleService
             }
 
             foreach ($data['payments'] as $payment) {
-                $sale->payments()->create($payment);
+                $sale->payments()->create(array_merge($payment, ['source' => 'sale']));
             }
 
             $utangTotal = collect($data['payments'])->where('method', 'utang')->sum('amount');
