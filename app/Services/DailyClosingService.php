@@ -59,30 +59,21 @@ class DailyClosingService
         // 5. Laba (Profit of sales)
         $laba = (float) Sale::approved()->whereDate('sale_date', $date)->sum('profit');
 
-        // 6. Cash System (Received Cash from Sales - Cash Expenses - Cash HP Purchases)
-        $cashSystemSales = (float) SalePayment::where('method', 'cash')
-            ->where(function ($q) use ($date) {
-                $q->where(function ($initial) use ($date) {
-                    $initial
-                        ->where('source', 'sale')
-                        ->whereHas('sale', fn($sq) => $sq->approved()->whereDate('sale_date', $date));
-                })->orWhere(function ($repayment) use ($date) {
-                    $repayment
-                        ->whereDate('created_at', $date)
-                        ->where(function ($source) {
-                            $source->where('source', 'debt_payment')
-                                ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
-                        })
-                        ->whereHas('sale', fn($sq) => $sq->approved());
-                });
-            })
-            ->sum('amount');
-        $cashExpenses = (float) Expense::where('payment_method', 'cash')
-            ->whereDate('expense_date', $date)
-            ->sum('amount');
-        $hpCashPurchases = (float) Unit::whereDate('purchase_date', $date)
-            ->sum('purchase_cash');
-        $cashSystem = $cashSystemSales - $cashExpenses - $hpCashPurchases;
+        // 6. Cash System (Overall current cash balance in the system - saldoKas)
+        $modalCash = (float)\App\Models\Capital::whereIn('type', ['initial','addition'])->where('payment_method','cash')->whereNull('sale_id')->sum('amount');
+        $totalWithdrawal = (float)\App\Models\Capital::where('type', 'withdrawal')->sum('amount');
+        $revenueCash = (float)\App\Models\SalePayment::where('method','cash')->whereHas('sale', fn($q) => $q->where('status','approved'))->sum('amount');
+        $hpCash = (float)\App\Models\Unit::sum('purchase_cash');
+        $accAssetCash = (float)\App\Models\Accessory::selectRaw('COALESCE(SUM(purchase_cash * stock_qty),0) as v')->value('v');
+        $accSoldCash = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
+                           ->join('accessories','sale_items.accessory_id','=','accessories.id')
+                           ->selectRaw('COALESCE(SUM(accessories.purchase_cash * sale_items.quantity),0) as total')->value('total');
+        $expCash = (float)\App\Models\Expense::where('payment_method','cash')->sum('amount');
+        $transferCashToAtm = \App\Models\FundTransfer::where('direction', 'cash_to_atm')->sum('amount');
+        $transferAtmToCash = \App\Models\FundTransfer::where('direction', 'atm_to_cash')->sum('amount');
+
+        $cashSystem = $modalCash - $totalWithdrawal + $revenueCash - $hpCash - $accAssetCash - $accSoldCash - $expCash
+                    + $transferAtmToCash - $transferCashToAtm;
 
         // 7. Transfer Income
         $transferIncome = (float) SalePayment::where('method', 'transfer')

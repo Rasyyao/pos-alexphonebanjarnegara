@@ -283,6 +283,25 @@ class FinanceService
         $totalAccessoryPurchases = $accStock + $accSold;
         $modalSekarang           = $modalAwal + $lifetimeRevenue - $totalHPPurchases - $totalAccessoryPurchases - $lifetimeExpenses;
 
+        // Calculate current lifetime cash balance (saldoKas)
+        $modalCash     = (float)\App\Models\Capital::whereIn('type', ['initial','addition'])->where('payment_method','cash')->whereNull('sale_id')->sum('amount');
+        $totalWithdrawal = (float)\App\Models\Capital::where('type', 'withdrawal')->sum('amount');
+        $revenueCash     = (float)\App\Models\SalePayment::where('method','cash')->whereHas('sale', fn($q) => $q->where('status','approved'))->sum('amount');
+        $hpCash     = (float)\App\Models\Unit::sum('purchase_cash');
+        $accAssetCash = (float)\App\Models\Accessory::selectRaw('COALESCE(SUM(purchase_cash * stock_qty),0) as v')->value('v');
+        $accSoldCash  = (float)\App\Models\SaleItem::whereNotNull('accessory_id')
+                            ->join('accessories', 'sale_items.accessory_id', '=', 'accessories.id')
+                            ->selectRaw('COALESCE(SUM(accessories.purchase_cash * sale_items.quantity),0) as total')
+                            ->value('total');
+        $totalAccessoryCash = $accAssetCash + $accSoldCash;
+        $lifetimeExpensesCash     = (float) \App\Models\Expense::where('payment_method', 'cash')->sum('amount');
+
+        $transferCashToAtm = $this->fundTransfers->sumCashToAtm();
+        $transferAtmToCash = $this->fundTransfers->sumAtmToCash();
+
+        $saldoKas         = $modalCash - $totalWithdrawal + $revenueCash - $hpCash - $totalAccessoryCash - $lifetimeExpensesCash
+                          + $transferAtmToCash - $transferCashToAtm;
+
         return [
             'revenue'      => $revenue,
             'profit'       => $profit,
@@ -296,6 +315,8 @@ class FinanceService
             'assetValue'   => $this->units->assetValue(),
             'modalAwal'    => $modalAwal,
             'modalSekarang'=> $modalSekarang,
+            'saldoKas'     => $saldoKas,
+            'saldoAtm'     => $incomeTransfer, // period transfer
         ];
     }
 
@@ -696,8 +717,10 @@ class FinanceService
             'week'             => $week,
             'month'            => $month,
             'total'            => [
-                'revenue' => $totalRevenue,
-                'profit'  => $totalProfit,
+                'revenue'    => $totalRevenue,
+                'profit'     => $totalProfit,
+                'debt'       => $rangeDebt,
+                'net_profit' => $totalProfit - $totalExpenses,
             ],
             'cashflow'         => [
                 'inflow'      => $totalRevenue,

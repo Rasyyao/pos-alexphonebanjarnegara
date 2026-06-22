@@ -230,6 +230,25 @@
             }
         </script>
 
+        @php
+            $start = request('start_date');
+            $end = request('end_date');
+            $preset = request('preset', 'all');
+            if ($preset === 'today') {
+                $periodLabel = 'hari ini';
+            } elseif ($preset === 'week') {
+                $periodLabel = 'minggu ini';
+            } elseif ($preset === 'month') {
+                $periodLabel = 'bulan ini';
+            } elseif ($preset === 'all') {
+                $periodLabel = 'semua periode';
+            } else {
+                $periodLabel = ($start && $end) 
+                    ? \Carbon\Carbon::parse($start)->format('d/m/Y') . ' - ' . \Carbon\Carbon::parse($end)->format('d/m/Y') 
+                    : 'semua periode';
+            }
+        @endphp
+
         <div class="grid grid-cols-2 {{ $isSuperadmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5' }} gap-3">
 
             {{-- 1. Omzet --}}
@@ -245,16 +264,16 @@
                     </div>
                 </div>
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-blue-600" style="color:#2563EB">
-                    Rp {{ number_format($today['revenue'], 0, ',', '.') }}
+                    Rp {{ number_format($total['revenue'], 0, ',', '.') }}
                 </div>
-                <div class="text-xs" style="color:var(--ink-mute)">Penjualan disetujui tanggal {{ $today['date_label'] }}</div>
+                <div class="text-xs" style="color:var(--ink-mute)">Penjualan {{ $periodLabel }}</div>
             </div>
 
             {{-- 2. Cash --}}
             <div class="bg-white rounded-xl border p-5 card-lift"
                 style="border-color:var(--line)">
                 <div class="flex items-start justify-between mb-3">
-                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Cash</div>
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Cash Flow</div>
                     <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style="background:rgba(16,185,129,0.08)">
                         <svg class="w-4 h-4 text-emerald-600" style="color:var(--success)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -281,9 +300,9 @@
                     </div>
                 </div>
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-indigo-600" style="color:#4F46E5">
-                    Rp {{ number_format($saldoAtmLifetime, 0, ',', '.') }}
+                    Rp {{ number_format($saldoAtm, 0, ',', '.') }}
                 </div>
-                <div class="text-xs text-indigo-700" style="color:#4F46E5">Rekening / ATM saat ini</div>
+                <div class="text-xs text-indigo-700" style="color:#4F46E5">Rekening / ATM {{ $periodLabel }}</div>
             </div>
 
             {{-- 4. Pengeluaran --}}
@@ -299,16 +318,16 @@
                     </div>
                 </div>
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-red-600" style="color:var(--warn)">
-                    Rp {{ number_format($today['expenses'], 0, ',', '.') }}
+                    Rp {{ number_format($cashflow['outflow'], 0, ',', '.') }}
                 </div>
-                <div class="text-xs" style="color:var(--ink-mute)">Operasional & biaya tanggal {{ $today['date_label'] }}</div>
+                <div class="text-xs" style="color:var(--ink-mute)">Operasional & biaya {{ $periodLabel }}</div>
             </div>
 
-            {{-- 5. Hutang Hari Ini --}}
+            {{-- 5. Hutang --}}
             <div class="bg-white rounded-xl border p-5 card-lift"
                 style="border-color:var(--line)">
                 <div class="flex items-start justify-between mb-3">
-                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Hutang Hari Ini</div>
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Hutang</div>
                     <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style="background:rgba(245,158,11,0.08)">
                         <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -317,14 +336,14 @@
                     </div>
                 </div>
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-amber-600" style="color:#F59E0B">
-                    Rp {{ number_format($today['debt'], 0, ',', '.') }}
+                    Rp {{ number_format($total['debt'], 0, ',', '.') }}
                 </div>
-                <div class="text-xs" style="color:var(--ink-mute)">Piutang baru tanggal {{ $today['date_label'] }}</div>
+                <div class="text-xs" style="color:var(--ink-mute)">Piutang baru {{ $periodLabel }}</div>
             </div>
 
             {{-- 6. Laba Bersih --}}
             @if ($isSuperadmin)
-            @php $isProfitNegative = $today['net_profit'] < 0; @endphp
+            @php $isProfitNegative = $total['net_profit'] < 0; @endphp
             <div class="bg-white rounded-xl border p-5 card-lift"
                 style="border-color:var(--line)">
                 <div class="flex items-start justify-between mb-3">
@@ -337,9 +356,9 @@
                     </div>
                 </div>
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums {{ $isProfitNegative ? 'text-red-600' : 'text-emerald-600' }}" style="color:{{ $isProfitNegative ? 'var(--warn)' : 'var(--success)' }}">
-                    Rp {{ number_format($today['net_profit'], 0, ',', '.') }}
+                    Rp {{ number_format($total['net_profit'], 0, ',', '.') }}
                 </div>
-                <div class="text-xs" style="color:var(--ink-mute)">Penjualan dikurangi biaya</div>
+                <div class="text-xs" style="color:var(--ink-mute)">Laba bersih {{ $periodLabel }}</div>
             </div>
             @endif
 
@@ -1057,7 +1076,7 @@
                                 <div class="font-bold text-gray-800" id="closing-date-display">-</div>
                             </div>
                             <div>
-                                <div class="text-gray-500 font-semibold mb-0.5">Total Uang Masuk</div>
+                                <div class="text-gray-500 font-semibold mb-0.5">Omzet</div>
                                 <div class="font-bold text-blue-600" id="closing-total-income">-</div>
                             </div>
                             <div>
@@ -1092,12 +1111,8 @@
                                         <span class="font-semibold text-amber-600" id="closing-debt-amount">-</span>
                                     </div>
                                     <div class="flex justify-between p-2.5 bg-blue-50">
-                                        <span class="text-blue-800 font-semibold">Kas Sistem Harian</span>
+                                        <span class="text-blue-800 font-semibold">Cash Flow</span>
                                         <span class="font-semibold text-blue-700 font-mono" id="closing-cash-system">-</span>
-                                    </div>
-                                    <div class="flex justify-between p-2.5 bg-purple-50">
-                                        <span class="text-purple-800 font-semibold">ATM Sistem Harian</span>
-                                        <span class="font-semibold text-purple-700 font-mono" id="closing-atm-system">-</span>
                                     </div>
                                 </div>
                             </div>

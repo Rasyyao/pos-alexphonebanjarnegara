@@ -322,6 +322,7 @@ class ReportController extends Controller
         $totalProfit = (float) $report['total_profit'];
         $dailyExpenses = $this->dailyExpenseSummary($date);
         $dailyPayments = $this->dailyPaymentSummary($date);
+        $saldoKas    = $this->finance->saldoSplit()['saldoKas'];
 
         $data = [
             'sales'         => $sales,
@@ -331,6 +332,7 @@ class ReportController extends Controller
             'totalCash'     => $dailyPayments['cash'],
             'totalTransfer' => $dailyPayments['transfer'],
             'totalDebt'     => $dailyPayments['debt'],
+            'saldoKas'      => $saldoKas,
             'operationalExpenses' => $dailyExpenses['expenses'],
             'operationalExpenseTotal' => $dailyExpenses['total'],
             'operationalExpenseCash' => $dailyExpenses['cash'],
@@ -1168,20 +1170,23 @@ class ReportController extends Controller
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]],
         ]);
 
+        $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
+
         // 4. METRICS DATA
-        $metrics = [
-            ['Total Omzet (Pemasukan)', $totalRev],
-            ['Total Laba Bersih', $totalProfit],
-            ['Penerimaan Cash', $totalCash],
-            ['Penerimaan Transfer', $totalTransfer],
-            ['Piutang (Hutang)', $totalDebt],
-            ['Pengeluaran Operasional', $operationalExpenseTotal],
-            ['Jumlah Transaksi', $txCount],
-            ['Rata-rata per Transaksi', $avgPerTx],
-        ];
+        $metrics = [];
+        $metrics[] = ['Total Omzet (Pemasukan)', $totalRev, 'omzet'];
+        if ($isSuperAdmin) {
+            $metrics[] = ['Total Laba Bersih', $totalProfit, 'laba'];
+        }
+        $metrics[] = ['Penerimaan Cash', $totalCash, 'normal'];
+        $metrics[] = ['Penerimaan Transfer', $totalTransfer, 'normal'];
+        $metrics[] = ['Piutang (Hutang)', $totalDebt, 'normal'];
+        $metrics[] = ['Pengeluaran Operasional', $operationalExpenseTotal, 'normal'];
+        $metrics[] = ['Jumlah Transaksi', $txCount, 'count'];
+        $metrics[] = ['Rata-rata per Transaksi', $avgPerTx, 'normal'];
 
         $mRow = 8;
-        foreach ($metrics as $idx => $m) {
+        foreach ($metrics as $m) {
             $sheet->setCellValue("A{$mRow}", $m[0]);
             $sheet->setCellValue("B{$mRow}", $m[1]);
 
@@ -1193,20 +1198,20 @@ class ReportController extends Controller
             ]);
             $sheet->getStyle("B{$mRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-            // Format numbers (skip count row idx=6)
-            if ($idx !== 6) {
+            // Format numbers (skip count row)
+            if ($m[2] !== 'count') {
                 $sheet->getStyle("B{$mRow}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
             }
 
             // Highlight total omzet row
-            if ($mRow === 8) {
+            if ($m[2] === 'omzet') {
                 $sheet->getStyle("A{$mRow}:B{$mRow}")->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => '1E3A5F']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'DBEAFE']],
                 ]);
             }
             // Highlight laba bersih row
-            if ($mRow === 9) {
+            if ($m[2] === 'laba') {
                 $sheet->getStyle("A{$mRow}:B{$mRow}")->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => '065F46']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1FAE5']],
@@ -1215,17 +1220,20 @@ class ReportController extends Controller
             $mRow++;
         }
 
-        // 5. NATIVE EXCEL BAR CHART — payment method breakdown (rows 10-12: Cash, Transfer, Piutang)
+        $chartStartRow = $isSuperAdmin ? 10 : 9;
+        $chartEndRow = $isSuperAdmin ? 12 : 11;
+
+        // 5. NATIVE EXCEL BAR CHART — payment method breakdown (Cash, Transfer, Piutang)
         $categories = [
             new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues(
                 \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues::DATASERIES_TYPE_STRING,
-                '\'Penjualan Harian\'!$A$10:$A$12', null, 3
+                '\'Penjualan Harian\'!$A$' . $chartStartRow . ':$A$' . $chartEndRow, null, 3
             )
         ];
         $values = [
             new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues(
                 \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues::DATASERIES_TYPE_NUMBER,
-                '\'Penjualan Harian\'!$B$10:$B$12', null, 3
+                '\'Penjualan Harian\'!$B$' . $chartStartRow . ':$B$' . $chartEndRow, null, 3
             )
         ];
         $series = new \PhpOffice\PhpSpreadsheet\Chart\DataSeries(
@@ -1246,8 +1254,9 @@ class ReportController extends Controller
         $sheet->addChart($chart);
 
         // 6. TRANSACTION DETAIL SECTION TITLE (row 23)
-        $sheet->mergeCells('A23:I23');
-        $sheet->setCellValue('A23', 'RINCIAN TRANSAKSI');
+        $lastCol = $isSuperAdmin ? 'I' : 'H';
+        $sheet->mergeCells("A23:{$lastCol}23");
+        $sheet->setCellValue("A23", 'RINCIAN TRANSAKSI');
         $sheet->getStyle('A23')->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => '0A2540']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -1255,8 +1264,14 @@ class ReportController extends Controller
         $sheet->getRowDimension('23')->setRowHeight(24);
 
         // Column headers (row 24)
-        $sheet->fromArray(['NO', 'INVOICE', 'ITEM TERJUAL', 'KASIR', 'TOTAL JUAL', 'LABA', 'CASH', 'TRANSFER', 'UTANG'], null, 'A24');
-        $sheet->getStyle('A24:I24')->applyFromArray([
+        $headers = ['NO', 'INVOICE', 'ITEM TERJUAL', 'KASIR', 'TOTAL JUAL'];
+        if ($isSuperAdmin) {
+            $headers[] = 'LABA';
+        }
+        $headers = array_merge($headers, ['CASH', 'TRANSFER', 'UTANG']);
+
+        $sheet->fromArray($headers, null, 'A24');
+        $sheet->getStyle("A24:{$lastCol}24")->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '0A2540']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -1285,13 +1300,19 @@ class ReportController extends Controller
             $sheet->setCellValue("C{$row}", $items);
             $sheet->setCellValue("D{$row}", $s->creator->name ?? '—');
             $sheet->setCellValue("E{$row}", $s->total_price);
-            $sheet->setCellValue("F{$row}", $s->profit);
-            $sheet->setCellValue("G{$row}", $sCash);
-            $sheet->setCellValue("H{$row}", $sTransfer);
-            $sheet->setCellValue("I{$row}", $sDebt);
+            if ($isSuperAdmin) {
+                $sheet->setCellValue("F{$row}", $s->profit);
+                $sheet->setCellValue("G{$row}", $sCash);
+                $sheet->setCellValue("H{$row}", $sTransfer);
+                $sheet->setCellValue("I{$row}", $sDebt);
+            } else {
+                $sheet->setCellValue("F{$row}", $sCash);
+                $sheet->setCellValue("G{$row}", $sTransfer);
+                $sheet->setCellValue("H{$row}", $sDebt);
+            }
 
             $fill = ($no % 2 === 0) ? 'F4F6FB' : 'FFFFFF';
-            $sheet->getStyle("A{$row}:I{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
                 'font' => ['name' => 'Segoe UI', 'size' => 9],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
                 'borders' => [
@@ -1322,29 +1343,33 @@ class ReportController extends Controller
                 'font' => ['color' => ['rgb' => '0A2540']],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER]
             ]);
-            $sheet->getStyle("F{$row}")->applyFromArray([
-                'font' => ['bold' => true, 'color' => ['rgb' => '065F46']],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER]
-            ]);
-            $sheet->getStyle("G{$row}")->applyFromArray([
-                'font' => ['color' => ['rgb' => '7A8AA8']],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER]
-            ]);
-            $sheet->getStyle("H{$row}")->applyFromArray([
-                'font' => ['color' => ['rgb' => '7A8AA8']],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER]
-            ]);
-            $sheet->getStyle("I{$row}")->applyFromArray([
-                'font' => ['color' => ['rgb' => '7A8AA8']],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER]
-            ]);
 
             // Number formatting
             $sheet->getStyle("E{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
-            $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
-            $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
-            $sheet->getStyle("H{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
-            $sheet->getStyle("I{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
+
+            if ($isSuperAdmin) {
+                $sheet->getStyle("F{$row}")->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['rgb' => '065F46']],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER]
+                ]);
+                $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+                
+                foreach (['G', 'H', 'I'] as $col) {
+                    $sheet->getStyle("{$col}{$row}")->applyFromArray([
+                        'font' => ['color' => ['rgb' => '7A8AA8']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER]
+                    ]);
+                    $sheet->getStyle("{$col}{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
+                }
+            } else {
+                foreach (['F', 'G', 'H'] as $col) {
+                    $sheet->getStyle("{$col}{$row}")->applyFromArray([
+                        'font' => ['color' => ['rgb' => '7A8AA8']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER]
+                    ]);
+                    $sheet->getStyle("{$col}{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
+                }
+            }
 
             $sheet->getRowDimension($row)->setRowHeight(22);
             $row++;
@@ -1356,12 +1381,18 @@ class ReportController extends Controller
             $sheet->mergeCells("A{$row}:D{$row}");
             $sheet->setCellValue("A{$row}", 'TOTAL:');
             $sheet->setCellValue("E{$row}", $totalRev);
-            $sheet->setCellValue("F{$row}", $totalProfit);
-            $sheet->setCellValue("G{$row}", $totalCash);
-            $sheet->setCellValue("H{$row}", $totalTransfer);
-            $sheet->setCellValue("I{$row}", $totalDebt);
+            if ($isSuperAdmin) {
+                $sheet->setCellValue("F{$row}", $totalProfit);
+                $sheet->setCellValue("G{$row}", $totalCash);
+                $sheet->setCellValue("H{$row}", $totalTransfer);
+                $sheet->setCellValue("I{$row}", $totalDebt);
+            } else {
+                $sheet->setCellValue("F{$row}", $totalCash);
+                $sheet->setCellValue("G{$row}", $totalTransfer);
+                $sheet->setCellValue("H{$row}", $totalDebt);
+            }
 
-            $sheet->getStyle("A{$row}:I{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
                 'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => '0A2540']],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8EDF5']],
                 'borders' => [
@@ -1373,17 +1404,22 @@ class ReportController extends Controller
             ]);
 
             $sheet->getStyle("E{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
-            $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
-            $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
-            $sheet->getStyle("H{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
-            $sheet->getStyle("I{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
+            
+            if ($isSuperAdmin) {
+                $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+                $sheet->getStyle("F{$row}")->applyFromArray(['font' => ['color' => ['rgb' => '065F46']]]);
+                
+                foreach (['G', 'H', 'I'] as $col) {
+                    $sheet->getStyle("{$col}{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
+                }
+            } else {
+                foreach (['F', 'G', 'H'] as $col) {
+                    $sheet->getStyle("{$col}{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
+                }
+            }
 
-            $sheet->getStyle("E{$row}:I{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("E{$row}:{$lastCol}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-
-            $sheet->getStyle("F{$row}")->applyFromArray([
-                'font' => ['color' => ['rgb' => '065F46']]
-            ]);
 
             $sheet->getRowDimension($row)->setRowHeight(24);
             $row++;
@@ -1470,6 +1506,7 @@ class ReportController extends Controller
     private function buildSalesTransactionsSheet($sheet, ?string $startDate = null, ?string $endDate = null): void
     {
         $sheet->setTitle('Transaksi Penjualan');
+        $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
 
         $salesQuery = \App\Models\Sale::with(['creator', 'payments', 'items.unit.model.brand', 'items.accessory'])->where('status', 'approved');
         if ($startDate) $salesQuery->whereDate('sale_date', '>=', $startDate);
@@ -1531,18 +1568,19 @@ class ReportController extends Controller
         ]);
 
         // 4. METRICS DATA
-        $metrics = [
-            ['Total Omzet (Pemasukan)', $totalRev, true],
-            ['Total Laba Bersih', $totalProfit, true],
-            ['Penerimaan Cash', $totalCash, true],
-            ['Penerimaan Transfer', $totalTransfer, true],
-            ['Piutang (Hutang)', $totalDebt, true],
-            ['Jumlah Transaksi', $txCount, false],
-            ['Rata-rata per Transaksi', $avgPerTx, true],
-        ];
+        $metrics = [];
+        $metrics[] = ['Total Omzet (Pemasukan)', $totalRev, true, 'omzet'];
+        if ($isSuperAdmin) {
+            $metrics[] = ['Total Laba Bersih', $totalProfit, true, 'laba'];
+        }
+        $metrics[] = ['Penerimaan Cash', $totalCash, true, 'normal'];
+        $metrics[] = ['Penerimaan Transfer', $totalTransfer, true, 'normal'];
+        $metrics[] = ['Piutang (Hutang)', $totalDebt, true, 'normal'];
+        $metrics[] = ['Jumlah Transaksi', $txCount, false, 'normal'];
+        $metrics[] = ['Rata-rata per Transaksi', $avgPerTx, true, 'normal'];
 
         $mRow = 8;
-        foreach ($metrics as $idx => [$label, $value, $isCurrency]) {
+        foreach ($metrics as [$label, $value, $isCurrency, $highlight]) {
             $sheet->setCellValue("A{$mRow}", $label);
             $sheet->setCellValue("B{$mRow}", $value);
             $fillColor = ($mRow % 2 === 0) ? 'F8FAFC' : 'FFFFFF';
@@ -1553,15 +1591,17 @@ class ReportController extends Controller
             ]);
             $sheet->getStyle("B{$mRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             if ($isCurrency) $sheet->getStyle("B{$mRow}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+            else $sheet->getStyle("B{$mRow}")->getNumberFormat()->setFormatCode('#,##0');
+            
             // Highlight total omzet blue
-            if ($mRow === 8) {
+            if ($highlight === 'omzet') {
                 $sheet->getStyle("A{$mRow}:B{$mRow}")->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => '1E3A5F']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'DBEAFE']],
                 ]);
             }
             // Highlight laba bersih green
-            if ($mRow === 9) {
+            if ($highlight === 'laba') {
                 $sheet->getStyle("A{$mRow}:B{$mRow}")->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => '065F46']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1FAE5']],
@@ -1570,17 +1610,20 @@ class ReportController extends Controller
             $mRow++;
         }
 
-        // 5. CHART — payment method bar chart (Cash/Transfer/Piutang rows 10-12)
+        $chartStartRow = $isSuperAdmin ? 10 : 9;
+        $chartEndRow = $isSuperAdmin ? 12 : 11;
+
+        // 5. CHART — payment method bar chart (Cash/Transfer/Piutang)
         $categories = [
             new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues(
                 \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues::DATASERIES_TYPE_STRING,
-                '\'Transaksi Penjualan\'!$A$10:$A$12', null, 3
+                '\'Transaksi Penjualan\'!$A$' . $chartStartRow . ':$A$' . $chartEndRow, null, 3
             )
         ];
         $values = [
             new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues(
                 \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues::DATASERIES_TYPE_NUMBER,
-                '\'Transaksi Penjualan\'!$B$10:$B$12', null, 3
+                '\'Transaksi Penjualan\'!$B$' . $chartStartRow . ':$B$' . $chartEndRow, null, 3
             )
         ];
         $series = new \PhpOffice\PhpSpreadsheet\Chart\DataSeries(
@@ -1600,15 +1643,23 @@ class ReportController extends Controller
         $sheet->addChart($chart);
 
         // 6. TRANSACTION TABLE HEADER (row 23)
-        $sheet->mergeCells('A23:I23');
+        $lastCol = $isSuperAdmin ? 'I' : 'H';
+        $sheet->mergeCells("A23:{$lastCol}23");
         $sheet->setCellValue('A23', 'RINCIAN SEMUA TRANSAKSI PENJUALAN');
-        $sheet->getStyle('A23')->applyFromArray([
+        $sheet->getStyle("A23")->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1D4ED8']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
-        $sheet->fromArray(['NO', 'INVOICE', 'ITEM TERJUAL', 'KASIR', 'TOTAL JUAL', 'LABA', 'CASH', 'TRANSFER', 'UTANG'], null, 'A24');
-        $sheet->getStyle('A24:I24')->applyFromArray([
+        
+        $headers = ['NO', 'INVOICE', 'ITEM TERJUAL', 'KASIR', 'TOTAL JUAL'];
+        if ($isSuperAdmin) {
+            $headers[] = 'LABA';
+        }
+        $headers = array_merge($headers, ['CASH', 'TRANSFER', 'UTANG']);
+        
+        $sheet->fromArray($headers, null, 'A24');
+        $sheet->getStyle("A24:{$lastCol}24")->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'DBEAFE']],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'BFDBFE']]],
@@ -1636,13 +1687,19 @@ class ReportController extends Controller
             $sheet->setCellValue("C{$row}", $items);
             $sheet->setCellValue("D{$row}", $s->creator->name ?? '—');
             $sheet->setCellValue("E{$row}", $s->total_price);
-            $sheet->setCellValue("F{$row}", $s->profit);
-            $sheet->setCellValue("G{$row}", $cash);
-            $sheet->setCellValue("H{$row}", $transfer);
-            $sheet->setCellValue("I{$row}", $debt);
+            if ($isSuperAdmin) {
+                $sheet->setCellValue("F{$row}", $s->profit);
+                $sheet->setCellValue("G{$row}", $cash);
+                $sheet->setCellValue("H{$row}", $transfer);
+                $sheet->setCellValue("I{$row}", $debt);
+            } else {
+                $sheet->setCellValue("F{$row}", $cash);
+                $sheet->setCellValue("G{$row}", $transfer);
+                $sheet->setCellValue("H{$row}", $debt);
+            }
 
             $fill = ($no % 2 === 0) ? 'EFF6FF' : 'FFFFFF';
-            $sheet->getStyle("A{$row}:I{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
                 'font' => ['name' => 'Segoe UI', 'size' => 9],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'DBEAFE']]],
@@ -1651,7 +1708,8 @@ class ReportController extends Controller
             $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             
-            foreach (['E', 'F', 'G', 'H', 'I'] as $col) {
+            $numericCols = $isSuperAdmin ? ['E', 'F', 'G', 'H', 'I'] : ['E', 'F', 'G', 'H'];
+            foreach ($numericCols as $col) {
                 $sheet->getStyle("{$col}{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
                 $sheet->getStyle("{$col}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             }
@@ -1664,16 +1722,23 @@ class ReportController extends Controller
             $sheet->mergeCells("A{$row}:D{$row}");
             $sheet->setCellValue("A{$row}", 'TOTAL');
             $sheet->setCellValue("E{$row}", $totalRev);
-            $sheet->setCellValue("F{$row}", $totalProfit);
-            $sheet->setCellValue("G{$row}", $totalCash);
-            $sheet->setCellValue("H{$row}", $totalTransfer);
-            $sheet->setCellValue("I{$row}", $totalDebt);
-            $sheet->getStyle("A{$row}:I{$row}")->applyFromArray([
+            if ($isSuperAdmin) {
+                $sheet->setCellValue("F{$row}", $totalProfit);
+                $sheet->setCellValue("G{$row}", $totalCash);
+                $sheet->setCellValue("H{$row}", $totalTransfer);
+                $sheet->setCellValue("I{$row}", $totalDebt);
+            } else {
+                $sheet->setCellValue("F{$row}", $totalCash);
+                $sheet->setCellValue("G{$row}", $totalTransfer);
+                $sheet->setCellValue("H{$row}", $totalDebt);
+            }
+            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
                 'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => '1E3A5F']],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'DBEAFE']],
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '93C5FD']]],
             ]);
-            foreach (['E', 'F', 'G', 'H', 'I'] as $col) {
+            $numericCols = $isSuperAdmin ? ['E', 'F', 'G', 'H', 'I'] : ['E', 'F', 'G', 'H'];
+            foreach ($numericCols as $col) {
                 $sheet->getStyle("{$col}{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0;;""—""');
                 $sheet->getStyle("{$col}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             }
@@ -1894,23 +1959,22 @@ class ReportController extends Controller
         ]);
 
         // Values
-        $sheet->setCellValue('A8', 'Total Omzet (Pemasukan)');
-        $sheet->setCellValue('B8', $data['revenue']);
-        $sheet->setCellValue('A9', 'Total Laba Bersih');
-        $sheet->setCellValue('B9', $data['profit']);
-        $sheet->setCellValue('A10', 'Penerimaan Cash');
-        $sheet->setCellValue('B10', $penerimaanCash);
-        $sheet->setCellValue('A11', 'Penerimaan Transfer');
-        $sheet->setCellValue('B11', $penerimaanTransfer);
-        $sheet->setCellValue('A12', 'Piutang (Hutang)');
-        $sheet->setCellValue('B12', $piutang);
-        $sheet->setCellValue('A13', 'Jumlah Transaksi');
-        $sheet->setCellValue('B13', $txCount);
-        $sheet->setCellValue('A14', 'Rata-rata per Transaksi');
-        $sheet->setCellValue('B14', $avgPerTx);
+        $rowsData = [];
+        $rowsData[] = ['label' => 'Total Omzet (Pemasukan)', 'value' => $data['revenue'], 'type' => 'currency', 'highlight' => 'omzet'];
+        if ($isSuperAdmin) {
+            $rowsData[] = ['label' => 'Total Laba Bersih', 'value' => $data['net'], 'type' => 'currency', 'highlight' => 'laba'];
+        }
+        $rowsData[] = ['label' => 'Cash Flow (Saldo Cash Saat Ini)', 'value' => $cashVal, 'type' => 'currency'];
+        $rowsData[] = ['label' => 'Transfer', 'value' => $penerimaanTransfer, 'type' => 'currency'];
+        $rowsData[] = ['label' => 'Piutang (Hutang)', 'value' => $piutang, 'type' => 'currency'];
+        $rowsData[] = ['label' => 'Jumlah Transaksi', 'value' => $txCount, 'type' => 'number'];
+        $rowsData[] = ['label' => 'Rata-rata per Transaksi', 'value' => $avgPerTx, 'type' => 'currency'];
 
-        // Styling Ringkasan Statistik
-        for ($r = 8; $r <= 14; $r++) {
+        $r = 8;
+        foreach ($rowsData as $rowData) {
+            $sheet->setCellValue("A{$r}", $rowData['label']);
+            $sheet->setCellValue("B{$r}", $rowData['value']);
+            
             $fillColor = ($r % 2 === 0) ? 'F8FAFC' : 'FFFFFF';
             $sheet->getStyle("A{$r}:B{$r}")->applyFromArray([
                 'font' => ['name' => 'Segoe UI', 'size' => 9],
@@ -1918,28 +1982,36 @@ class ReportController extends Controller
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]]
             ]);
             $sheet->getStyle("B{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            if ($r != 13) {
+            if ($rowData['type'] === 'currency') {
                 $sheet->getStyle("B{$r}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
             } else {
                 $sheet->getStyle("B{$r}")->getNumberFormat()->setFormatCode('#,##0');
             }
+            
+            if (isset($rowData['highlight'])) {
+                if ($rowData['highlight'] === 'omzet') {
+                    $sheet->getStyle("A{$r}:B{$r}")->applyFromArray([
+                        'font' => ['name' => 'Segoe UI', 'bold' => true, 'color' => ['rgb' => '1E3A8A']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EFF6FF']]
+                    ]);
+                } elseif ($rowData['highlight'] === 'laba') {
+                    $sheet->getStyle("A{$r}:B{$r}")->applyFromArray([
+                        'font' => ['name' => 'Segoe UI', 'bold' => true, 'color' => ['rgb' => '065F46']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1FAE5']]
+                    ]);
+                }
+            }
+            $r++;
         }
-        
-        // Highlight Total Omzet & Laba
-        $sheet->getStyle('A8:B8')->applyFromArray([
-            'font' => ['name' => 'Segoe UI', 'bold' => true, 'color' => ['rgb' => '1E3A8A']], // Dark Blue
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EFF6FF']]
-        ]);
-        $sheet->getStyle('A9:B9')->applyFromArray([
-            'font' => ['name' => 'Segoe UI', 'bold' => true, 'color' => ['rgb' => '065F46']], // Dark Green
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D1FAE5']]
-        ]);
+
+        $chartStartRow = $isSuperAdmin ? 10 : 9;
+        $chartEndRow = $isSuperAdmin ? 12 : 11;
 
         // 3. NATIVE EXCEL COLUMN CHART COMPARISON (payment method breakdown)
         $categories = [
             new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues(
                 \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues::DATASERIES_TYPE_STRING, 
-                '\'Laporan Keuangan\'!$A$10:$A$12', 
+                '\'Laporan Keuangan\'!$A$' . $chartStartRow . ':$A$' . $chartEndRow, 
                 null, 
                 3
             )
@@ -1947,7 +2019,7 @@ class ReportController extends Controller
         $values = [
             new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues(
                 \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues::DATASERIES_TYPE_NUMBER, 
-                '\'Laporan Keuangan\'!$B$10:$B$12', 
+                '\'Laporan Keuangan\'!$B$' . $chartStartRow . ':$B$' . $chartEndRow, 
                 null, 
                 3
             )
@@ -1974,7 +2046,7 @@ class ReportController extends Controller
             null
         );
         $chart->setTopLeftPosition('D6');
-        $chart->setBottomRightPosition('K14');
+        $chart->setBottomRightPosition('K' . ($r - 1));
         $sheet->addChart($chart);
 
         // 4. ASET BARANG SECTION (Row 16 onwards)

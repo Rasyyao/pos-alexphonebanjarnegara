@@ -28,7 +28,7 @@
   /* KPI CARDS TABLE LAYOUT FOR DOMPDF */
   .kpi-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
   .kpi-table td.kpi-spacer { width: 1.5%; }
-  .kpi-table td.kpi-card { border: 1px solid #E4E9F2; padding: 6px 8px; border-top: 2.5px solid #0A2540; background: #fff; vertical-align: top; width: 18.8%; }
+  .kpi-table td.kpi-card { border: 1px solid #E4E9F2; padding: 6px 8px; border-top: 2.5px solid #0A2540; background: #fff; vertical-align: top; width: {{ auth()->user()?->isSuperAdmin() ? '15.2%' : '18.8%' }}; }
   .kpi-label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #7A8AA8; margin-bottom: 2px; }
   .kpi-value { font-size: 10.5pt; font-weight: 700; color: #0A2540; white-space: nowrap; }
   .kpi-value.green { color: #065F46; }
@@ -87,11 +87,18 @@
       </td>
       <td class="kpi-spacer"></td>
       <td class="kpi-card">
-        <div class="kpi-label">Pendapatan</div>
-        <div class="kpi-value green">Rp {{ number_format($summary['income'] ?? 0, 0, ',', '.') }}</div>
+        <div class="kpi-label">Cash Flow</div>
+        <div class="kpi-value green">Rp {{ number_format($summary['saldoKas'] ?? 0, 0, ',', '.') }}</div>
         <div style="font-size: 6.5pt; color: #7A8AA8; margin-top: 3px; font-weight: bold; line-height: 1.2;">
-          Cash: Rp {{ number_format($summary['income_cash'] ?? 0, 0, ',', '.') }}<br>
-          ATM: Rp {{ number_format($summary['income_transfer'] ?? 0, 0, ',', '.') }}
+          Saldo cash saat ini
+        </div>
+      </td>
+      <td class="kpi-spacer"></td>
+      <td class="kpi-card">
+        <div class="kpi-label">Transfer</div>
+        <div class="kpi-value" style="color: #4F46E5;">Rp {{ number_format($summary['saldoAtm'] ?? 0, 0, ',', '.') }}</div>
+        <div style="font-size: 6.5pt; color: #7A8AA8; margin-top: 3px; font-weight: bold; line-height: 1.2;">
+          Total transfer dalam periode
         </div>
       </td>
       <td class="kpi-spacer"></td>
@@ -99,11 +106,13 @@
         <div class="kpi-label">Pengeluaran</div>
         <div class="kpi-value red">Rp {{ number_format($summary['expenses'], 0, ',', '.') }}</div>
       </td>
+      @if (auth()->user()?->isSuperAdmin())
       <td class="kpi-spacer"></td>
       <td class="kpi-card">
         <div class="kpi-label">Laba Bersih</div>
         <div class="kpi-value {{ $summary['net'] >= 0 ? 'green' : 'red' }}">Rp {{ number_format($summary['net'], 0, ',', '.') }}</div>
       </td>
+      @endif
       <td class="kpi-spacer"></td>
       <td class="kpi-card">
         <div class="kpi-label">Hutang Aktif</div>
@@ -123,7 +132,9 @@
         <th>Item</th>
         <th>Kasir</th>
         <th class="right">Total Jual</th>
+        @if (auth()->user()?->isSuperAdmin())
         <th class="right">Laba</th>
+        @endif
         <th class="center">Bayar</th>
       </tr>
     </thead>
@@ -145,19 +156,23 @@
           <td>{{ $items }}</td>
           <td class="muted">{{ $s->creator->name ?? '—' }}</td>
           <td class="right">Rp {{ number_format($s->total_price, 0, ',', '.') }}</td>
+          @if (auth()->user()?->isSuperAdmin())
           <td class="right {{ $s->profit > 0 ? 'green' : '' }}">Rp {{ number_format($s->profit, 0, ',', '.') }}</td>
+          @endif
           <td class="center muted" style="font-size:7.5pt">
             {{ $s->payments->map(fn($p) => ucfirst($p->method->value))->join(', ') }}
           </td>
         </tr>
       @empty
-        <tr><td colspan="8" style="text-align:center;padding:14px;color:#7A8AA8">Tidak ada transaksi pada periode ini</td></tr>
+        <tr><td colspan="{{ auth()->user()?->isSuperAdmin() ? 8 : 7 }}" style="text-align:center;padding:14px;color:#7A8AA8">Tidak ada transaksi pada periode ini</td></tr>
       @endforelse
       @if($sales->count())
       <tr class="total-row">
         <td colspan="5" style="text-align:right">TOTAL KESELURUHAN:</td>
         <td class="right">Rp {{ number_format($tTotal, 0, ',', '.') }}</td>
+        @if (auth()->user()?->isSuperAdmin())
         <td class="right green">Rp {{ number_format($tLaba, 0, ',', '.') }}</td>
+        @endif
         <td></td>
       </tr>
       @endif
