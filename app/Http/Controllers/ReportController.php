@@ -286,7 +286,17 @@ class ReportController extends Controller
         if ($endDate)   $hpPurchasesQuery->whereDate('purchase_date', '<=', $endDate);
         $hpPurchases = $hpPurchasesQuery->latest('purchase_date')->get();
 
-        $data = compact('summary', 'sales', 'debtPayments', 'hpPurchases', 'periodStr', 'startDate', 'endDate');
+        // Operational expenses (excluding HP stock purchases)
+        $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
+        $operationalExpensesQuery = \App\Models\Expense::with('creator');
+        if (!$isSuperAdmin) {
+            $operationalExpensesQuery->where('category', '!=', 'tarik_owner');
+        }
+        if ($startDate) $operationalExpensesQuery->whereDate('expense_date', '>=', $startDate);
+        if ($endDate)   $operationalExpensesQuery->whereDate('expense_date', '<=', $endDate);
+        $operationalExpenses = $operationalExpensesQuery->latest('expense_date')->get();
+
+        $data = compact('summary', 'sales', 'debtPayments', 'hpPurchases', 'operationalExpenses', 'periodStr', 'startDate', 'endDate');
         $data['printedAt'] = now()->isoFormat('D MMMM YYYY, HH:mm') . ' WIB';
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf-finance', $data)
@@ -1726,14 +1736,13 @@ class ReportController extends Controller
             return $exp;
         });
 
-        $expensesList = $expensesList->concat($virtualExpenses)
-            ->sortByDesc(function ($item) {
-                return $item->expense_date instanceof \Carbon\Carbon 
-                    ? $item->expense_date->toDateString() 
-                    : $item->expense_date;
-            });
-
-
+        // Keep only real operational expenses (no HP virtual expenses in operational table)
+        // virtualExpenses (HP purchases) are shown separately below
+        $expensesList = $expensesList->sortByDesc(function ($item) {
+            return $item->expense_date instanceof \Carbon\Carbon
+                ? $item->expense_date->toDateString()
+                : $item->expense_date;
+        });
 
         // Fetch approved sales payments for Omzet breakdown
         $salesQuery = \App\Models\Sale::where('status', 'approved');
@@ -2100,23 +2109,22 @@ class ReportController extends Controller
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
         ]);
 
-        // Table 2: Expenses Header E35:J35
+        // Table 2: Operational Expenses Header E35:J35
         $sheet->mergeCells('E35:J35');
-        $sheet->setCellValue('E35', 'RINCIAN CATATAN PENGELUARAN');
+        $sheet->setCellValue('E35', 'RINCIAN PENGELUARAN OPERASIONAL');
         $sheet->getStyle('E35')->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'BE123C']], // Soft Red
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
         ]);
-        
-        $sheet->fromArray(['Tanggal', 'Keterangan', 'Kategori', 'Jumlah', 'Catatan', 'Dicatat Oleh'], null, 'E36');
+
+        $sheet->fromArray(['Tanggal', 'Keterangan', 'Kategori', 'Metode', 'Catatan', 'Dicatat Oleh'], null, 'E36');
         $sheet->getStyle('E36:J36')->applyFromArray([
             'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => 'BE123C']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFE4E6']], // Rose 100
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FDA4AF']]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
         ]);
-        
 
 
         // Populate Piutang
@@ -2147,29 +2155,111 @@ class ReportController extends Controller
             ]);
         }
 
-        // Populate Expenses
+        // Populate Operational Expenses only (real Expense records, no HP)
         $expRow = 37;
         foreach ($expensesList as $e) {
-            $sheet->setCellValue("E{$expRow}", $e->expense_date->format('d/m/Y'));
+            $categoryLabel = match($e->category) {
+                'tarik_owner' => 'Tarik Saldo Owner',
+                'listrik'     => 'Listrik & Gas',
+                'stok_hp'     => 'Stok HP',
+                default       => ucwords($e->category)
+            };
+            $methodLabel = match($e->payment_method ?? 'cash') {
+                'transfer' => 'Transfer',
+                'cash'     => 'Tunai',
+                default    => ucfirst($e->payment_method ?? 'cash')
+            };
+            $dateVal = $e->expense_date instanceof \Carbon\Carbon
+                ? $e->expense_date->format('d/m/Y')
+                : \Carbon\Carbon::parse($e->expense_date)->format('d/m/Y');
+
+            $sheet->setCellValue("E{$expRow}", $dateVal);
             $sheet->setCellValue("F{$expRow}", $e->description);
-            $categoryLabel = $e->category === 'stok_hp' ? 'Stok HP' : ($e->category === 'tarik_owner' ? 'Tarik Saldo Owner' : ($e->category === 'listrik' ? 'Listrik & Gas' : ucwords($e->category)));
             $sheet->setCellValue("G{$expRow}", $categoryLabel);
             $sheet->setCellValue("H{$expRow}", $e->amount);
             $sheet->setCellValue("I{$expRow}", $e->notes ?: '—');
             $sheet->setCellValue("J{$expRow}", $e->creator->name ?? '—');
-            
+
             $fill = ($expRow % 2 === 0) ? 'FFF1F2' : 'FFFFFF'; // Rose stripe
             $sheet->getStyle("E{$expRow}:J{$expRow}")->applyFromArray([
-                'font' => ['name' => 'Segoe UI', 'size' => 9],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
+                'font'    => ['name' => 'Segoe UI', 'size' => 9],
+                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FFE4E6']]]
             ]);
             $sheet->getStyle("H{$expRow}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
             $sheet->getStyle("E{$expRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle("G{$expRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle("H{$expRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            
+
             $expRow++;
+        }
+        if ($expensesList->isEmpty()) {
+            $sheet->mergeCells("E37:J37");
+            $sheet->setCellValue("E37", "Tidak ada pengeluaran operasional");
+            $sheet->getStyle("E37:J37")->applyFromArray([
+                'font'      => ['name' => 'Segoe UI', 'size' => 9, 'italic' => true],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+            ]);
+            $expRow = 38;
+        }
+
+        // HP Purchases table — below the operational expenses
+        $hpTableStartRow = max($piutangRow, $expRow) + 2;
+        $sheet->mergeCells("E{$hpTableStartRow}:J{$hpTableStartRow}");
+        $totalHPExcel = $virtualExpenses->sum('amount');
+        $sheet->setCellValue("E{$hpTableStartRow}", 'PEMBELIAN STOK HP (Total: Rp ' . number_format($totalHPExcel, 0, ',', '.') . ')');
+        $sheet->getStyle("E{$hpTableStartRow}")->applyFromArray([
+            'font'      => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1D4ED8']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
+        ]);
+        $sheet->getRowDimension((string)$hpTableStartRow)->setRowHeight(28);
+
+        $hpHeaderRow = $hpTableStartRow + 1;
+        $sheet->fromArray(['Tanggal', 'Nama HP', 'IMEI / SN', 'Kondisi', 'Metode', 'Inputter'], null, "E{$hpHeaderRow}");
+        $sheet->getStyle("E{$hpHeaderRow}:J{$hpHeaderRow}")->applyFromArray([
+            'font'      => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => '1D4ED8']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'DBEAFE']],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'BFDBFE']]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+        ]);
+        $sheet->getRowDimension((string)$hpHeaderRow)->setRowHeight(22);
+
+        $hpRow = $hpHeaderRow + 1;
+        foreach ($virtualExpenses as $ve) {
+            $unit = \App\Models\Unit::with(['model.brand', 'creator'])->find($ve->unit_id);
+            $imeiSn = collect([$unit?->imei ? 'IMEI: '.$unit->imei : null, $unit?->serial_number ? 'SN: '.$unit->serial_number : null])->filter()->join(' | ') ?: '—';
+            $kondisi = ucfirst($unit?->unit_type?->value ?? '') . ($unit?->grade ? ' Grade '.$unit->grade : '');
+            $hpDate = $ve->expense_date instanceof \Carbon\Carbon ? $ve->expense_date->format('d/m/Y') : \Carbon\Carbon::parse($ve->expense_date)->format('d/m/Y');
+            $hpMethod = match($ve->payment_method ?? 'cash') {
+                'transfer' => 'Transfer', 'cash' => 'Tunai', default => ucfirst($ve->payment_method ?? 'cash')
+            };
+
+            $sheet->setCellValue("E{$hpRow}", $hpDate);
+            $sheet->setCellValue("F{$hpRow}", $ve->description);
+            $sheet->setCellValue("G{$hpRow}", $imeiSn);
+            $sheet->setCellValue("H{$hpRow}", $kondisi);
+            $sheet->setCellValue("I{$hpRow}", $hpMethod);
+            $sheet->setCellValue("J{$hpRow}", $ve->creator?->name ?? '—');
+
+            $fill = ($hpRow % 2 === 0) ? 'EFF6FF' : 'FFFFFF';
+            $sheet->getStyle("E{$hpRow}:J{$hpRow}")->applyFromArray([
+                'font'    => ['name' => 'Segoe UI', 'size' => 9],
+                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'BFDBFE']]]
+            ]);
+            $sheet->getStyle("E{$hpRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getRowDimension((string)$hpRow)->setRowHeight(20);
+            $hpRow++;
+        }
+        if ($virtualExpenses->isEmpty()) {
+            $sheet->mergeCells("E{$hpRow}:J{$hpRow}");
+            $sheet->setCellValue("E{$hpRow}", 'Tidak ada pembelian stok HP');
+            $sheet->getStyle("E{$hpRow}:J{$hpRow}")->applyFromArray([
+                'font'      => ['name' => 'Segoe UI', 'size' => 9, 'italic' => true],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+            ]);
+            $hpRow++;
         }
 
         // Fetch all capital transactions
@@ -2183,7 +2273,7 @@ class ReportController extends Controller
         $capitalsList = $capitalsQuery->latest('entry_date')->get();
 
         // Calculate starting row for Capital table (leave a 3-row gap below the longest table)
-        $capitalStartRow = max($piutangRow, $expRow) + 3;
+        $capitalStartRow = max($piutangRow, $hpRow) + 3;
 
         $sheet->mergeCells("A{$capitalStartRow}:F{$capitalStartRow}");
         $sheet->setCellValue("A{$capitalStartRow}", 'RINCIAN TRANSAKSI MODAL');

@@ -241,6 +241,58 @@
   </table>
   @endif
 
+  {{-- OPERATIONAL EXPENSES TABLE --}}
+  @if(isset($operationalExpenses) && $operationalExpenses->count() > 0)
+  <div class="section-title" style="margin-top:16px">Rincian Pengeluaran Operasional</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:24px">No</th>
+        <th class="center">Tanggal</th>
+        <th>Keterangan</th>
+        <th class="center">Kategori</th>
+        <th class="center">Metode</th>
+        <th>Catatan</th>
+        <th>Dicatat Oleh</th>
+        <th class="right">Jumlah</th>
+      </tr>
+    </thead>
+    <tbody>
+      @php $no = 1; $tExp = 0; @endphp
+      @foreach($operationalExpenses as $e)
+        @php
+          $tExp += (float)$e->amount;
+          $catLabel = match($e->category) {
+            'tarik_owner' => 'Tarik Saldo Owner',
+            'listrik'     => 'Listrik & Gas',
+            'stok_hp'     => 'Stok HP',
+            default       => ucwords($e->category)
+          };
+          $methodLabel = match($e->payment_method ?? 'cash') {
+            'transfer' => 'Transfer',
+            'cash'     => 'Tunai',
+            default    => ucfirst($e->payment_method ?? 'cash')
+          };
+        @endphp
+        <tr>
+          <td class="center muted">{{ $no++ }}</td>
+          <td class="center muted">{{ \Carbon\Carbon::parse($e->expense_date)->format('d/m/Y') }}</td>
+          <td>{{ $e->description }}</td>
+          <td class="center muted">{{ $catLabel }}</td>
+          <td class="center muted">{{ $methodLabel }}</td>
+          <td class="muted" style="font-size:7pt">{{ $e->notes ?: '—' }}</td>
+          <td class="muted">{{ $e->creator->name ?? '—' }}</td>
+          <td class="right red">Rp {{ number_format($e->amount, 0, ',', '.') }}</td>
+        </tr>
+      @endforeach
+      <tr class="total-row">
+        <td colspan="7" style="text-align:right">TOTAL PENGELUARAN OPERASIONAL:</td>
+        <td class="right red">Rp {{ number_format($tExp, 0, ',', '.') }}</td>
+      </tr>
+    </tbody>
+  </table>
+  @endif
+
   <div class="footer">Dokumen dicetak otomatis oleh sistem POS Alex Phone &mdash; {{ $printedAt }}</div>
 </div>
 </body>
