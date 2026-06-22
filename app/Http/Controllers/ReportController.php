@@ -22,7 +22,7 @@ class ReportController extends Controller
 
     public function finance(Request $request)
     {
-        return view('reports.finance', $this->finance->reportSummary($request->start_date, $request->end_date));
+        return view('reports.finance', $this->finance->reportSummary($request->start_date, $request->end_date, $request->type_filter));
     }
 
     public function cashflow(Request $request)
@@ -89,10 +89,21 @@ class ReportController extends Controller
             ->groupBy('method')
             ->pluck('total', 'method');
 
-        $debt = (float) \App\Models\SalePayment::where('method', 'utang')
+        $initialDebt = (float) \App\Models\SalePayment::where('method', 'utang')
             ->where('source', 'sale')
             ->whereHas('sale', fn($q) => $q->where('status', 'approved')->whereDate('sale_date', $date))
             ->sum('amount');
+
+        $repayments = (float) \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->whereDate('created_at', '<=', $date)
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            })
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved')->whereDate('sale_date', $date))
+            ->sum('amount');
+
+        $debt = max(0.0, $initialDebt - $repayments);
 
         return [
             'cash'     => (float) ($receivedByMethod['cash'] ?? 0),

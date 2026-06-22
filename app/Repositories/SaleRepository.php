@@ -86,8 +86,20 @@ class SaleRepository implements SaleRepositoryInterface
         $row = Sale::approved()->whereDate('sale_date', today())
             ->selectRaw('SUM(total_price) as revenue, SUM(profit) as profit, COUNT(*) as count')
             ->first();
+        $initialDebt = (float) SalePayment::where('method', 'utang')
+            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', today()))
+            ->sum('amount');
+        $repayments = (float) SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->whereDate('created_at', '<=', today()->toDateString())
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            })
+            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', today()))
+            ->sum('amount');
+        $debt = max(0.0, $initialDebt - $repayments);
         return [
-            'revenue' => $row->revenue ?? 0,
+            'revenue' => ($row->revenue ?? 0) - $debt,
             'profit'  => $row->profit ?? 0,
             'count'   => $row->count ?? 0,
         ];
@@ -95,12 +107,26 @@ class SaleRepository implements SaleRepositoryInterface
 
     public function weekStats(): array
     {
+        $startOfWeek = now()->startOfWeek()->toDateString();
+        $today = now()->toDateString();
         $row = Sale::approved()
-            ->whereBetween('sale_date', [now()->startOfWeek()->toDateString(), now()->toDateString()])
+            ->whereBetween('sale_date', [$startOfWeek, $today])
             ->selectRaw('SUM(total_price) as revenue, SUM(profit) as profit, COUNT(*) as count')
             ->first();
+        $initialDebt = (float) SalePayment::where('method', 'utang')
+            ->whereHas('sale', fn($q) => $q->approved()->whereBetween('sale_date', [$startOfWeek, $today]))
+            ->sum('amount');
+        $repayments = (float) SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->whereDate('created_at', '<=', $today)
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            })
+            ->whereHas('sale', fn($q) => $q->approved()->whereBetween('sale_date', [$startOfWeek, $today]))
+            ->sum('amount');
+        $debt = max(0.0, $initialDebt - $repayments);
         return [
-            'revenue' => $row->revenue ?? 0,
+            'revenue' => ($row->revenue ?? 0) - $debt,
             'profit'  => $row->profit ?? 0,
             'count'   => $row->count ?? 0,
         ];
@@ -113,8 +139,20 @@ class SaleRepository implements SaleRepositoryInterface
             ->whereYear('sale_date', now()->year)
             ->selectRaw('SUM(total_price) as revenue, SUM(profit) as profit, COUNT(*) as count')
             ->first();
+        $initialDebt = (float) SalePayment::where('method', 'utang')
+            ->whereHas('sale', fn($q) => $q->approved()->whereMonth('sale_date', now()->month)->whereYear('sale_date', now()->year))
+            ->sum('amount');
+        $repayments = (float) SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->whereDate('created_at', '<=', now()->endOfMonth()->toDateString())
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            })
+            ->whereHas('sale', fn($q) => $q->approved()->whereMonth('sale_date', now()->month)->whereYear('sale_date', now()->year))
+            ->sum('amount');
+        $debt = max(0.0, $initialDebt - $repayments);
         return [
-            'revenue' => $row->revenue ?? 0,
+            'revenue' => ($row->revenue ?? 0) - $debt,
             'profit'  => $row->profit ?? 0,
             'count'   => $row->count ?? 0,
         ];
@@ -122,12 +160,39 @@ class SaleRepository implements SaleRepositoryInterface
 
     public function weeklyRevenue(): Collection
     {
-        return Sale::approved()
+        $sales = Sale::approved()
             ->whereBetween('sale_date', [now()->subDays(6)->toDateString(), now()->toDateString()])
-            ->selectRaw('DATE(sale_date) as date, SUM(total_price) as total, SUM(profit) as profit, COUNT(*) as count')
-            ->groupBy('date')
-            ->orderBy('date')
             ->get();
+
+        $debts = SalePayment::where('method', 'utang')
+            ->whereHas('sale', fn($q) => $q->approved()->whereBetween('sale_date', [now()->subDays(6)->toDateString(), now()->toDateString()]))
+            ->get();
+
+        $repayments = SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            })
+            ->whereHas('sale', fn($q) => $q->approved()->whereBetween('sale_date', [now()->subDays(6)->toDateString(), now()->toDateString()]))
+            ->get();
+
+        $result = collect();
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->toDateString();
+            $daySales = $sales->filter(fn($s) => $s->sale_date->toDateString() === $date);
+            
+            $dayInitialDebt = (float) $debts->filter(fn($p) => $p->sale->sale_date->toDateString() === $date)->sum('amount');
+            $dayRepayments = (float) $repayments->filter(fn($p) => $p->sale->sale_date->toDateString() === $date && $p->created_at->toDateString() <= $date)->sum('amount');
+            $dayDebt = max(0.0, $dayInitialDebt - $dayRepayments);
+
+            $result->push((object)[
+                'date'   => $date,
+                'total'  => (float) $daySales->sum('total_price') - $dayDebt,
+                'profit' => (float) $daySales->sum('profit'),
+                'count'  => $daySales->count(),
+            ]);
+        }
+        return $result;
     }
 
     public function paymentBreakdownToday(): Collection
@@ -164,7 +229,19 @@ class SaleRepository implements SaleRepositoryInterface
 
     public function totalRevenue(): float
     {
-        return (float) Sale::approved()->sum('total_price');
+        $total = (float) Sale::approved()->sum('total_price');
+        $initialDebt = (float) SalePayment::where('method', 'utang')
+            ->whereHas('sale', fn($q) => $q->approved())
+            ->sum('amount');
+        $repayments = (float) SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            })
+            ->whereHas('sale', fn($q) => $q->approved())
+            ->sum('amount');
+        $unpaid = max(0.0, $initialDebt - $repayments);
+        return $total - $unpaid;
     }
 
     public function totalProfit(): float

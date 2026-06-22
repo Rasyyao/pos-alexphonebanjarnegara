@@ -117,6 +117,7 @@
             <form method="GET" action="{{ route('reports.finance') }}" id="date-filter-form"
                 class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <input type="hidden" name="preset" id="active-preset" value="{{ request('preset', 'all') }}" />
+                <input type="hidden" name="type_filter" id="active-type-filter" value="{{ request('type_filter', 'all') }}" />
 
                 {{-- Left: Inputs & Presets --}}
                 <div class="flex flex-wrap items-center gap-4">
@@ -222,6 +223,11 @@
 
                 document.getElementById('date-filter-form').submit();
             }
+
+            function setTypeFilter(filter) {
+                document.getElementById('active-type-filter').value = filter;
+                document.getElementById('date-filter-form').submit();
+            }
         </script>
 
         <div class="grid grid-cols-2 {{ $isSuperadmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5' }} gap-3">
@@ -257,9 +263,9 @@
                     </div>
                 </div>
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-emerald-600" style="color:var(--success)">
-                    Rp {{ number_format($today['cash'], 0, ',', '.') }}
+                    Rp {{ number_format($saldoKas, 0, ',', '.') }}
                 </div>
-                <div class="text-xs text-emerald-700" style="color:var(--success)">Kas masuk tanggal {{ $today['date_label'] }}</div>
+                <div class="text-xs text-emerald-700" style="color:var(--success)">Kas / laci saat ini</div>
             </div>
 
             {{-- 3. Transfer --}}
@@ -275,9 +281,9 @@
                     </div>
                 </div>
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-indigo-600" style="color:#4F46E5">
-                    Rp {{ number_format($today['transfer'], 0, ',', '.') }}
+                    Rp {{ number_format($saldoAtmLifetime, 0, ',', '.') }}
                 </div>
-                <div class="text-xs text-indigo-700" style="color:#4F46E5">ATM masuk tanggal {{ $today['date_label'] }}</div>
+                <div class="text-xs text-indigo-700" style="color:#4F46E5">Rekening / ATM saat ini</div>
             </div>
 
             {{-- 4. Pengeluaran --}}
@@ -345,32 +351,46 @@
 
                 {{-- Operational Expenses Log --}}
                 <div class="bg-white rounded-xl border overflow-hidden shadow-sm" style="border-color:var(--line)">
-                    <div class="px-5 py-4 border-b flex items-center justify-between" style="border-color:var(--line)">
+                    <div class="px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" style="border-color:var(--line)">
                         <div>
                             <h3 class="text-sm font-semibold" style="color:var(--ink)">Biaya Pengeluaran &amp; Pembelian Stok</h3>
                             <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">Log biaya pengeluaran operasional
                                 dan pembelian stok HP toko yang mengurangi kas/ATM</p>
                         </div>
+ 
+                        <div class="flex items-center gap-3">
+                            {{-- Type Filter Segmented Control --}}
+                            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg text-xs font-semibold"
+                                style="height: 36px;">
+                                @foreach (['all' => 'Semua', 'income' => 'Pemasukan', 'expense' => 'Pengeluaran'] as $tf => $tfLbl)
+                                    @php $isTfActive = request('type_filter', 'all') === $tf; @endphp
+                                    <button type="button" onclick="setTypeFilter('{{ $tf }}')"
+                                        class="px-3 rounded-md transition-all text-[11px] h-7 flex items-center justify-center {{ $isTfActive ? 'bg-white text-blue-600 font-bold shadow-sm' : 'text-gray-500 hover:text-gray-800' }}">
+                                        {{ $tfLbl }}
+                                    </button>
+                                @endforeach
+                            </div>
 
-                        @if (!$isLocked)
-                            <button onclick="openExpenseModal()"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-                                style="background:#FFF5F5;color:var(--warn)" onmouseenter="this.style.background='#FEE2E2'"
-                                onmouseleave="this.style.background='#FFF5F5'">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                    stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                                </svg>
-                                Tambah Pengeluaran
-                            </button>
-                        @else
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-400">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                                Terkunci
-                            </span>
-                        @endif
+                            @if (!$isLocked)
+                                <button onclick="openExpenseModal()"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                                    style="background:#FFF5F5;color:var(--warn)" onmouseenter="this.style.background='#FEE2E2'"
+                                    onmouseleave="this.style.background='#FFF5F5'">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Tambah Pengeluaran
+                                </button>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-400">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                    Terkunci
+                                </span>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto max-h-[300px]">

@@ -131,10 +131,22 @@ class FinanceService
     public function dailyReport(string $date): array
     {
         $sales = $this->sales->approvedForDate($date);
+        $initialDebt = (float) \App\Models\SalePayment::where('method', 'utang')
+            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', $date))
+            ->sum('amount');
+        $repayments = (float) \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->whereDate('created_at', '<=', $date)
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            })
+            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', $date))
+            ->sum('amount');
+        $debt = max(0.0, $initialDebt - $repayments);
         return [
             'sales'          => $sales,
             'date'           => $date,
-            'total_revenue'  => $sales->sum('total_price'),
+            'total_revenue'  => $sales->sum('total_price') - $debt,
             'total_profit'   => $sales->sum('profit'),
         ];
     }
@@ -150,6 +162,33 @@ class FinanceService
             $salesQuery->whereDate('sale_date', '<=', $endDate);
         }
         $revenue = (float) $salesQuery->sum('total_price');
+
+        $rangeInitialDebtsQuery = \App\Models\SalePayment::where('method', 'utang')
+            ->whereHas('sale', function ($q) use ($startDate, $endDate) {
+                $q->approved();
+                if ($startDate) $q->whereDate('sale_date', '>=', $startDate);
+                if ($endDate)   $q->whereDate('sale_date', '<=', $endDate);
+            });
+        $rangeInitialDebt = (float) $rangeInitialDebtsQuery->sum('amount');
+
+        $rangeRepaymentsQuery = \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            })
+            ->whereHas('sale', function ($q) use ($startDate, $endDate) {
+                $q->approved();
+                if ($startDate) $q->whereDate('sale_date', '>=', $startDate);
+                if ($endDate)   $q->whereDate('sale_date', '<=', $endDate);
+            });
+        if ($endDate) {
+            $rangeRepaymentsQuery->whereDate('created_at', '<=', $endDate);
+        }
+        $rangeRepayment = (float) $rangeRepaymentsQuery->sum('amount');
+
+        $rangeDebt = max(0.0, $rangeInitialDebt - $rangeRepayment);
+        $revenue = $revenue - $rangeDebt;
+
         $profit  = (float) $salesQuery->sum('profit');
 
         // Pendapatan = cash/transfer actually received: initial payments for sales in period + debt payments received in period
@@ -261,7 +300,7 @@ class FinanceService
     }
 
     /** Compile statistics for the unified reports hub page. */
-    public function reportSummary(?string $startDate = null, ?string $endDate = null): array
+    public function reportSummary(?string $startDate = null, ?string $endDate = null, ?string $typeFilter = null): array
     {
         $user = auth()->user();
         $isSuperAdmin = $user && $user->isSuperAdmin();
@@ -312,15 +351,24 @@ class FinanceService
         $todayCash     = (float) ($dailyIncomeByMethod['cash'] ?? 0);
         $todayTransfer = (float) ($dailyIncomeByMethod['transfer'] ?? 0);
         $todayIncome   = $todayCash + $todayTransfer;
-        $todayDebt     = (float) \App\Models\SalePayment::where('method', 'utang')
+        $todayInitialDebt = (float) \App\Models\SalePayment::where('method', 'utang')
             ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', $dailySummaryDate))
             ->sum('amount');
+        $todayRepayments = (float) \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->whereDate('created_at', '<=', $dailySummaryDate)
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            })
+            ->whereHas('sale', fn($q) => $q->approved()->whereDate('sale_date', $dailySummaryDate))
+            ->sum('amount');
+        $todayDebt = max(0.0, $todayInitialDebt - $todayRepayments);
 
         $today = [
             'date'       => $dailySummaryDate,
             'date_label' => \Carbon\Carbon::parse($dailySummaryDate)->format('d/m/Y'),
             'is_today'   => $dailySummaryDate === today()->toDateString(),
-            'revenue'    => $todayStats['revenue'],
+            'revenue'    => $todayStats['revenue'] - $todayDebt,
             'profit'     => $todayStats['profit'],
             'count'      => $todayStats['count'],
             'expenses'   => $todayExpenses,
@@ -343,6 +391,33 @@ class FinanceService
         }
         
         $totalRevenue = (float) $salesQuery->sum('total_price');
+
+        $rangeInitialDebtsQuery = \App\Models\SalePayment::where('method', 'utang')
+            ->whereHas('sale', function ($q) use ($startDate, $endDate) {
+                $q->approved();
+                if ($startDate) $q->whereDate('sale_date', '>=', $startDate);
+                if ($endDate)   $q->whereDate('sale_date', '<=', $endDate);
+            });
+        $rangeInitialDebt = (float) $rangeInitialDebtsQuery->sum('amount');
+
+        $rangeRepaymentsQuery = \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            })
+            ->whereHas('sale', function ($q) use ($startDate, $endDate) {
+                $q->approved();
+                if ($startDate) $q->whereDate('sale_date', '>=', $startDate);
+                if ($endDate)   $q->whereDate('sale_date', '<=', $endDate);
+            });
+        if ($endDate) {
+            $rangeRepaymentsQuery->whereDate('created_at', '<=', $endDate);
+        }
+        $rangeRepayment = (float) $rangeRepaymentsQuery->sum('amount');
+
+        $rangeDebt = max(0.0, $rangeInitialDebt - $rangeRepayment);
+        $totalRevenue = $totalRevenue - $rangeDebt;
+
         $totalProfit  = (float) $salesQuery->sum('profit');
 
         // 2. Calculate expenses for the filtered date range
@@ -491,14 +566,21 @@ class FinanceService
         });
 
         $realExpensesList = $expensesQuery->get();
-        $mergedCollection = $realExpensesList->concat($virtualExpenses)->concat($virtualSales)->concat($virtualDebtPayments)
-            ->sortByDesc(function ($item) {
-                $dateVal = $item->expense_date;
-                if ($dateVal instanceof \Carbon\Carbon) {
-                    return $dateVal->toDateString();
-                }
-                return $dateVal;
-            });
+        if ($typeFilter === 'income') {
+            $mergedCollection = collect()->concat($virtualSales)->concat($virtualDebtPayments);
+        } elseif ($typeFilter === 'expense') {
+            $mergedCollection = $realExpensesList->concat($virtualExpenses);
+        } else {
+            $mergedCollection = $realExpensesList->concat($virtualExpenses)->concat($virtualSales)->concat($virtualDebtPayments);
+        }
+
+        $mergedCollection = $mergedCollection->sortByDesc(function ($item) {
+            $dateVal = $item->expense_date;
+            if ($dateVal instanceof \Carbon\Carbon) {
+                return $dateVal->toDateString();
+            }
+            return $dateVal;
+        });
 
         $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage('page_expense') ?: 1;
         $perPage = 10;
