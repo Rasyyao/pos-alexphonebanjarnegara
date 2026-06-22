@@ -19,6 +19,7 @@ class DailyClosing extends Model
         'cash_system',
         'atm_physical',
         'atm_system',
+        'expense_physical',
         'transfer_income',
         'debt_amount',
         'closed_by',
@@ -31,20 +32,21 @@ class DailyClosing extends Model
     protected function casts(): array
     {
         return [
-            'closing_date'    => 'date',
-            'total_income'    => 'decimal:2',
-            'gas_income'      => 'decimal:2',
-            'hp_purchase'     => 'decimal:2',
-            'hp_sale'         => 'decimal:2',
-            'laba'            => 'decimal:2',
-            'cash_physical'   => 'decimal:2',
-            'cash_system'     => 'decimal:2',
-            'atm_physical'    => 'decimal:2',
-            'atm_system'      => 'decimal:2',
-            'transfer_income' => 'decimal:2',
-            'debt_amount'     => 'decimal:2',
-            'closed_at'       => 'datetime',
-            'verified_at'     => 'datetime',
+            'closing_date'     => 'date',
+            'total_income'     => 'decimal:2',
+            'gas_income'       => 'decimal:2',
+            'hp_purchase'      => 'decimal:2',
+            'hp_sale'          => 'decimal:2',
+            'laba'             => 'decimal:2',
+            'cash_physical'    => 'decimal:2',
+            'cash_system'      => 'decimal:2',
+            'atm_physical'     => 'decimal:2',
+            'atm_system'       => 'decimal:2',
+            'expense_physical' => 'decimal:2',
+            'transfer_income'  => 'decimal:2',
+            'debt_amount'      => 'decimal:2',
+            'closed_at'        => 'datetime',
+            'verified_at'      => 'datetime',
         ];
     }
 

@@ -164,9 +164,9 @@ class DailyClosingService
     /**
      * Close the book for a given date.
      */
-    public function closeBook(string $date, float $cashPhysical, float $atmPhysical, ?string $notes, User $actor): DailyClosing
+    public function closeBook(string $date, float $cashPhysical, float $atmPhysical, float $expensePhysical, ?string $notes, User $actor): DailyClosing
     {
-        return DB::transaction(function () use ($date, $cashPhysical, $atmPhysical, $notes, $actor) {
+        return DB::transaction(function () use ($date, $cashPhysical, $atmPhysical, $expensePhysical, $notes, $actor) {
             $existing = DailyClosing::whereDate('closing_date', $date)->first();
             if ($existing) {
                 if ($existing->status === 'verified') {
@@ -185,11 +185,12 @@ class DailyClosingService
             $metrics = $this->getClosingDataForDate($date);
 
             $attributes = array_merge($metrics, [
-                'cash_physical' => $cashPhysical,
-                'atm_physical'  => $atmPhysical,
-                'closed_by'     => $actor->id,
-                'closed_at'     => now(),
-                'notes'         => $notes,
+                'cash_physical'    => $cashPhysical,
+                'atm_physical'     => $atmPhysical,
+                'expense_physical' => $expensePhysical,
+                'closed_by'        => $actor->id,
+                'closed_at'        => now(),
+                'notes'            => $notes,
             ]);
 
             if ($isSuperadmin) {

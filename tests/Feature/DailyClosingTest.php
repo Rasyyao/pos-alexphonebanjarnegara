@@ -66,10 +66,11 @@ class DailyClosingTest extends TestCase
     public function test_admin_can_close_daily_report(): void
     {
         $response = $this->actingAs($this->admin)->post(route('daily-closings.store'), [
-            'closing_date'  => $this->testDate,
-            'cash_physical' => '10.000.000',
-            'atm_physical'  => '5.000.000',
-            'notes'         => 'Test notes from admin',
+            'closing_date'     => $this->testDate,
+            'cash_physical'    => '10.000.000',
+            'atm_physical'     => '5.000.000',
+            'expense_physical' => '1.000.000',
+            'notes'            => 'Test notes from admin',
         ]);
 
         $response->assertRedirect();
@@ -79,6 +80,7 @@ class DailyClosingTest extends TestCase
         $this->assertEquals('closed', $closing->status);
         $this->assertEquals(10000000, (float)$closing->cash_physical);
         $this->assertEquals(5000000, (float)$closing->atm_physical);
+        $this->assertEquals(1000000, (float)$closing->expense_physical);
         $this->assertEquals('Test notes from admin', $closing->notes);
     }
 
@@ -221,24 +223,27 @@ class DailyClosingTest extends TestCase
 
         // 2. Admin tries to re-submit closing for that date -> blocked
         $response = $this->actingAs($this->admin)->post(route('daily-closings.store'), [
-            'closing_date'  => $this->testDate,
-            'cash_physical' => '6.000.000',
-            'atm_physical'  => '6.000.000',
-            'notes'         => 'Try edit closing as admin',
+            'closing_date'     => $this->testDate,
+            'cash_physical'    => '6.000.000',
+            'atm_physical'     => '6.000.000',
+            'expense_physical' => '1.000.000',
+            'notes'            => 'Try edit closing as admin',
         ]);
         $response->assertSessionHasErrors('date');
 
         // 3. Superadmin tries to submit/edit closing for that date -> allowed
         $response = $this->actingAs($this->superadmin)->post(route('daily-closings.store'), [
-            'closing_date'  => $this->testDate,
-            'cash_physical' => '7.000.000',
-            'atm_physical'  => '7.000.000',
-            'notes' => 'Superadmin edit closing',
+            'closing_date'     => $this->testDate,
+            'cash_physical'    => '7.000.000',
+            'atm_physical'     => '7.000.000',
+            'expense_physical' => '2.000.000',
+            'notes'            => 'Superadmin edit closing',
         ]);
         $response->assertRedirect();
 
         $closing = DailyClosing::whereDate('closing_date', $this->testDate)->first();
         $this->assertEquals(7000000, (float)$closing->cash_physical);
         $this->assertEquals(7000000, (float)$closing->atm_physical);
+        $this->assertEquals(2000000, (float)$closing->expense_physical);
     }
 }

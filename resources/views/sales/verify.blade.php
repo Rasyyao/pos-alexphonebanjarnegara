@@ -473,6 +473,7 @@
                                             data-date="{{ $closing->closing_date->toDateString() }}"
                                             data-cash="{{ $closing->cash_physical }}"
                                             data-atm="{{ $closing->atm_physical }}"
+                                            data-expense="{{ $closing->expense_physical }}"
                                             data-notes="{{ $closing->notes }}"
                                             onclick="openEditClosingModal(this)"
                                             class="btn-secondary w-full flex items-center justify-center gap-1.5"
@@ -632,6 +633,16 @@
                     </div>
 
                     <div>
+                        <label class="field-label text-[11px] font-semibold text-gray-700">Realisasi Pengeluaran Fisik <span style="color:var(--warn)">*</span></label>
+                        <div class="money-wrap mt-1">
+                            <span class="rp-prefix">Rp</span>
+                            <input type="text" name="expense_physical" id="edit-closing-expense-physical" required placeholder="0"
+                                class="field-input money-input font-mono font-bold" inputmode="numeric"
+                                style="height:44px;font-size:15px" />
+                        </div>
+                    </div>
+
+                    <div>
                         <label class="field-label text-[11px] font-semibold text-gray-700">Catatan Penutupan Buku</label>
                         <textarea name="notes" id="edit-closing-notes" rows="3" class="field-input mt-1" placeholder="Tuliskan catatan rekonsiliasi atau selisih jika ada..."></textarea>
                     </div>
@@ -658,6 +669,7 @@
         const date = btn.dataset.date;
         const cash = parseFloat(btn.dataset.cash || 0);
         const atm = parseFloat(btn.dataset.atm || 0);
+        const expense = parseFloat(btn.dataset.expense || 0);
         const notes = btn.dataset.notes || '';
         
         document.getElementById('edit-closing-date-input').value = date;
@@ -669,15 +681,18 @@
         
         const cashInput = document.getElementById('edit-closing-cash-physical');
         const atmInput = document.getElementById('edit-closing-atm-physical');
+        const expenseInput = document.getElementById('edit-closing-expense-physical');
         const notesInput = document.getElementById('edit-closing-notes');
         
         cashInput.value = Math.round(cash).toLocaleString('id-ID');
         atmInput.value = Math.round(atm).toLocaleString('id-ID');
+        expenseInput.value = Math.round(expense).toLocaleString('id-ID');
         notesInput.value = notes;
         
         // Trigger input event to format
         cashInput.dispatchEvent(new Event('input', { bubbles: true }));
         atmInput.dispatchEvent(new Event('input', { bubbles: true }));
+        expenseInput.dispatchEvent(new Event('input', { bubbles: true }));
         
         const modal = document.getElementById('modal-edit-closing');
         modal.classList.remove('hidden');

@@ -265,7 +265,7 @@
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-emerald-600" style="color:var(--success)">
                     Rp {{ number_format($saldoKas, 0, ',', '.') }}
                 </div>
-                <div class="text-xs text-emerald-700" style="color:var(--success)">Kas / laci saat ini</div>
+                <div class="text-xs text-emerald-700" style="color:var(--success)">Saldo cash saat ini</div>
             </div>
 
             {{-- 3. Transfer --}}
@@ -833,21 +833,18 @@
                             const formatRupiah = (val) => 'Rp ' + Math.round(val).toLocaleString('id-ID');
                             
                             setClosingText('closing-total-income', formatRupiah(data.total_income));
-                            setClosingText('closing-gas-income', formatRupiah(data.gas_income));
                             setClosingText('closing-hp-purchase', formatRupiah(data.hp_purchase));
                             setClosingText('closing-hp-sale', formatRupiah(data.hp_sale));
                             setClosingText('closing-laba', formatRupiah(data.laba));
                             setClosingText('closing-cash-system', formatRupiah(data.cash_system));
-                            setClosingText('closing-cash-system-card', formatRupiah(data.cash_system));
                             setClosingText('closing-atm-system', formatRupiah(data.atm_system));
-                            setClosingText('closing-atm-system-card', formatRupiah(data.atm_system));
                             setClosingText('closing-transfer-income', formatRupiah(data.transfer_income));
                             setClosingText('closing-debt-amount', formatRupiah(data.debt_amount));
                             
                             // If physical cash was already submitted previously (draft / edit)
                             const cashPhysicalInput = document.getElementById('closing-cash-physical');
                             if (cashPhysicalInput) {
-                                cashPhysicalInput.value = data.cash_physical > 0 ? Math.round(data.cash_physical).toLocaleString('id-ID') : '';
+                                cashPhysicalInput.value = data.status !== 'draft' ? Math.round(data.cash_physical).toLocaleString('id-ID') : (data.cash_physical > 0 ? Math.round(data.cash_physical).toLocaleString('id-ID') : '');
                             
                                 // Trigger input event to format if it has value
                                 if (cashPhysicalInput.value) {
@@ -859,12 +856,24 @@
                             // If physical ATM was already submitted previously (draft / edit)
                             const atmPhysicalInput = document.getElementById('closing-atm-physical');
                             if (atmPhysicalInput) {
-                                atmPhysicalInput.value = data.atm_physical > 0 ? Math.round(data.atm_physical).toLocaleString('id-ID') : '';
+                                atmPhysicalInput.value = data.status !== 'draft' ? Math.round(data.atm_physical).toLocaleString('id-ID') : (data.atm_physical > 0 ? Math.round(data.atm_physical).toLocaleString('id-ID') : '');
                             
                                 // Trigger input event to format if it has value
                                 if (atmPhysicalInput.value) {
                                     const event = new Event('input', { bubbles: true });
                                     atmPhysicalInput.dispatchEvent(event);
+                                }
+                            }
+
+                            // If physical Expense was already submitted previously (draft / edit)
+                            const expensePhysicalInput = document.getElementById('closing-expense-physical');
+                            if (expensePhysicalInput) {
+                                expensePhysicalInput.value = data.status !== 'draft' ? Math.round(data.expense_physical).toLocaleString('id-ID') : (data.expense_physical > 0 ? Math.round(data.expense_physical).toLocaleString('id-ID') : '');
+                            
+                                // Trigger input event to format if it has value
+                                if (expensePhysicalInput.value) {
+                                    const event = new Event('input', { bubbles: true });
+                                    expensePhysicalInput.dispatchEvent(event);
                                 }
                             }
                             
@@ -1063,15 +1072,11 @@
                             @endif
                         </div>
 
-                        <div class="grid grid-cols-1 {{ $isSuperadmin ? 'md:grid-cols-2' : '' }} gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {{-- Metrics Details --}}
                             <div class="space-y-3">
                                 <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider font-mono">Detail Transaksi Sistem</h4>
                                 <div class="border rounded-xl divide-y text-xs">
-                                    <div class="flex justify-between p-2.5 bg-white">
-                                        <span class="text-gray-600">Pendapatan Gas</span>
-                                        <span class="font-semibold text-gray-800" id="closing-gas-income">-</span>
-                                    </div>
                                     @if ($isSuperadmin)
                                     <div class="flex justify-between p-2.5 bg-white">
                                         <span class="text-gray-600">Pembelian HP (Stok)</span>
@@ -1086,70 +1091,54 @@
                                         <span class="text-gray-600">Piutang / Utang</span>
                                         <span class="font-semibold text-amber-600" id="closing-debt-amount">-</span>
                                     </div>
-                                    @unless ($isSuperadmin)
-                                        <div class="flex justify-between p-2.5 bg-blue-50">
-                                            <span class="text-blue-800 font-semibold">Kas Sistem Harian</span>
-                                            <span class="font-semibold text-blue-700 font-mono" id="closing-cash-system">-</span>
-                                        </div>
-                                        <div class="flex justify-between p-2.5 bg-purple-50">
-                                            <span class="text-purple-800 font-semibold">ATM Sistem Harian</span>
-                                            <span class="font-semibold text-purple-700 font-mono" id="closing-atm-system">-</span>
-                                        </div>
-                                    @endunless
+                                    <div class="flex justify-between p-2.5 bg-blue-50">
+                                        <span class="text-blue-800 font-semibold">Kas Sistem Harian</span>
+                                        <span class="font-semibold text-blue-700 font-mono" id="closing-cash-system">-</span>
+                                    </div>
+                                    <div class="flex justify-between p-2.5 bg-purple-50">
+                                        <span class="text-purple-800 font-semibold">ATM Sistem Harian</span>
+                                        <span class="font-semibold text-purple-700 font-mono" id="closing-atm-system">-</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {{-- Reconciliation (superadmin only) --}}
-                            @if ($isSuperadmin)
+                            {{-- Reconciliation --}}
                             <div class="space-y-4">
-                                <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider font-mono">Reorganisasi Kas & ATM</h4>
+                                <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider font-mono">Reorganisasi Kas, ATM & Pengeluaran</h4>
 
                                 <!-- KAS TUNAI -->
-                                <div class="space-y-2 pb-3 border-b" style="border-color:var(--line)">
-                                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 flex justify-between items-center text-xs">
-                                        <div>
-                                            <span class="text-blue-800 font-semibold block">Kas Sistem</span>
-                                            <span class="text-[10px] text-blue-600 block mt-0.5">Uang masuk tunai - biaya tunai</span>
-                                        </div>
-                                        <span class="text-sm font-bold text-blue-700 font-mono" id="closing-cash-system-card">-</span>
-                                    </div>
-
-                                    <div>
-                                        <label class="field-label text-[11px] font-semibold">Realisasi Uang Cash Fisik <span style="color:var(--warn)">*</span></label>
-                                        <div class="money-wrap mt-1">
-                                            <span class="rp-prefix">Rp</span>
-                                            <input type="text" name="cash_physical" id="closing-cash-physical" required placeholder="0"
-                                                class="field-input money-input font-mono font-bold" inputmode="numeric"
-                                                style="height:40px;font-size:14px" />
-                                        </div>
+                                <div>
+                                    <label class="field-label text-[11px] font-semibold text-gray-700">Realisasi Uang Cash Fisik <span style="color:var(--warn)">*</span></label>
+                                    <div class="money-wrap mt-1">
+                                        <span class="rp-prefix">Rp</span>
+                                        <input type="text" name="cash_physical" id="closing-cash-physical" required placeholder="0"
+                                            class="field-input money-input font-mono font-bold" inputmode="numeric"
+                                            style="height:40px;font-size:14px" />
                                     </div>
                                 </div>
 
                                 <!-- ATM / TRANSFER -->
-                                <div class="space-y-2">
-                                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 flex justify-between items-center text-xs">
-                                        <div>
-                                            <span class="text-purple-800 font-semibold block">ATM Sistem</span>
-                                            <span class="text-[10px] text-purple-600 block mt-0.5">Uang masuk transfer - biaya transfer</span>
-                                        </div>
-                                        <span class="text-sm font-bold text-purple-700 font-mono" id="closing-atm-system-card">-</span>
+                                <div>
+                                    <label class="field-label text-[11px] font-semibold text-gray-700">Realisasi Saldo ATM Fisik <span style="color:var(--warn)">*</span></label>
+                                    <div class="money-wrap mt-1">
+                                        <span class="rp-prefix">Rp</span>
+                                        <input type="text" name="atm_physical" id="closing-atm-physical" required placeholder="0"
+                                            class="field-input money-input font-mono font-bold" inputmode="numeric"
+                                            style="height:40px;font-size:14px" />
                                     </div>
+                                </div>
 
-                                    <div>
-                                        <label class="field-label text-[11px] font-semibold">Realisasi Saldo ATM Fisik <span style="color:var(--warn)">*</span></label>
-                                        <div class="money-wrap mt-1">
-                                            <span class="rp-prefix">Rp</span>
-                                            <input type="text" name="atm_physical" id="closing-atm-physical" required placeholder="0"
-                                                class="field-input money-input font-mono font-bold" inputmode="numeric"
-                                                style="height:40px;font-size:14px" />
-                                        </div>
+                                <!-- PENGELUARAN HARI INI -->
+                                <div>
+                                    <label class="field-label text-[11px] font-semibold text-gray-700">Realisasi Pengeluaran Fisik <span style="color:var(--warn)">*</span></label>
+                                    <div class="money-wrap mt-1">
+                                        <span class="rp-prefix">Rp</span>
+                                        <input type="text" name="expense_physical" id="closing-expense-physical" required placeholder="0"
+                                            class="field-input money-input font-mono font-bold" inputmode="numeric"
+                                            style="height:40px;font-size:14px" />
                                     </div>
                                 </div>
                             </div>
-                            @else
-                            <input type="hidden" name="cash_physical" value="0" />
-                            <input type="hidden" name="atm_physical" value="0" />
-                            @endif
                         </div>
 
                         <div>

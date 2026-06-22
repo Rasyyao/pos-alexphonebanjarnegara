@@ -14,10 +14,11 @@ class StoreDailyClosingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'closing_date'  => ['required', 'date'],
-            'cash_physical' => ['required', 'string'],
-            'atm_physical'  => ['required', 'string'],
-            'notes'         => ['nullable', 'string', 'max:500'],
+            'closing_date'     => ['required', 'date'],
+            'cash_physical'    => ['required', 'string'],
+            'atm_physical'     => ['required', 'string'],
+            'expense_physical' => ['required', 'string'],
+            'notes'            => ['nullable', 'string', 'max:500'],
         ];
     }
 }

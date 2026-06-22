@@ -22,14 +22,16 @@ class DailyClosingController extends Controller
     {
         $validated = $request->validated();
         
-        // Normalize cash_physical and atm_physical from string representation
-        $cashPhysical = (float) str_replace(['.', ','], ['', '.'], $validated['cash_physical']);
-        $atmPhysical  = (float) str_replace(['.', ','], ['', '.'], $validated['atm_physical']);
+        // Normalize cash_physical, atm_physical and expense_physical from string representation
+        $cashPhysical    = (float) str_replace(['.', ','], ['', '.'], $validated['cash_physical']);
+        $atmPhysical     = (float) str_replace(['.', ','], ['', '.'], $validated['atm_physical']);
+        $expensePhysical = (float) str_replace(['.', ','], ['', '.'], $validated['expense_physical']);
         
         $this->service->closeBook(
             $validated['closing_date'],
             $cashPhysical,
             $atmPhysical,
+            $expensePhysical,
             $validated['notes'] ?? null,
             $request->user()
         );
@@ -84,6 +86,7 @@ class DailyClosingController extends Controller
         $data['notes'] = $closing ? $closing->notes : '';
         $data['cash_physical'] = $closing ? (float)$closing->cash_physical : 0.0;
         $data['atm_physical'] = $closing ? (float)$closing->atm_physical : 0.0;
+        $data['expense_physical'] = $closing ? (float)$closing->expense_physical : 0.0;
 
         return response()->json($data);
     }
