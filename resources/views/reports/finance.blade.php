@@ -15,28 +15,46 @@
             <div class="flex items-center gap-2">
                 @php
                     $isSuperadmin = auth()->user()->role->value === 'superadmin';
+                    $canManageDailyClosing = in_array(auth()->user()->role->value, ['superadmin', 'admin']);
                     $viewedDate = (request('start_date') && request('start_date') === request('end_date')) ? request('start_date') : today()->toDateString();
                     $closingRecord = \App\Models\DailyClosing::whereDate('closing_date', $viewedDate)->first();
                     $isLocked = !$isSuperadmin && $closingRecord && in_array($closingRecord->status, ['closed', 'verified']);
                 @endphp
 
-                @if ($closingRecord)
-                    @if ($closingRecord->status === 'closed')
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 shadow-sm">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            Tutup Buku (Pending)
-                        </span>
-                    @elseif ($closingRecord->status === 'verified')
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                            Tutup Buku (Verified)
-                        </span>
-                    @endif
-                @else
+                @if ($closingRecord && in_array($closingRecord->status, ['closed', 'verified']))
+                    <div class="flex items-center gap-2">
+                        @if ($closingRecord->status === 'closed')
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                Tutup Buku (Pending)
+                            </span>
+                        @elseif ($closingRecord->status === 'verified')
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                Tutup Buku (Verified)
+                            </span>
+                        @endif
+
+                        @if ($isSuperadmin)
+                            <form method="POST" action="{{ route('daily-closings.revert', $closingRecord) }}"
+                                  onsubmit="return confirm('Kembalikan laporan ini ke draft? Tanggal transaksi akan dibuka kembali.')">
+                                @csrf
+                                <button type="submit"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 bg-white border hover:bg-gray-50 transition-all shadow-sm"
+                                    style="border-color:var(--line)">
+                                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 10v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                    </svg>
+                                    Buka Kembali
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                @elseif ($canManageDailyClosing)
                     <button type="button" onclick="openClosingModal('{{ $viewedDate }}')"
                         class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all shadow-sm"
                         style="background:var(--accent)"
@@ -74,6 +92,21 @@
                                 Semua data transaksi bersifat read-only.
                             @endif
                         </p>
+                    @endif
+                    @if ($isSuperadmin)
+                        <div class="mt-3">
+                            <form method="POST" action="{{ route('daily-closings.revert', $closingRecord) }}"
+                                  onsubmit="return confirm('Kembalikan laporan ini ke draft? Tanggal transaksi akan dibuka kembali.')">
+                                @csrf
+                                <button type="submit"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-sm">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 10v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                    </svg>
+                                    Buka Kunci Tutup Buku
+                                </button>
+                            </form>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -191,7 +224,7 @@
             }
         </script>
 
-        <div class="grid grid-cols-2 {{ $isSuperadmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4' }} gap-3">
+        <div class="grid grid-cols-2 {{ $isSuperadmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5' }} gap-3">
 
             {{-- 1. Omzet --}}
             <div class="bg-white rounded-xl border p-5 card-lift"
@@ -211,11 +244,11 @@
                 <div class="text-xs" style="color:var(--ink-mute)">Penjualan disetujui tanggal {{ $today['date_label'] }}</div>
             </div>
 
-            {{-- 2. Pendapatan --}}
+            {{-- 2. Cash --}}
             <div class="bg-white rounded-xl border p-5 card-lift"
                 style="border-color:var(--line)">
                 <div class="flex items-start justify-between mb-3">
-                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Pendapatan</div>
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Cash</div>
                     <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style="background:rgba(16,185,129,0.08)">
                         <svg class="w-4 h-4 text-emerald-600" style="color:var(--success)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -224,26 +257,30 @@
                     </div>
                 </div>
                 <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-emerald-600" style="color:var(--success)">
-                    Rp {{ number_format($today['income'], 0, ',', '.') }}
+                    Rp {{ number_format($today['cash'], 0, ',', '.') }}
                 </div>
-                <!-- <div class="grid grid-cols-2 gap-2 mt-3">
-                    <div class="rounded-lg px-2.5 py-2" style="background:#F0FDF4">
-                        <div class="text-[10px] font-bold uppercase tracking-wider font-mono text-emerald-700">Cash</div>
-                        <div class="text-xs font-bold font-mono tabular-nums text-emerald-700">
-                            Rp {{ number_format($today['cash'], 0, ',', '.') }}
-                        </div>
-                    </div>
-                    <div class="rounded-lg px-2.5 py-2" style="background:#EFF6FF">
-                        <div class="text-[10px] font-bold uppercase tracking-wider font-mono text-blue-700">ATM</div>
-                        <div class="text-xs font-bold font-mono tabular-nums text-blue-700">
-                            Rp {{ number_format($today['transfer'], 0, ',', '.') }}
-                        </div>
-                    </div>
-                </div> -->
-    <div class="text-xs mt-2" style="color:var(--ink-mute)">Uang masuk tanggal {{ $today['date_label'] }}</div>
+                <div class="text-xs text-emerald-700" style="color:var(--success)">Kas masuk tanggal {{ $today['date_label'] }}</div>
             </div>
 
-            {{-- 3. Pengeluaran --}}
+            {{-- 3. Transfer --}}
+            <div class="bg-white rounded-xl border p-5 card-lift"
+                style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Transfer</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(99,102,241,0.08)">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-indigo-600" style="color:#4F46E5">
+                    Rp {{ number_format($today['transfer'], 0, ',', '.') }}
+                </div>
+                <div class="text-xs text-indigo-700" style="color:#4F46E5">ATM masuk tanggal {{ $today['date_label'] }}</div>
+            </div>
+
+            {{-- 4. Pengeluaran --}}
             <div class="bg-white rounded-xl border p-5 card-lift"
                 style="border-color:var(--line)">
                 <div class="flex items-start justify-between mb-3">
@@ -261,7 +298,25 @@
                 <div class="text-xs" style="color:var(--ink-mute)">Operasional & biaya tanggal {{ $today['date_label'] }}</div>
             </div>
 
-            {{-- 4. Laba Bersih --}}
+            {{-- 5. Hutang Hari Ini --}}
+            <div class="bg-white rounded-xl border p-5 card-lift"
+                style="border-color:var(--line)">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Hutang Hari Ini</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(245,158,11,0.08)">
+                        <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-amber-600" style="color:#F59E0B">
+                    Rp {{ number_format($today['debt'], 0, ',', '.') }}
+                </div>
+                <div class="text-xs" style="color:var(--ink-mute)">Piutang baru tanggal {{ $today['date_label'] }}</div>
+            </div>
+
+            {{-- 6. Laba Bersih --}}
             @if ($isSuperadmin)
             @php $isProfitNegative = $today['net_profit'] < 0; @endphp
             <div class="bg-white rounded-xl border p-5 card-lift"
@@ -281,24 +336,6 @@
                 <div class="text-xs" style="color:var(--ink-mute)">Penjualan dikurangi biaya</div>
             </div>
             @endif
-
-            {{-- 5. Hutang Baru --}}
-            <div class="bg-white rounded-xl border p-5 card-lift"
-                style="border-color:var(--line)">
-                <div class="flex items-start justify-between mb-3">
-                    <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Hutang Baru</div>
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style="background:rgba(245,158,11,0.08)">
-                        <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
-                </div>
-                <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums text-amber-600" style="color:#F59E0B">
-                    Rp {{ number_format($today['debt'], 0, ',', '.') }}
-                </div>
-                <div class="text-xs" style="color:var(--ink-mute)">Piutang baru tanggal {{ $today['date_label'] }}</div>
-            </div>
 
         </div>
 
@@ -358,6 +395,7 @@
                             </thead>
                             <tbody>
                                     @forelse($expenses as $expense)
+                                        @if ($expense->category === 'gaji' && !$isSuperadmin) @continue @endif
                                         <tr style="border-bottom:1px solid var(--line)">
                                             <td class="px-5 py-3 font-mono" style="color:var(--ink-soft)">
                                                 {{ $expense->expense_date->format('d/m/Y') }}</td>
@@ -586,7 +624,9 @@
                                     <select name="category" required class="field-input">
                                         <option value="operasional">Operasional</option>
                                         <option value="listrik">Listrik & Gas</option>
-                                        <option value="gaji">Gaji</option>
+                                        @if (auth()->user()->isSuperAdmin())
+                                            <option value="gaji">Gaji</option>
+                                        @endif
                                         <option value="sewa">Sewa</option>
                                         <option value="lainnya">Lainnya</option>
                                         @if (auth()->user()->isSuperAdmin())
@@ -744,8 +784,24 @@
                     form.classList.add('hidden');
                     
                     // Fetch date metrics
-                    fetch(`/daily-closings/data?date=${date}`)
-                        .then(response => response.json())
+                    const closingDataUrl = @json(route('daily-closings.data'));
+                    const setClosingText = (id, value) => {
+                        const el = document.getElementById(id);
+                        if (el) el.innerText = value;
+                    };
+
+                    fetch(`${closingDataUrl}?date=${encodeURIComponent(date)}`, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('HTTP ' + response.status);
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             document.getElementById('closing-date-input').value = date;
                             
@@ -756,37 +812,40 @@
                             
                             const formatRupiah = (val) => 'Rp ' + Math.round(val).toLocaleString('id-ID');
                             
-                            document.getElementById('closing-total-income').innerText = formatRupiah(data.total_income);
-                            document.getElementById('closing-gas-income').innerText = formatRupiah(data.gas_income);
-                            document.getElementById('closing-hp-purchase').innerText = formatRupiah(data.hp_purchase);
-                            document.getElementById('closing-hp-sale').innerText = formatRupiah(data.hp_sale);
-                            const closingLaba = document.getElementById('closing-laba');
-                            if (closingLaba) {
-                                closingLaba.innerText = formatRupiah(data.laba);
-                            }
-                            document.getElementById('closing-cash-system').innerText = formatRupiah(data.cash_system);
-                            document.getElementById('closing-atm-system').innerText = formatRupiah(data.atm_system);
-                            document.getElementById('closing-transfer-income').innerText = formatRupiah(data.transfer_income);
-                            document.getElementById('closing-debt-amount').innerText = formatRupiah(data.debt_amount);
+                            setClosingText('closing-total-income', formatRupiah(data.total_income));
+                            setClosingText('closing-gas-income', formatRupiah(data.gas_income));
+                            setClosingText('closing-hp-purchase', formatRupiah(data.hp_purchase));
+                            setClosingText('closing-hp-sale', formatRupiah(data.hp_sale));
+                            setClosingText('closing-laba', formatRupiah(data.laba));
+                            setClosingText('closing-cash-system', formatRupiah(data.cash_system));
+                            setClosingText('closing-cash-system-card', formatRupiah(data.cash_system));
+                            setClosingText('closing-atm-system', formatRupiah(data.atm_system));
+                            setClosingText('closing-atm-system-card', formatRupiah(data.atm_system));
+                            setClosingText('closing-transfer-income', formatRupiah(data.transfer_income));
+                            setClosingText('closing-debt-amount', formatRupiah(data.debt_amount));
                             
                             // If physical cash was already submitted previously (draft / edit)
                             const cashPhysicalInput = document.getElementById('closing-cash-physical');
-                            cashPhysicalInput.value = data.cash_physical > 0 ? Math.round(data.cash_physical).toLocaleString('id-ID') : '';
+                            if (cashPhysicalInput) {
+                                cashPhysicalInput.value = data.cash_physical > 0 ? Math.round(data.cash_physical).toLocaleString('id-ID') : '';
                             
-                            // Trigger input event to format if it has value
-                            if (cashPhysicalInput.value) {
-                                const event = new Event('input', { bubbles: true });
-                                cashPhysicalInput.dispatchEvent(event);
+                                // Trigger input event to format if it has value
+                                if (cashPhysicalInput.value) {
+                                    const event = new Event('input', { bubbles: true });
+                                    cashPhysicalInput.dispatchEvent(event);
+                                }
                             }
 
                             // If physical ATM was already submitted previously (draft / edit)
                             const atmPhysicalInput = document.getElementById('closing-atm-physical');
-                            atmPhysicalInput.value = data.atm_physical > 0 ? Math.round(data.atm_physical).toLocaleString('id-ID') : '';
+                            if (atmPhysicalInput) {
+                                atmPhysicalInput.value = data.atm_physical > 0 ? Math.round(data.atm_physical).toLocaleString('id-ID') : '';
                             
-                            // Trigger input event to format if it has value
-                            if (atmPhysicalInput.value) {
-                                const event = new Event('input', { bubbles: true });
-                                atmPhysicalInput.dispatchEvent(event);
+                                // Trigger input event to format if it has value
+                                if (atmPhysicalInput.value) {
+                                    const event = new Event('input', { bubbles: true });
+                                    atmPhysicalInput.dispatchEvent(event);
+                                }
                             }
                             
                             const notesTextarea = form.querySelector('textarea[name="notes"]');
@@ -794,10 +853,11 @@
                             
                             loading.classList.add('hidden');
                             form.classList.remove('hidden');
-                            setTimeout(() => cashPhysicalInput.focus(), 100);
+                            const firstInput = cashPhysicalInput || notesTextarea;
+                            if (firstInput) setTimeout(() => firstInput.focus(), 100);
                         })
                         .catch(err => {
-                            alert('Gagal mengambil data keuangan harian.');
+                            alert('Gagal mengambil data keuangan harian. Silakan muat ulang halaman dan coba lagi.');
                             closeClosingModal();
                         });
                 }
@@ -891,7 +951,9 @@
                                 <select name="category" id="edit-exp-category" required class="field-input">
                                     <option value="operasional">Operasional</option>
                                     <option value="listrik">Listrik &amp; Gas</option>
-                                    <option value="gaji">Gaji</option>
+                                    @if (auth()->user()->isSuperAdmin())
+                                        <option value="gaji">Gaji</option>
+                                    @endif
                                     <option value="sewa">Sewa</option>
                                     <option value="lainnya">Lainnya</option>
                                     @if (auth()->user()->isSuperAdmin())
@@ -981,7 +1043,7 @@
                             @endif
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 {{ $isSuperadmin ? 'md:grid-cols-2' : '' }} gap-6">
                             {{-- Metrics Details --}}
                             <div class="space-y-3">
                                 <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider font-mono">Detail Transaksi Sistem</h4>
@@ -990,10 +1052,12 @@
                                         <span class="text-gray-600">Pendapatan Gas</span>
                                         <span class="font-semibold text-gray-800" id="closing-gas-income">-</span>
                                     </div>
+                                    @if ($isSuperadmin)
                                     <div class="flex justify-between p-2.5 bg-white">
                                         <span class="text-gray-600">Pembelian HP (Stok)</span>
                                         <span class="font-semibold text-red-600" id="closing-hp-purchase">-</span>
                                     </div>
+                                    @endif
                                     <div class="flex justify-between p-2.5 bg-white">
                                         <span class="text-gray-600">Transfer Masuk</span>
                                         <span class="font-semibold text-gray-800" id="closing-transfer-income">-</span>
@@ -1002,13 +1066,24 @@
                                         <span class="text-gray-600">Piutang / Utang</span>
                                         <span class="font-semibold text-amber-600" id="closing-debt-amount">-</span>
                                     </div>
+                                    @unless ($isSuperadmin)
+                                        <div class="flex justify-between p-2.5 bg-blue-50">
+                                            <span class="text-blue-800 font-semibold">Kas Sistem Harian</span>
+                                            <span class="font-semibold text-blue-700 font-mono" id="closing-cash-system">-</span>
+                                        </div>
+                                        <div class="flex justify-between p-2.5 bg-purple-50">
+                                            <span class="text-purple-800 font-semibold">ATM Sistem Harian</span>
+                                            <span class="font-semibold text-purple-700 font-mono" id="closing-atm-system">-</span>
+                                        </div>
+                                    @endunless
                                 </div>
                             </div>
 
-                            {{-- Reconciliation --}}
+                            {{-- Reconciliation (superadmin only) --}}
+                            @if ($isSuperadmin)
                             <div class="space-y-4">
                                 <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider font-mono">Reorganisasi Kas & ATM</h4>
-                                
+
                                 <!-- KAS TUNAI -->
                                 <div class="space-y-2 pb-3 border-b" style="border-color:var(--line)">
                                     <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 flex justify-between items-center text-xs">
@@ -1016,7 +1091,7 @@
                                             <span class="text-blue-800 font-semibold block">Kas Sistem</span>
                                             <span class="text-[10px] text-blue-600 block mt-0.5">Uang masuk tunai - biaya tunai</span>
                                         </div>
-                                        <span class="text-sm font-bold text-blue-700 font-mono" id="closing-cash-system">-</span>
+                                        <span class="text-sm font-bold text-blue-700 font-mono" id="closing-cash-system-card">-</span>
                                     </div>
 
                                     <div>
@@ -1037,7 +1112,7 @@
                                             <span class="text-purple-800 font-semibold block">ATM Sistem</span>
                                             <span class="text-[10px] text-purple-600 block mt-0.5">Uang masuk transfer - biaya transfer</span>
                                         </div>
-                                        <span class="text-sm font-bold text-purple-700 font-mono" id="closing-atm-system">-</span>
+                                        <span class="text-sm font-bold text-purple-700 font-mono" id="closing-atm-system-card">-</span>
                                     </div>
 
                                     <div>
@@ -1051,6 +1126,10 @@
                                     </div>
                                 </div>
                             </div>
+                            @else
+                            <input type="hidden" name="cash_physical" value="0" />
+                            <input type="hidden" name="atm_physical" value="0" />
+                            @endif
                         </div>
 
                         <div>

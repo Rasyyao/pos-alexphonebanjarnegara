@@ -351,7 +351,7 @@
 
             const brandData = {
                 labels: {!! json_encode(array_column($brandDist, 'brand_name')) !!},
-                values: {!! json_encode(array_column($brandDist, 'count')) !!},
+                values: {!! json_encode(array_map('intval', array_column($brandDist, 'count'))) !!},
                 colors: ['#3B82F6', '#10B981', '#6366F1', '#8B5CF6', '#F59E0B', '#EC4899', '#EF4444', '#14B8A6',
                     '#22C55E', '#06B6D4'
                 ],
@@ -360,14 +360,14 @@
 
             const typeData = {
                 labels: {!! json_encode(array_map(fn($t) => $t === 'baru' ? 'Baru' : 'Second', array_column($typeDist, 'unit_type'))) !!},
-                values: {!! json_encode(array_column($typeDist, 'count')) !!},
+                values: {!! json_encode(array_map('intval', array_column($typeDist, 'count'))) !!},
                 colors: ['#3B82F6', '#F59E0B'],
                 labelName: 'Kondisi HP'
             };
 
             const statusData = {
                 labels: {!! json_encode(array_map(fn($s) => $s === 'ready' ? 'Ready' : 'Retur', array_column($statusDist, 'status'))) !!},
-                values: {!! json_encode(array_column($statusDist, 'count')) !!},
+                values: {!! json_encode(array_map('intval', array_column($statusDist, 'count'))) !!},
                 colors: ['#10B981', '#EF4444'],
                 labelName: 'Status Unit'
             };

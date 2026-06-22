@@ -14,12 +14,13 @@
   .doc-label  { font-size: 10pt; font-weight: 700; color: #111827; text-align: right; text-transform: uppercase; letter-spacing: 0.5px; }
   .doc-meta   { font-size: 7pt; color: #6B7280; margin-top: 3px; text-align: right; }
 
-  /* KPI */
-  .kpi-row { display: flex; gap: 8px; margin-bottom: 12px; }
-  .kpi { flex: 1; border: 1px solid #D1D5DB; border-top: 2.5px solid #374151; padding: 8px 10px; }
-  .kpi-label { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #6B7280; margin-bottom: 3px; }
-  .kpi-value { font-size: 11pt; font-weight: 700; color: #111827; }
-  .kpi-sub   { font-size: 7pt; color: #6B7280; margin-top: 2px; }
+  /* KPI CARDS TABLE LAYOUT FOR DOMPDF */
+  .kpi-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .kpi-table td.kpi-spacer { width: 2%; }
+  .kpi-table td.kpi-card { border: 1px solid #D1D5DB; padding: 6px 8px; border-top: 2.5px solid #374151; background: #fff; vertical-align: top; width: 49%; }
+  .kpi-label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; margin-bottom: 2px; }
+  .kpi-value { font-size: 10.5pt; font-weight: 700; color: #111827; white-space: nowrap; }
+  .kpi-sub   { font-size: 6.5pt; color: #6B7280; margin-top: 2px; }
 
   /* SECTION */
   .section-title { font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #111827; border-left: 3px solid #374151; padding-left: 6px; margin: 12px 0 5px; }
@@ -56,7 +57,7 @@
   .footer { margin-top: 14px; border-top: 1px solid #E5E7EB; padding-top: 6px; text-align: right; font-size: 7pt; color: #9CA3AF; font-style: italic; }
 
   @media print {
-    @page { size: A4 landscape; margin: 10mm; }
+    @page { size: A4 portrait; margin: 10mm; }
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
@@ -77,22 +78,27 @@
   </div>
 
   {{-- KPI --}}
-  <div class="kpi-row">
-    @if($units->count())
-    <div class="kpi">
-      <div class="kpi-label">Total Unit HP</div>
-      <div class="kpi-value">{{ $units->count() }} unit</div>
-      <div class="kpi-sub">Ready: {{ $readyCount }} &nbsp;|&nbsp; Retur: {{ $units->count() - $readyCount }}</div>
-    </div>
-    @endif
-    @if($accessories->count())
-    <div class="kpi">
-      <div class="kpi-label">Total Aksesoris</div>
-      <div class="kpi-value">{{ $accessories->count() }} jenis</div>
-      <div class="kpi-sub">Qty: {{ number_format($accQty, 0, ',', '.') }} pcs</div>
-    </div>
-    @endif
-  </div>
+  <table class="kpi-table">
+    <tr>
+      @if($units->count())
+      <td class="kpi-card">
+        <div class="kpi-label">Total Unit HP</div>
+        <div class="kpi-value">{{ $units->count() }} unit</div>
+        <div class="kpi-sub">Ready: {{ $readyCount }} &nbsp;|&nbsp; Retur: {{ $units->count() - $readyCount }}</div>
+      </td>
+      @endif
+      @if($units->count() && $accessories->count())
+      <td class="kpi-spacer"></td>
+      @endif
+      @if($accessories->count())
+      <td class="kpi-card">
+        <div class="kpi-label">Total Aksesoris</div>
+        <div class="kpi-value">{{ $accessories->count() }} jenis</div>
+        <div class="kpi-sub">Qty: {{ number_format($accQty, 0, ',', '.') }} pcs</div>
+      </td>
+      @endif
+    </tr>
+  </table>
 
   {{-- HP TABLE --}}
   @if($units->count())
@@ -100,7 +106,7 @@
   <table>
     <thead>
       <tr>
-        <th class="c" style="width:16px">✓</th>
+        <th class="c" style="width:16px"></th>
         <th style="width:20px">No</th>
         <th>Brand / Model</th>
         <th>Spesifikasi</th>
@@ -117,7 +123,7 @@
       @foreach($groupedUnits as $brandName => $brandUnits)
         <tr class="brand-row">
           <td colspan="7">
-            ◆ BRAND: {{ strtoupper($brandName) }} ({{ $brandUnits->count() }} unit)
+            BRAND: {{ strtoupper($brandName) }} ({{ $brandUnits->count() }} unit)
           </td>
         </tr>
         @foreach($brandUnits as $u)
@@ -153,7 +159,7 @@
   <table>
     <thead>
       <tr>
-        <th class="c" style="width:16px">✓</th>
+        <th class="c" style="width:16px"></th>
         <th style="width:20px">No</th>
         <th>Nama Aksesoris</th>
         <th>Kategori</th>

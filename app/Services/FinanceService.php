@@ -171,10 +171,48 @@ class FinanceService
         if ($endDate)   $incomeDebtQuery->whereDate('created_at', '<=', $endDate);
         $income = $incomeInitial + (float) $incomeDebtQuery->sum('amount');
 
+        // Income Cash portion
+        $incomeInitialCash = (float) \App\Models\SalePayment::where('method', 'cash')
+            ->where('source', 'sale')
+            ->whereHas('sale', function ($sq) use ($startDate, $endDate) {
+                $sq->where('status', 'approved');
+                if ($startDate) $sq->whereDate('sale_date', '>=', $startDate);
+                if ($endDate)   $sq->whereDate('sale_date', '<=', $endDate);
+            })->sum('amount');
+        $incomeDebtCashQuery = \App\Models\SalePayment::where('method', 'cash')
+            ->whereNotNull('created_at')
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            });
+        if ($startDate) $incomeDebtCashQuery->whereDate('created_at', '>=', $startDate);
+        if ($endDate)   $incomeDebtCashQuery->whereDate('created_at', '<=', $endDate);
+        $incomeCash = $incomeInitialCash + (float) $incomeDebtCashQuery->sum('amount');
+
+        // Income Transfer portion
+        $incomeInitialTransfer = (float) \App\Models\SalePayment::where('method', 'transfer')
+            ->where('source', 'sale')
+            ->whereHas('sale', function ($sq) use ($startDate, $endDate) {
+                $sq->where('status', 'approved');
+                if ($startDate) $sq->whereDate('sale_date', '>=', $startDate);
+                if ($endDate)   $sq->whereDate('sale_date', '<=', $endDate);
+            })->sum('amount');
+        $incomeDebtTransferQuery = \App\Models\SalePayment::where('method', 'transfer')
+            ->whereNotNull('created_at')
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved'))
+            ->where(function ($q) {
+                $q->where('source', 'debt_payment')
+                  ->orWhereRaw('DATE(sale_payments.created_at) > (SELECT DATE(sales.created_at) FROM sales WHERE sales.id = sale_payments.sale_id)');
+            });
+        if ($startDate) $incomeDebtTransferQuery->whereDate('created_at', '>=', $startDate);
+        if ($endDate)   $incomeDebtTransferQuery->whereDate('created_at', '<=', $endDate);
+        $incomeTransfer = $incomeInitialTransfer + (float) $incomeDebtTransferQuery->sum('amount');
+
         $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
         $expensesQuery = \App\Models\Expense::query();
         if (!$isSuperAdmin) {
-            $expensesQuery->where('category', '!=', 'tarik_owner');
+            $expensesQuery->whereNotIn('category', ['tarik_owner', 'gaji']);
         }
         if ($startDate) {
             $expensesQuery->whereDate('expense_date', '>=', $startDate);
@@ -210,6 +248,8 @@ class FinanceService
             'revenue'      => $revenue,
             'profit'       => $profit,
             'income'       => $income,
+            'income_cash'  => $incomeCash,
+            'income_transfer' => $incomeTransfer,
             'capital'      => $capital,
             'expenses'     => $expenses,
             'net'          => $profit - $operationalExpenses,
@@ -308,7 +348,7 @@ class FinanceService
         // 2. Calculate expenses for the filtered date range
         $expensesQuery = \App\Models\Expense::with('creator');
         if (!$isSuperAdmin) {
-            $expensesQuery->where('category', '!=', 'tarik_owner');
+            $expensesQuery->whereNotIn('category', ['tarik_owner', 'gaji']);
         }
         if ($startDate) {
             $expensesQuery->whereDate('expense_date', '>=', $startDate);
@@ -404,7 +444,13 @@ class FinanceService
             })->join(', ');
             
             $exp->notes = "Metode: {$paymentDetails}" . ($sale->description ? " | " . $sale->description : "");
-            $exp->amount = $sale->total_price;
+            // Only count cash + transfer received now; utang is on hold until paid (shows as Pelunasan row)
+            $exp->amount = $sale->payments
+                ->filter(fn($p) => in_array(
+                    $p->method instanceof \BackedEnum ? $p->method->value : $p->method,
+                    ['cash', 'transfer']
+                ))
+                ->sum('amount');
             $exp->created_by = $sale->created_by;
             $exp->setRelation('creator', $sale->creator);
             return $exp;

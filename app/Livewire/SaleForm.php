@@ -45,7 +45,7 @@ class SaleForm extends Component
         } elseif (preg_match('/^items\.(\d+)\.unit_id$/', $name, $m)) {
             $i = (int) $m[1];
             $unit = $value ? Unit::find($value) : null;
-            $this->items[$i]['selling_price'] = $unit ? (float) $unit->purchase_price : 0;
+            $this->items[$i]['selling_price'] = 0;
         } elseif (preg_match('/^items\.(\d+)\.type$/', $name, $m)) {
             $i = (int) $m[1];
             $this->items[$i]['unit_id']       = null;

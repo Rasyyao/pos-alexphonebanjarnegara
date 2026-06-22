@@ -193,7 +193,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
   <table>
     <thead>
       <tr>
-        <th class="c" style="width:20px;background:#065F46">✓</th>
+        <th class="c" style="width:20px;background:#065F46"></th>
         <th style="width:20px">No</th>
         <th>Brand / Model</th>
         <th>Spesifikasi</th>
@@ -213,7 +213,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
       @forelse($groupedUnits as $brandName => $brandUnits)
         <tr class="brand-row">
           <td colspan="10" style="text-align:left;padding:6px 8px;">
-            ◆ BRAND: {{ strtoupper($brandName) }} ({{ $brandUnits->count() }} unit)
+            BRAND: {{ strtoupper($brandName) }} ({{ $brandUnits->count() }} unit)
           </td>
         </tr>
         @foreach($brandUnits as $u)
@@ -269,7 +269,7 @@ tbody td.muted { color: #7A8AA8; font-size: 7pt; }
   <table>
     <thead>
       <tr>
-        <th class="c" style="width:20px;background:#065F46">✓</th>
+        <th class="c" style="width:20px;background:#065F46"></th>
         <th style="width:20px">No</th>
         <th>Nama Aksesoris</th>
         <th>Kategori</th>

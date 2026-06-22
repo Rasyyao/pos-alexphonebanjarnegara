@@ -106,7 +106,7 @@ class ReportController extends Controller
         $query = \App\Models\Expense::with('creator')->whereDate('expense_date', $date);
 
         if (!(auth()->user()?->isSuperAdmin() ?? false)) {
-            $query->where('category', '!=', 'tarik_owner');
+            $query->whereNotIn('category', ['tarik_owner', 'gaji']);
         }
 
         $expenses = $query->latest('expense_date')->latest('created_at')->get();
@@ -207,7 +207,7 @@ class ReportController extends Controller
         ];
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf-stock', $data)
-            ->setPaper('a4', 'landscape');
+            ->setPaper('a4', 'portrait');
     }
 
     private function buildStockHpPdf(): \Barryvdh\DomPDF\PDF
@@ -228,7 +228,7 @@ class ReportController extends Controller
         ];
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf-stock', $data)
-            ->setPaper('a4', 'landscape');
+            ->setPaper('a4', 'portrait');
     }
 
     private function buildStockAccessoriesPdf(): \Barryvdh\DomPDF\PDF
@@ -250,7 +250,7 @@ class ReportController extends Controller
         ];
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf-stock', $data)
-            ->setPaper('a4', 'landscape');
+            ->setPaper('a4', 'portrait');
     }
 
     private function buildFinancePdf(?string $startDate, ?string $endDate): \Barryvdh\DomPDF\PDF
@@ -290,7 +290,7 @@ class ReportController extends Controller
         $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
         $operationalExpensesQuery = \App\Models\Expense::with('creator');
         if (!$isSuperAdmin) {
-            $operationalExpensesQuery->where('category', '!=', 'tarik_owner');
+            $operationalExpensesQuery->whereNotIn('category', ['tarik_owner', 'gaji']);
         }
         if ($startDate) $operationalExpensesQuery->whereDate('expense_date', '>=', $startDate);
         if ($endDate)   $operationalExpensesQuery->whereDate('expense_date', '<=', $endDate);
@@ -1693,7 +1693,7 @@ class ReportController extends Controller
         $expensesQuery = \App\Models\Expense::with('creator');
         $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
         if (!$isSuperAdmin) {
-            $expensesQuery->where('category', '!=', 'tarik_owner');
+            $expensesQuery->whereNotIn('category', ['tarik_owner', 'gaji']);
         }
         if ($startDate) {
             $expensesQuery->whereDate('expense_date', '>=', $startDate);

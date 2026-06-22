@@ -25,11 +25,12 @@
   .period-label { font-size: 7.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #7A8AA8; }
   .period-value { font-size: 11pt; font-weight: 700; color: #0A2540; margin-top: 2px; }
 
-  /* KPI CARDS */
-  .kpi-row { display: flex; gap: 8px; margin-bottom: 14px; }
-  .kpi { flex: 1; border: 1px solid #E4E9F2; padding: 9px 11px; border-top: 3px solid #0A2540; }
-  .kpi-label { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #7A8AA8; margin-bottom: 3px; }
-  .kpi-value { font-size: 12pt; font-weight: 700; color: #0A2540; }
+  /* KPI CARDS TABLE LAYOUT FOR DOMPDF */
+  .kpi-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .kpi-table td.kpi-spacer { width: 1.5%; }
+  .kpi-table td.kpi-card { border: 1px solid #E4E9F2; padding: 6px 8px; border-top: 2.5px solid #0A2540; background: #fff; vertical-align: top; width: 18.8%; }
+  .kpi-label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #7A8AA8; margin-bottom: 2px; }
+  .kpi-value { font-size: 10.5pt; font-weight: 700; color: #0A2540; white-space: nowrap; }
   .kpi-value.green { color: #065F46; }
   .kpi-value.red   { color: #B91C1C; }
 
@@ -78,28 +79,38 @@
   </div>
 
   {{-- KPI --}}
-  <div class="kpi-row">
-    <div class="kpi">
-      <div class="kpi-label">Omzet</div>
-      <div class="kpi-value">Rp {{ number_format($summary['revenue'], 0, ',', '.') }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Pendapatan</div>
-      <div class="kpi-value green">Rp {{ number_format($summary['income'] ?? 0, 0, ',', '.') }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Pengeluaran</div>
-      <div class="kpi-value red">Rp {{ number_format($summary['expenses'], 0, ',', '.') }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Laba Bersih</div>
-      <div class="kpi-value {{ $summary['net'] >= 0 ? 'green' : 'red' }}">Rp {{ number_format($summary['net'], 0, ',', '.') }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Hutang Aktif</div>
-      <div class="kpi-value {{ ($summary['unpaidDebts'] ?? 0) > 0 ? 'red' : '' }}">Rp {{ number_format($summary['unpaidDebts'] ?? 0, 0, ',', '.') }}</div>
-    </div>
-  </div>
+  <table class="kpi-table">
+    <tr>
+      <td class="kpi-card">
+        <div class="kpi-label">Omzet</div>
+        <div class="kpi-value">Rp {{ number_format($summary['revenue'], 0, ',', '.') }}</div>
+      </td>
+      <td class="kpi-spacer"></td>
+      <td class="kpi-card">
+        <div class="kpi-label">Pendapatan</div>
+        <div class="kpi-value green">Rp {{ number_format($summary['income'] ?? 0, 0, ',', '.') }}</div>
+        <div style="font-size: 6.5pt; color: #7A8AA8; margin-top: 3px; font-weight: bold; line-height: 1.2;">
+          Cash: Rp {{ number_format($summary['income_cash'] ?? 0, 0, ',', '.') }}<br>
+          ATM: Rp {{ number_format($summary['income_transfer'] ?? 0, 0, ',', '.') }}
+        </div>
+      </td>
+      <td class="kpi-spacer"></td>
+      <td class="kpi-card">
+        <div class="kpi-label">Pengeluaran</div>
+        <div class="kpi-value red">Rp {{ number_format($summary['expenses'], 0, ',', '.') }}</div>
+      </td>
+      <td class="kpi-spacer"></td>
+      <td class="kpi-card">
+        <div class="kpi-label">Laba Bersih</div>
+        <div class="kpi-value {{ $summary['net'] >= 0 ? 'green' : 'red' }}">Rp {{ number_format($summary['net'], 0, ',', '.') }}</div>
+      </td>
+      <td class="kpi-spacer"></td>
+      <td class="kpi-card">
+        <div class="kpi-label">Hutang Aktif</div>
+        <div class="kpi-value {{ ($summary['unpaidDebts'] ?? 0) > 0 ? 'red' : '' }}">Rp {{ number_format($summary['unpaidDebts'] ?? 0, 0, ',', '.') }}</div>
+      </td>
+    </tr>
+  </table>
 
   {{-- SALES TABLE --}}
   <div class="section-title">Rincian Transaksi Penjualan</div>

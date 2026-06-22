@@ -1,16 +1,15 @@
 <claude-mem-context>
 # Memory Context
 
-# [alexphonebanjarnegara] recent context, 2026-06-22 3:25pm GMT+7
+# [alexphonebanjarnegara] recent context, 2026-06-22 9:55pm GMT+7
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (17,543t read) | 334,034t work | 95% savings
+Stats: 50 obs (17,772t read) | 515,456t work | 97% savings
 
 ### Jun 14, 2026
-S27 Capital Distribution Tracker Implemented in cashflow.blade.php (Jun 14 at 11:23 AM)
 S28 Stock Add Bug — setVal Fallback Empty String Prevented Form Submission (Jun 14 at 11:42 AM)
 ### Jun 15, 2026
 S30 Harga Modal Removal — Partial Completion Status Across Report Views (Jun 15 at 6:38 PM)
@@ -21,22 +20,8 @@ S33 Bug fix: Indonesian money input fields saving wrong values (100 juta stored 
 S34 Accessories Verify Table Replaced "Harga Jual" Column with "Inputter" (Date + Time) (Jun 20 at 11:31 PM)
 ### Jun 21, 2026
 S35 Superadmin Sales Auto-Approval Implemented in SaleService (Jun 21 at 12:10 AM)
-288 12:23a 🟣 Superadmin Sales Auto-Approval Implemented in SaleService
 S37 FinanceService.php Confirmed Exists and Syntax-Valid During Laba Bersih Debug (Jun 21 at 12:23 AM)
-289 12:32a ⚖️ Role-Based Daily Sales Report Edit Access Control — Tutup Buku Policy
-290 12:33a 🔵 Existing Role Gates in Sales Views — Delete Already Superadmin-Only, Edit Not Date-Gated
-360 6:05p 🟣 Estimasi Margin Hidden from Admin, Split Payment Edit Fix Requested
-361 6:07p 🔵 Split Payment Architecture and Estimasi Margin Role-Gating — Pre-Edit Research
-362 " 🟣 Estimasi Margin Hidden from Admin Role in Sales Show Page
-363 " 🔴 Split Payment Fields Now Editable in Unit Edit Form
-364 6:08p 🟣 Role-Based Estimasi Margin Visibility in Sales Show Page
-365 " 🔴 Split Payment Edit Fixed in Units Edit Form
-366 6:09p 🟣 Estimasi Margin Hidden from Admin Role in Sales Show View
-367 " 🔴 Split Payment Edit Fixed in Unit Edit View
-368 6:10p 🟣 Role-Based Estimasi Margin Visibility + Split Payment Edit Fix
-369 " 🔵 UpdateUnitRequest::rules() Crashes with "Attempt to read property 'id' on string"
 370 6:11p 🟣 Estimasi Margin Hidden from Admin, Visible to Superadmin in Sales Show Page
-371 " 🔴 Split Payment Edit Fixed in units/edit.blade.php
 372 6:12p 🟣 Estimasi Margin Hidden from Admin, Visible to Superadmin in Sales Show Page
 373 " 🔴 Split Payment Fields Now Editable in Unit Edit Form
 374 " 🟣 Estimasi Margin Hidden from Admin, Visible to Superadmin in Sales Show
@@ -61,6 +46,7 @@ S37 FinanceService.php Confirmed Exists and Syntax-Valid During Laba Bersih Debu
 394 " 🔵 Finance Report Missing Debt Payment Records for Unreconciled Prior-Day Buyers
 396 7:19p 🔵 Finance Report — Net Profit (Laba Bersih) Still Shows Negative Value
 397 " 🔵 FinanceService.php Confirmed Exists and Syntax-Valid During Laba Bersih Debug
+S38 HP Purchases Added to Finance PDF Report Data (Jun 21 at 7:19 PM)
 398 7:22p 🔵 Finance Report — Two Bugs Found in Tutup Buku (Book Closing) Flow
 399 7:23p 🔵 Finance Report Tutup Buku — Two Role-Based Access Bugs Identified
 ### Jun 22, 2026
@@ -73,7 +59,21 @@ S37 FinanceService.php Confirmed Exists and Syntax-Valid During Laba Bersih Debu
 406 " ⚖️ Cashflow Report — Exclude Stock Purchases from Pengeluaran (Expenses)
 407 2:00p 🔴 HP Unit Purchase Costs Double-Counted in Finance Reports — Removed from FinanceService
 408 2:01p 🟣 HP Purchases Added to Finance PDF Report Data
-S38 HP Purchases Added to Finance PDF Report Data (Jun 22 at 2:01 PM)
+409 3:30p 🟣 Debt Payment Date Selection — Backdate Support for Daily Finance Reports
+410 3:31p 🟣 Daily Finance Report Feature Request — Cash, ATM Balance, and Debt Totals Per Day
+411 " 🔴 Daily Finance Report Cash/Transfer Totals Now Include Backdated Debt Repayments
+412 3:32p 🟣 Full Changeset: Debt Payment Date + Daily Finance Report Totals Fix
+413 9:04p 🔴 Sale Form Buy Price Auto-Population Bug — Stock Item Selection
+S39 Sale Form Bug Fix — Phone Buy Price Auto-Populating Selling Price Field on Stock Selection (Jun 22 at 9:04 PM)
+414 9:06p 🔵 Stock Report Showing Inflated Quantity — 2111 Instead of 5
+415 9:17p 🔵 Accessories Selection Bug in Sales Create Form
+416 " 🔵 Accessories Selection Implementation in Sale-Form Component
+417 9:26p ⚖️ Gaji Category in Finance Report Restricted to Superadmin Only
+418 9:27p 🔵 Gaji Category Currently Visible to All Roles; Filtering Pattern Exists for tarik_owner
+419 " 🟣 Gaji Expense Category Restricted to Superadmin in Finance Reports
+420 9:30p ✅ Finance Report — Hide "Tutup Buku Harian" Section for Admin Role
+421 9:31p ✅ Finance Report — "Tutup Buku Harian" Button Hidden for Admin Role
+422 " ✅ Tutup Buku Modal — "Pembelian HP (Stok)" Row Hidden for Admin Role
 
-Access 334k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 515k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

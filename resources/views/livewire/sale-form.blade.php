@@ -57,7 +57,7 @@
 
                 <div>
                     @foreach ($items as $i => $item)
-                        <div class="p-5" style="{{ $i > 0 ? 'border-top:1px solid var(--line)' : '' }}">
+                        <div wire:key="item-{{ $i }}-{{ $item['type'] ?? 'unit' }}" class="p-5" style="{{ $i > 0 ? 'border-top:1px solid var(--line)' : '' }}">
 
                             {{-- Row header --}}
                             <div class="flex items-center justify-between mb-4">
@@ -117,17 +117,13 @@
                                 <div class="grid grid-cols-3 gap-3 mb-4">
                                     <div class="col-span-2">
                                         <label class="field-label">Aksesoris</label>
-                                        <input type="hidden" wire:model.live="items.{{ $i }}.accessory_id"
-                                            id="ss-val-acc-{{ $i }}" />
-                                        <div wire:ignore class="ss-wrap" data-target="ss-val-acc-{{ $i }}"
-                                            data-placeholder="Pilih Aksesoris">
-                                            <div class="ss-opts" style="display:none">
-                                                @foreach ($accessories as $acc)
-                                                    <span data-v="{{ $acc->id }}">{{ $acc->name }} (stok:
-                                                        {{ $acc->stock_qty }})</span>
-                                                @endforeach
-                                            </div>
-                                        </div>
+                                        <select wire:model.live="items.{{ $i }}.accessory_id"
+                                            class="field-input" style="width:100%">
+                                            <option value="">-- Pilih Aksesoris --</option>
+                                            @foreach ($accessories as $acc)
+                                                <option value="{{ $acc->id }}">{{ $acc->name }} (stok: {{ $acc->stock_qty }})</option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                     <div>
                                         <label class="field-label">Qty</label>
