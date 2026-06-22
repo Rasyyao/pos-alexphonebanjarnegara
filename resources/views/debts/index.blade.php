@@ -10,6 +10,7 @@
     paymentType: 'full',
     installmentAmount: 0,
     paymentMethod: 'cash',
+    paymentDate: '{{ today()->toDateString() }}',
     
     openPayModal(debt) {
         this.activeDebt = debt;
@@ -18,6 +19,7 @@
         this.paymentType = 'full';
         this.installmentAmount = this.outstanding;
         this.paymentMethod = 'cash';
+        this.paymentDate = '{{ today()->toDateString() }}';
         this.showPayModal = true;
     },
     
@@ -322,6 +324,18 @@
                             <span class="text-[9px] mt-0.5" style="color:var(--ink-mute)">Masuk ke saldo ATM</span>
                         </label>
                     </div>
+                </div>
+
+                {{-- Payment Date --}}
+                <div>
+                    <label class="field-label">Tanggal Pembayaran</label>
+                    <div class="flex items-center gap-2 px-3 rounded-lg border bg-[#F8FAFC]"
+                        style="border-color:var(--line);height:42px">
+                        <input type="date" name="payment_date" x-model="paymentDate" required
+                            class="text-xs focus:outline-none bg-transparent w-full"
+                            style="border:none!important;outline:none!important;box-shadow:none!important;padding:0!important;background:transparent;color:var(--ink)" />
+                    </div>
+                    <span class="text-[10px] mt-1 block" style="color:var(--ink-mute)">Tanggal ini menentukan kapan uang pelunasan masuk ke laporan harian.</span>
                 </div>
 
                 {{-- Live Calculation Breakdown --}}

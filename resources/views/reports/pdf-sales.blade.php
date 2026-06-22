@@ -91,6 +91,10 @@
         {{ number_format($totalDebt,0,',','.') }}
       </div>
     </div>
+    <div class="kpi">
+      <div class="kpi-label">Pengeluaran</div>
+      <div class="kpi-value" style="color:#B91C1C">Rp {{ number_format($operationalExpenseTotal, 0, ',', '.') }}</div>
+    </div>
   </div>
 
   {{-- TABLE --}}
@@ -114,7 +118,7 @@
       @forelse($sales as $s)
         @php
           $sCash = $sTransfer = $sDebt = 0;
-          foreach ($s->payments as $p) {
+          foreach ($s->payments->where('source', 'sale') as $p) {
               $m = $p->method->value ?? $p->method;
               if ($m === 'cash')         $sCash     += $p->amount;
               elseif ($m === 'transfer') $sTransfer += $p->amount;
@@ -149,6 +153,40 @@
         <td class="center">{{ $totalCash > 0 ? 'Rp '.number_format($totalCash,0,',','.') : '—' }}</td>
         <td class="center">{{ $totalTransfer > 0 ? 'Rp '.number_format($totalTransfer,0,',','.') : '—' }}</td>
         <td class="center">{{ $totalDebt > 0 ? 'Rp '.number_format($totalDebt,0,',','.') : '—' }}</td>
+      </tr>
+      @endif
+    </tbody>
+  </table>
+
+  <div class="section-title" style="margin-top:14px">Rekap Pengeluaran Operasional</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:24px">No</th>
+        <th>Keterangan</th>
+        <th>Kategori</th>
+        <th class="center">Metode</th>
+        <th class="right">Jumlah</th>
+      </tr>
+    </thead>
+    <tbody>
+      @forelse($operationalExpenses as $i => $expense)
+        <tr>
+          <td class="center muted">{{ $i + 1 }}</td>
+          <td>{{ $expense->description }}</td>
+          <td class="muted">{{ $expense->category === 'tarik_owner' ? 'Tarik Saldo Owner' : ($expense->category === 'listrik' ? 'Listrik & Gas' : ucwords($expense->category)) }}</td>
+          <td class="center muted">{{ ($expense->payment_method ?? 'cash') === 'transfer' ? 'Transfer' : 'Tunai' }}</td>
+          <td class="right">Rp {{ number_format($expense->amount, 0, ',', '.') }}</td>
+        </tr>
+      @empty
+        <tr>
+          <td colspan="5" style="text-align:center;padding:12px;color:#7A8AA8">Tidak ada pengeluaran operasional pada tanggal ini</td>
+        </tr>
+      @endforelse
+      @if($operationalExpenses->count() > 0)
+      <tr class="total-row">
+        <td colspan="4" style="text-align:right">TOTAL PENGELUARAN:</td>
+        <td class="right">Rp {{ number_format($operationalExpenseTotal, 0, ',', '.') }}</td>
       </tr>
       @endif
     </tbody>

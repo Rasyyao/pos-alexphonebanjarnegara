@@ -17,6 +17,7 @@ class PayDebtRequest extends FormRequest
             'type'           => ['required', 'string', 'in:full,partial'],
             'amount'         => ['required_if:type,partial', 'nullable', 'numeric', 'min:1'],
             'payment_method' => ['required', 'string', 'in:cash,transfer'],
+            'payment_date'   => ['required', 'date'],
         ];
     }
 
@@ -28,6 +29,8 @@ class PayDebtRequest extends FormRequest
             'amount.required_if'=> 'Jumlah cicilan harus diisi jika memilih pembayaran sebagian/cicilan.',
             'amount.numeric'    => 'Jumlah cicilan harus berupa angka.',
             'amount.min'        => 'Jumlah cicilan minimal adalah Rp 1.',
+            'payment_date.required' => 'Tanggal pembayaran harus diisi.',
+            'payment_date.date'     => 'Tanggal pembayaran tidak valid.',
         ];
     }
 }

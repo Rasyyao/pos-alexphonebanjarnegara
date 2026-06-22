@@ -63,6 +63,7 @@ class DebtRepaymentTest extends TestCase
         $response = $this->actingAs($this->user)->post(route('debts.pay', $this->debt), [
             'type'           => 'full',
             'payment_method' => 'cash',
+            'payment_date'   => '2026-06-15',
         ]);
 
         $response->assertRedirect();
@@ -80,6 +81,7 @@ class DebtRepaymentTest extends TestCase
             'type'           => 'partial',
             'amount'         => 200000,
             'payment_method' => 'transfer',
+            'payment_date'   => '2026-06-15',
         ]);
 
         $response->assertRedirect();
@@ -89,6 +91,15 @@ class DebtRepaymentTest extends TestCase
         // 500.000 (original paid) + 200.000 = 700.000
         $this->assertEquals(700000, (float) $this->debt->paid_amount);
         $this->assertEquals('partial', $this->debt->status);
+        $this->assertEquals(
+            '2026-06-15',
+            $this->debt->sale->payments()
+                ->where('source', 'debt_payment')
+                ->where('amount', 200000)
+                ->first()
+                ->created_at
+                ->toDateString()
+        );
     }
 
     public function test_payment_exceeding_outstanding_balance_is_rejected(): void
@@ -98,6 +109,7 @@ class DebtRepaymentTest extends TestCase
             'type'           => 'partial',
             'amount'         => 600000,
             'payment_method' => 'cash',
+            'payment_date'   => '2026-06-15',
         ]);
 
         $response->assertRedirect();
@@ -114,6 +126,7 @@ class DebtRepaymentTest extends TestCase
             'type'           => 'partial',
             'amount'         => -50,
             'payment_method' => 'cash',
+            'payment_date'   => '2026-06-15',
         ]);
 
         $response->assertSessionHasErrors(['amount']);

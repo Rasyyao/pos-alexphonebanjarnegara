@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Models\Debt;
 use App\Repositories\Contracts\DebtRepositoryInterface;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -13,25 +14,28 @@ class DebtService
         private readonly DebtRepositoryInterface $debts,
     ) {}
 
-    public function markPaid(Debt $debt, string $paymentMethod = 'cash'): Debt
+    public function markPaid(Debt $debt, string $paymentMethod = 'cash', ?string $paymentDate = null): Debt
     {
         $status = is_string($debt->status) ? $debt->status : ($debt->status->value ?? '');
         if ($status === 'paid') {
             throw new \LogicException('Utang sudah lunas.');
         }
         $remaining = $debt->amount - $debt->paid_amount;
-        return DB::transaction(function () use ($debt, $remaining, $paymentMethod) {
+        $paymentAt = $this->paymentTimestamp($paymentDate);
+
+        return DB::transaction(function () use ($debt, $remaining, $paymentMethod, $paymentAt) {
             $updated = $this->debts->markPaid($debt);
             $debt->sale->payments()->create([
-                'method' => $paymentMethod,
-                'amount' => $remaining,
-                'source' => 'debt_payment',
+                'method'     => $paymentMethod,
+                'amount'     => $remaining,
+                'source'     => 'debt_payment',
+                'created_at' => $paymentAt,
             ]);
             return $updated;
         });
     }
 
-    public function pay(Debt $debt, string $type, float $amount = 0, string $paymentMethod = 'cash'): Debt
+    public function pay(Debt $debt, string $type, float $amount = 0, string $paymentMethod = 'cash', ?string $paymentDate = null): Debt
     {
         $status = is_string($debt->status) ? $debt->status : ($debt->status->value ?? '');
         if ($status === 'paid') {
@@ -54,7 +58,9 @@ class DebtService
             throw new \InvalidArgumentException('Tipe pembayaran tidak valid.');
         }
 
-        return DB::transaction(function () use ($debt, $payAmount, $type, $paymentMethod) {
+        $paymentAt = $this->paymentTimestamp($paymentDate);
+
+        return DB::transaction(function () use ($debt, $payAmount, $type, $paymentMethod, $paymentAt) {
             $newPaidAmount = $debt->paid_amount + $payAmount;
             $newStatus = $newPaidAmount >= $debt->amount ? 'paid' : 'partial';
 
@@ -64,9 +70,10 @@ class DebtService
             ]);
 
             $updatedDebt->sale->payments()->create([
-                'method' => $paymentMethod,
-                'amount' => $payAmount,
-                'source' => 'debt_payment',
+                'method'     => $paymentMethod,
+                'amount'     => $payAmount,
+                'source'     => 'debt_payment',
+                'created_at' => $paymentAt,
             ]);
 
             Log::info('Debt payment recorded', [
@@ -84,5 +91,13 @@ class DebtService
 
             return $updatedDebt;
         });
+    }
+
+    private function paymentTimestamp(?string $paymentDate): Carbon
+    {
+        $date = $paymentDate ?: today()->toDateString();
+        \App\Services\DailyClosingService::assertDateNotLocked($date);
+
+        return Carbon::parse($date)->setTimeFrom(now());
     }
 }

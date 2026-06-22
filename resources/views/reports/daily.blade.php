@@ -46,7 +46,7 @@
     </div>
 
     {{-- Stat Cards --}}
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
 
         {{-- Total Omzet --}}
         <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
@@ -123,6 +123,23 @@
             </p>
         </div>
 
+        {{-- Pengeluaran Operasional --}}
+        <div class="bg-white rounded-xl border p-4 shadow-sm" style="border-color:var(--line)">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3 bg-rose-50">
+                <svg class="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <p class="text-[10px] font-bold uppercase tracking-widest font-mono" style="color:var(--warn)">Pengeluaran Operasional</p>
+            <p class="text-lg font-bold font-mono tabular-nums mt-0.5" style="color:var(--warn)">
+                Rp {{ number_format($operationalExpenseTotal, 0, ',', '.') }}
+            </p>
+            <p class="text-[9px] mt-1 font-mono" style="color:var(--ink-mute)">
+                Tunai: Rp {{ number_format($operationalExpenseCash, 0, ',', '.') }}<br>
+                Transfer: Rp {{ number_format($operationalExpenseTransfer, 0, ',', '.') }}
+            </p>
+        </div>
+
         {{-- Pengeluaran Stok (superadmin only) --}}
         @if(auth()->user()->role->value === 'superadmin')
         @php $stockTotalOut = $stockCashOut + $stockTransferOut; @endphp
@@ -143,6 +160,81 @@
         </div>
         @endif
 
+    </div>
+
+    {{-- Rekap Pengeluaran Operasional --}}
+    <div class="bg-white rounded-xl border overflow-hidden shadow-sm" style="border-color:var(--line)">
+        <div class="px-5 py-4 border-b flex items-center justify-between" style="border-color:var(--line)">
+            <div>
+                <h3 class="text-sm font-semibold" style="color:var(--ink)">Rekap Pengeluaran Operasional</h3>
+                <p class="text-[11px] mt-0.5" style="color:var(--ink-mute)">
+                    Pengeluaran pada {{ \Illuminate\Support\Carbon::parse($date)->isoFormat('D MMMM YYYY') }}
+                    @if(auth()->user()->role->value !== 'superadmin')
+                        tidak termasuk Tarik Saldo Owner
+                    @endif
+                </p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold font-mono" style="background:#FFF1F2;color:var(--warn)">
+                Rp {{ number_format($operationalExpenseTotal, 0, ',', '.') }}
+            </span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead>
+                    <tr style="background:var(--bg-soft);border-bottom:1px solid var(--line)">
+                        <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">No</th>
+                        <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Keterangan</th>
+                        <th class="text-left px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Kategori</th>
+                        <th class="text-center px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Metode</th>
+                        <th class="text-right px-5 py-2.5 font-bold uppercase tracking-wider font-mono" style="color:var(--ink-mute)">Jumlah</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($operationalExpenses as $i => $expense)
+                    <tr style="border-bottom:1px solid var(--line)">
+                        <td class="px-5 py-2.5 font-mono" style="color:var(--ink-mute)">{{ $i + 1 }}</td>
+                        <td class="px-5 py-2.5">
+                            <div class="font-semibold" style="color:var(--ink)">{{ $expense->description }}</div>
+                            @if($expense->notes)
+                                <div class="text-[10px] mt-0.5" style="color:var(--ink-mute)">{{ $expense->notes }}</div>
+                            @endif
+                        </td>
+                        <td class="px-5 py-2.5">
+                            <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-mono text-[9px]">
+                                {{ $expense->category === 'tarik_owner' ? 'Tarik Saldo Owner' : ($expense->category === 'listrik' ? 'Listrik & Gas' : ucwords($expense->category)) }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-2.5 text-center">
+                            @if(($expense->payment_method ?? 'cash') === 'transfer')
+                                <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-mono text-[9px] font-semibold">Transfer</span>
+                            @else
+                                <span class="px-2 py-0.5 rounded-full bg-green-50 text-green-600 font-mono text-[9px] font-semibold">Tunai</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-2.5 text-right font-mono font-bold tabular-nums" style="color:var(--warn)">
+                            Rp {{ number_format($expense->amount, 0, ',', '.') }}
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="px-5 py-8 text-center text-xs" style="color:var(--ink-mute)">
+                            Belum ada pengeluaran operasional pada tanggal ini
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+                @if($operationalExpenses->count() > 0)
+                <tfoot>
+                    <tr style="background:var(--bg-soft);border-top:1.5px solid var(--line)">
+                        <td colspan="4" class="px-5 py-2.5 text-right font-bold text-xs" style="color:var(--ink-soft)">TOTAL PENGELUARAN OPERASIONAL</td>
+                        <td class="px-5 py-2.5 text-right font-mono font-bold tabular-nums" style="color:var(--warn)">
+                            Rp {{ number_format($operationalExpenseTotal, 0, ',', '.') }}
+                        </td>
+                    </tr>
+                </tfoot>
+                @endif
+            </table>
+        </div>
     </div>
 
     {{-- Main Content --}}
@@ -182,7 +274,7 @@
                                 </td>
                                 <td class="px-5 py-2.5">
                                     <div class="flex flex-wrap gap-1">
-                                        @foreach($sale->payments as $payment)
+                                        @foreach($sale->payments->where('source', 'sale') as $payment)
                                             @php
                                                 $methodVal = $payment->method->value ?? $payment->method;
                                                 $badgeStyle = match($methodVal) {

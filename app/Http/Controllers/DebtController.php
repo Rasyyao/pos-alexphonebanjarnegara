@@ -30,7 +30,13 @@ class DebtController extends Controller
     public function pay(PayDebtRequest $request, Debt $debt)
     {
         try {
-            $this->service->pay($debt, $request->type, (float) $request->amount, $request->input('payment_method', 'cash'));
+            $this->service->pay(
+                $debt,
+                $request->type,
+                (float) $request->amount,
+                $request->input('payment_method', 'cash'),
+                $request->input('payment_date')
+            );
             return back()->with('success', 'Pembayaran utang berhasil dicatat.');
         } catch (\LogicException $e) {
             return back()->with('error', $e->getMessage());

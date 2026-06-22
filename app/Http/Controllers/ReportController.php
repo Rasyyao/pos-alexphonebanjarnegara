@@ -35,23 +35,8 @@ class ReportController extends Controller
         $date = $request->date ?? today()->toDateString();
         $report = $this->finance->dailyReport($date);
         $sales  = $report['sales'];
-
-        $total_cash = 0;
-        $total_transfer = 0;
-        $total_debt = 0;
-
-        foreach ($sales as $sale) {
-            foreach ($sale->payments as $payment) {
-                $method = $payment->method->value ?? $payment->method;
-                if ($method === 'cash') {
-                    $total_cash += $payment->amount;
-                } elseif ($method === 'transfer') {
-                    $total_transfer += $payment->amount;
-                } elseif ($method === 'utang') {
-                    $total_debt += $payment->amount;
-                }
-            }
-        }
+        $dailyExpenses = $this->dailyExpenseSummary($date);
+        $dailyPayments = $this->dailyPaymentSummary($date);
 
         // Stock purchased on this date (superadmin only)
         $unitsToday        = \App\Models\Unit::with('model.brand')
@@ -71,14 +56,67 @@ class ReportController extends Controller
             'sales'           => $sales,
             'total_revenue'   => $report['total_revenue'],
             'total_profit'    => $report['total_profit'],
-            'total_cash'      => $total_cash,
-            'total_transfer'  => $total_transfer,
-            'total_debt'      => $total_debt,
+            'total_cash'      => $dailyPayments['cash'],
+            'total_transfer'  => $dailyPayments['transfer'],
+            'total_debt'      => $dailyPayments['debt'],
+            'operationalExpenses' => $dailyExpenses['expenses'],
+            'operationalExpenseTotal' => $dailyExpenses['total'],
+            'operationalExpenseCash' => $dailyExpenses['cash'],
+            'operationalExpenseTransfer' => $dailyExpenses['transfer'],
             'unitsToday'      => $unitsToday,
             'accToday'        => $accToday,
             'stockCashOut'    => $stockCashOut,
             'stockTransferOut'=> $stockTransferOut,
         ]);
+    }
+
+    private function dailyPaymentSummary(string $date): array
+    {
+        $receivedByMethod = \App\Models\SalePayment::whereIn('method', ['cash', 'transfer'])
+            ->where(function ($q) use ($date) {
+                $q->where(function ($initial) use ($date) {
+                    $initial
+                        ->where('source', 'sale')
+                        ->whereHas('sale', fn($sq) => $sq->where('status', 'approved')->whereDate('sale_date', $date));
+                })->orWhere(function ($repayment) use ($date) {
+                    $repayment
+                        ->where('source', 'debt_payment')
+                        ->whereDate('created_at', $date)
+                        ->whereHas('sale', fn($sq) => $sq->where('status', 'approved'));
+                });
+            })
+            ->selectRaw('method, SUM(amount) as total')
+            ->groupBy('method')
+            ->pluck('total', 'method');
+
+        $debt = (float) \App\Models\SalePayment::where('method', 'utang')
+            ->where('source', 'sale')
+            ->whereHas('sale', fn($q) => $q->where('status', 'approved')->whereDate('sale_date', $date))
+            ->sum('amount');
+
+        return [
+            'cash'     => (float) ($receivedByMethod['cash'] ?? 0),
+            'transfer' => (float) ($receivedByMethod['transfer'] ?? 0),
+            'debt'     => $debt,
+        ];
+    }
+
+    private function dailyExpenseSummary(string $date): array
+    {
+        $query = \App\Models\Expense::with('creator')->whereDate('expense_date', $date);
+
+        if (!(auth()->user()?->isSuperAdmin() ?? false)) {
+            $query->where('category', '!=', 'tarik_owner');
+        }
+
+        $expenses = $query->latest('expense_date')->latest('created_at')->get();
+
+        return [
+            'expenses' => $expenses,
+            'total'    => (float) $expenses->sum('amount'),
+            'cash'     => (float) $expenses->where('payment_method', 'cash')->sum('amount'),
+            'transfer' => (float) $expenses->where('payment_method', 'transfer')->sum('amount'),
+        ];
     }
 
     public function stock(Request $request)
@@ -261,25 +299,21 @@ class ReportController extends Controller
         $sales       = $report['sales'];
         $totalRev    = (float) $report['total_revenue'];
         $totalProfit = (float) $report['total_profit'];
-
-        $totalCash = $totalTransfer = $totalDebt = 0.0;
-        foreach ($sales as $s) {
-            foreach ($s->payments as $p) {
-                $m = $p->method->value ?? $p->method;
-                if ($m === 'cash')         $totalCash     += $p->amount;
-                elseif ($m === 'transfer') $totalTransfer += $p->amount;
-                elseif ($m === 'utang')    $totalDebt     += $p->amount;
-            }
-        }
+        $dailyExpenses = $this->dailyExpenseSummary($date);
+        $dailyPayments = $this->dailyPaymentSummary($date);
 
         $data = [
             'sales'         => $sales,
             'date'          => \Carbon\Carbon::parse($date)->isoFormat('D MMMM Y'),
             'totalRev'      => $totalRev,
             'totalProfit'   => $totalProfit,
-            'totalCash'     => $totalCash,
-            'totalTransfer' => $totalTransfer,
-            'totalDebt'     => $totalDebt,
+            'totalCash'     => $dailyPayments['cash'],
+            'totalTransfer' => $dailyPayments['transfer'],
+            'totalDebt'     => $dailyPayments['debt'],
+            'operationalExpenses' => $dailyExpenses['expenses'],
+            'operationalExpenseTotal' => $dailyExpenses['total'],
+            'operationalExpenseCash' => $dailyExpenses['cash'],
+            'operationalExpenseTransfer' => $dailyExpenses['transfer'],
             'txCount'       => count($sales),
             'printedAt'     => now()->isoFormat('D MMMM YYYY, HH:mm') . ' WIB',
         ];
@@ -1062,15 +1096,15 @@ class ReportController extends Controller
         $sales      = $report['sales'];
         $totalRev   = (float) $report['total_revenue'];
         $totalProfit= (float) $report['total_profit'];
-        $totalCash = $totalTransfer = $totalDebt = 0.0;
-        foreach ($sales as $s) {
-            foreach ($s->payments as $p) {
-                $m = $p->method->value ?? $p->method;
-                if ($m === 'cash')         $totalCash     += $p->amount;
-                elseif ($m === 'transfer') $totalTransfer += $p->amount;
-                elseif ($m === 'utang')    $totalDebt     += $p->amount;
-            }
-        }
+        $dailyExpenses = $this->dailyExpenseSummary($date);
+        $operationalExpenses = $dailyExpenses['expenses'];
+        $operationalExpenseTotal = $dailyExpenses['total'];
+        $operationalExpenseCash = $dailyExpenses['cash'];
+        $operationalExpenseTransfer = $dailyExpenses['transfer'];
+        $dailyPayments = $this->dailyPaymentSummary($date);
+        $totalCash = $dailyPayments['cash'];
+        $totalTransfer = $dailyPayments['transfer'];
+        $totalDebt = $dailyPayments['debt'];
         $txCount   = count($sales);
         $avgPerTx  = $txCount > 0 ? $totalRev / $txCount : 0;
         $dateStr   = now()->format('d F Y H:i');
@@ -1120,6 +1154,7 @@ class ReportController extends Controller
             ['Penerimaan Cash', $totalCash],
             ['Penerimaan Transfer', $totalTransfer],
             ['Piutang (Hutang)', $totalDebt],
+            ['Pengeluaran Operasional', $operationalExpenseTotal],
             ['Jumlah Transaksi', $txCount],
             ['Rata-rata per Transaksi', $avgPerTx],
         ];
@@ -1137,8 +1172,8 @@ class ReportController extends Controller
             ]);
             $sheet->getStyle("B{$mRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-            // Format numbers (skip count row idx=5)
-            if ($idx !== 5) {
+            // Format numbers (skip count row idx=6)
+            if ($idx !== 6) {
                 $sheet->getStyle("B{$mRow}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
             }
 
@@ -1213,7 +1248,7 @@ class ReportController extends Controller
         $no = 1;
         foreach ($sales as $s) {
             $sCash = $sTransfer = $sDebt = 0.0;
-            foreach ($s->payments as $p) {
+            foreach ($s->payments->where('source', 'sale') as $p) {
                 $m = $p->method->value ?? $p->method;
                 if ($m === 'cash')         $sCash     += $p->amount;
                 elseif ($m === 'transfer') $sTransfer += $p->amount;
@@ -1330,6 +1365,71 @@ class ReportController extends Controller
             ]);
 
             $sheet->getRowDimension($row)->setRowHeight(24);
+            $row++;
+        }
+
+        $row += 3;
+        $sheet->mergeCells("A{$row}:F{$row}");
+        $sheet->setCellValue("A{$row}", 'REKAP PENGELUARAN OPERASIONAL');
+        $sheet->getStyle("A{$row}:F{$row}")->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'B91C1C']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+        $row++;
+        $sheet->fromArray(['NO', 'TANGGAL', 'KETERANGAN', 'KATEGORI', 'METODE', 'JUMLAH'], null, "A{$row}");
+        $sheet->getStyle("A{$row}:F{$row}")->applyFromArray([
+            'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => '7F1D1D']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEE2E2']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FECACA']]],
+        ]);
+        $row++;
+
+        if ($operationalExpenses->isEmpty()) {
+            $sheet->mergeCells("A{$row}:F{$row}");
+            $sheet->setCellValue("A{$row}", 'Tidak ada pengeluaran operasional pada tanggal ini');
+            $sheet->getStyle("A{$row}:F{$row}")->applyFromArray([
+                'font' => ['name' => 'Segoe UI', 'size' => 9, 'italic' => true],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+            $row++;
+        } else {
+            foreach ($operationalExpenses as $idx => $expense) {
+                $categoryLabel = $expense->category === 'tarik_owner'
+                    ? 'Tarik Saldo Owner'
+                    : ($expense->category === 'listrik' ? 'Listrik & Gas' : ucwords($expense->category));
+                $methodLabel = ($expense->payment_method ?? 'cash') === 'transfer' ? 'Transfer' : 'Tunai';
+
+                $sheet->setCellValue("A{$row}", $idx + 1);
+                $sheet->setCellValue("B{$row}", $expense->expense_date->format('d/m/Y'));
+                $sheet->setCellValue("C{$row}", $expense->description);
+                $sheet->setCellValue("D{$row}", $categoryLabel);
+                $sheet->setCellValue("E{$row}", $methodLabel);
+                $sheet->setCellValue("F{$row}", $expense->amount);
+                $sheet->getStyle("A{$row}:F{$row}")->applyFromArray([
+                    'font' => ['name' => 'Segoe UI', 'size' => 9],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $idx % 2 === 0 ? 'FFFFFF' : 'FFF7F7']],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FEE2E2']]],
+                ]);
+                $sheet->getStyle("A{$row}:B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("E{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+                $sheet->getStyle("F{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $row++;
+            }
+
+            $sheet->mergeCells("A{$row}:E{$row}");
+            $sheet->setCellValue("A{$row}", 'TOTAL PENGELUARAN OPERASIONAL');
+            $sheet->setCellValue("F{$row}", $operationalExpenseTotal);
+            $sheet->getStyle("A{$row}:F{$row}")->applyFromArray([
+                'font' => ['name' => 'Segoe UI', 'bold' => true, 'size' => 9, 'color' => ['rgb' => '7F1D1D']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEE2E2']],
+                'borders' => ['top' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => 'B91C1C']]],
+            ]);
+            $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode('"Rp "#,##0');
+            $sheet->getStyle("F{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         }
 
         // 9. COLUMN WIDTHS & ROW HEIGHTS
