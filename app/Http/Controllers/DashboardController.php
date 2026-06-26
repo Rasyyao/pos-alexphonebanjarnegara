@@ -34,9 +34,14 @@ class DashboardController extends Controller
         $totalProfit      = $this->sales->totalProfit();
         $totalAccessories = $this->accessories->totalStockQty();
         
-        $totalExpExOwner  = (float) \App\Models\Expense::where('category', '!=', 'tarik_owner')->sum('amount');
-        $totalHPPurchases = (float) \App\Models\Unit::sum('purchase_price');
-        $totalNetProfit   = $totalProfit - $totalExpExOwner - $totalHPPurchases;
+        $todayExpensesQuery = \App\Models\Expense::whereDate('expense_date', today());
+        if (auth()->user()?->isSuperAdmin()) {
+            $todayExpensesQuery->where('category', '!=', 'tarik_owner');
+        } else {
+            $todayExpensesQuery->whereNotIn('category', ['tarik_owner', 'gaji']);
+        }
+        $todayExpenses = (float) $todayExpensesQuery->sum('amount');
+        $todayNetProfit = ($todayStats['profit'] ?? 0) - $todayExpenses;
         
         $brandDist        = $this->units->brandDistribution();
         $typeDist         = $this->units->typeDistribution();
@@ -59,7 +64,7 @@ class DashboardController extends Controller
         return view('dashboard.index', compact(
             'stockCounts', 'todayStats', 'weekStats', 'monthStats', 'weeklyRevenue',
             'paymentBreakdown', 'latestUnits', 'readyUnits', 'recentSales', 'pendingDebts', 'assetValue',
-            'totalRevenue', 'totalProfit', 'totalNetProfit', 'totalAccessories', 'brandDist', 'typeDist', 'statusDist',
+            'totalRevenue', 'totalProfit', 'todayNetProfit', 'totalAccessories', 'brandDist', 'typeDist', 'statusDist',
             'monthlyLabels', 'monthlyNetProfits', 'monthlyExpData'
         ));
     }

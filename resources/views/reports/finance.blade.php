@@ -149,9 +149,9 @@
                 </div>
 
                 {{-- Right: Filter + Export buttons --}}
-                <div class="flex items-center gap-2 shrink-0 self-end md:self-auto">
+                <div class="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto mt-2 md:mt-0 justify-start md:justify-end">
                     <button type="submit"
-                        class="text-xs h-9 px-4 font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
+                        class="text-xs h-9 px-4 font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm flex-1 md:flex-none"
                         style="background:var(--accent);color:#fff" onmouseenter="this.style.filter='brightness(0.95)'"
                         onmouseleave="this.style.filter='none'">
                         Filter Periode
@@ -159,10 +159,10 @@
                     @if (in_array(auth()->user()->role->value, ['superadmin', 'admin']))
                         <a href="{{ route('reports.pdf', ['type' => 'finance', 'start_date' => request('start_date'), 'end_date' => request('end_date')]) }}"
                             target="_blank"
-                            class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center gap-1.5 border shadow-sm"
-                            style="background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE"
+                            class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 border shadow-sm flex-1 md:flex-none"
+                            style="background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE;white-space:nowrap"
                             onmouseenter="this.style.background='#DBEAFE'" onmouseleave="this.style.background='#EFF6FF'">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                 stroke-width="2.2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -170,10 +170,10 @@
                             Export PDF
                         </a>
                         <a href="{{ route('reports.export', ['type' => 'finance', 'start_date' => request('start_date'), 'end_date' => request('end_date')]) }}"
-                            class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center gap-1.5 border shadow-sm"
-                            style="background:#F0FDF4;color:var(--success);border-color:#BBF7D0"
+                            class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 border shadow-sm flex-1 md:flex-none"
+                            style="background:#F0FDF4;color:var(--success);border-color:#BBF7D0;white-space:nowrap"
                             onmouseenter="this.style.background='#DCFCE7'" onmouseleave="this.style.background='#F0FDF4'">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                 stroke-width="2.2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -249,7 +249,7 @@
             }
         @endphp
 
-        <div class="grid grid-cols-2 {{ $isSuperadmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5' }} gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 {{ $isSuperadmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5' }} gap-3">
 
             {{-- 1. Omzet --}}
             <div class="bg-white rounded-xl border p-5 card-lift"
@@ -377,7 +377,7 @@
                                 dan pembelian stok HP toko yang mengurangi kas/ATM</p>
                         </div>
  
-                        <div class="flex items-center gap-3">
+                        <div class="flex flex-wrap items-center gap-3">
                             {{-- Type Filter Segmented Control --}}
                             <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg text-xs font-semibold"
                                 style="height: 36px;">

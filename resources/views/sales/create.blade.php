@@ -75,7 +75,8 @@ function syncMoney(displayEl, hiddenId) {
         var search = document.createElement('input');
         search.type = 'text';
         search.placeholder = 'Cari...';
-        search.style.cssText = 'width:100%;padding:10px 14px;border:none;border-bottom:1px solid var(--line);outline:none;font-size:13px;color:var(--ink);box-sizing:border-box;background:#fff';
+        var searchFs = window.innerWidth < 768 ? '16px' : '13px';
+        search.style.cssText = 'width:100%;padding:10px 14px;border:none;border-bottom:1px solid var(--line);outline:none;font-size:' + searchFs + ';color:var(--ink);box-sizing:border-box;background:#fff';
 
         var list = document.createElement('div');
         list.style.cssText = 'max-height:240px;overflow-y:auto';

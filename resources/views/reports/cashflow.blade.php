@@ -45,19 +45,19 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0 self-end md:self-auto">
+                <div class="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto mt-2 md:mt-0 justify-start md:justify-end">
                     <button type="submit"
-                        class="text-xs h-9 px-4 font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
+                        class="text-xs h-9 px-4 font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm flex-1 md:flex-none"
                         style="background:var(--accent);color:#fff" onmouseenter="this.style.filter='brightness(0.95)'"
                         onmouseleave="this.style.filter='none'">
                         Filter Periode
                     </button>
                     @if (auth()->user()->role->value === 'superadmin')
                         <a href="{{ route('reports.export', ['type' => 'finance', 'start_date' => request('start_date'), 'end_date' => request('end_date')]) }}"
-                            class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center gap-1.5 border shadow-sm"
-                            style="background:#F0FDF4;color:var(--success);border-color:#BBF7D0"
+                            class="text-xs h-9 px-4 font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 border shadow-sm flex-1 md:flex-none"
+                            style="background:#F0FDF4;color:var(--success);border-color:#BBF7D0;white-space:nowrap"
                             onmouseenter="this.style.background='#DCFCE7'" onmouseleave="this.style.background='#F0FDF4'">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                 stroke-width="2.2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -106,7 +106,7 @@
             $netCash = $cashflow['net'];
             $totalAset = ($assetValue ?? 0) + ($accAssetValue ?? 0) + $modalSekarang;
         @endphp
-        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
 
             {{-- 1. Nominal Aset --}}
             <div class="bg-white rounded-xl border p-5 card-lift" style="border-color:var(--line)">
@@ -303,7 +303,7 @@
             <div class="p-6 space-y-6">
 
                 {{-- Distribution Category Cards --}}
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                     @foreach ($distCategories as $cat)
                         <div class="rounded-xl border p-3.5 flex flex-col gap-2"
                             style="border-color:var(--line);background:{{ $cat['bg'] }}">

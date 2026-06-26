@@ -2,14 +2,14 @@
 @section('title', 'Penjualan')
 
 @section('content')
-<div class="flex items-center justify-between mb-5">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
     <div>
         <h2 class="text-xl font-bold" style="color:var(--ink)">Daftar Transaksi</h2>
         <p class="text-xs mt-0.5" style="color:var(--ink-mute)">Kelola dan pantau semua transaksi penjualan</p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
         @if(auth()->user()->role->value === 'superadmin')
-        <div class="flex items-center gap-1.5">
+        <div class="flex flex-wrap items-center gap-2">
             <div class="flex items-center px-2.5 rounded-lg border bg-[#F8FAFC]" style="border-color:var(--line);height:36px">
                 <input type="date" id="export-date" value="{{ today()->toDateString() }}"
                        class="text-xs focus:outline-none bg-transparent"
@@ -37,7 +37,7 @@
             </a>
         </div>
         @endif
-        <a href="{{ route('sales.create') }}" class="btn-primary" style="height:36px;padding:0 16px;font-size:13px">
+        <a href="{{ route('sales.create') }}" class="btn-primary" style="height:36px;padding:0 16px;font-size:13px;display:inline-flex;align-items:center;">
             + Input Transaksi
         </a>
     </div>

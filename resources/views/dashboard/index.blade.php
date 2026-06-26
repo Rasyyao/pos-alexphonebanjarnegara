@@ -38,7 +38,7 @@
     </div>
 
     {{-- ── KPI Row ── --}}
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
         {{-- Stok HP --}}
         <div class="bg-white rounded-xl border p-5 card-lift" style="border-color:var(--line)">
@@ -78,15 +78,15 @@
         {{-- Total Laba --}}
         <div class="bg-white rounded-xl border p-5 card-lift" style="border-color:var(--line)">
             <div class="flex items-start justify-between mb-3">
-                <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Laba Bersih</div>
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(16,128,107,.1)">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" style="color:var(--success)"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                <div class="text-[11px] font-medium uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Laba Bersih (Hari Ini)</div>
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:{{ ($todayNetProfit ?? 0) < 0 ? 'rgba(194,65,12,.1)' : 'rgba(16,128,107,.1)' }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" style="color:{{ ($todayNetProfit ?? 0) < 0 ? 'var(--warn)' : 'var(--success)' }}"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
                 </div>
             </div>
-            <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums" style="color:var(--success)">
-                {{ number_format($totalNetProfit ?? 0, 0, ',', '.') }}
+            <div class="text-2xl font-semibold leading-none mb-1 font-mono tabular-nums" style="color:{{ ($todayNetProfit ?? 0) < 0 ? 'var(--warn)' : 'var(--success)' }}">
+                {{ number_format($todayNetProfit ?? 0, 0, ',', '.') }}
             </div>
-            <div class="text-xs" style="color:var(--ink-mute)">Penjualan dikurangi biaya</div>
+            <div class="text-xs" style="color:var(--ink-mute)">Penjualan dikurangi biaya hari ini</div>
         </div>
 
         {{-- Total Aksesoris --}}
@@ -222,20 +222,20 @@
                 $maxProfit = count($monthlyNetProfits) > 0 ? max($monthlyNetProfits) : 0;
                 $thisMonthProfit = count($monthlyNetProfits) > 0 ? end($monthlyNetProfits) : 0;
             @endphp
-            <div class="grid grid-cols-3 border-t mt-4 pt-4 divide-x" style="border-color:var(--line)">
-                <div class="pr-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-0 border-t mt-4 pt-4 divide-y sm:divide-y-0 sm:divide-x divide-gray-100" style="border-color:var(--line)">
+                <div class="sm:pr-4 pb-2 sm:pb-0">
                     <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Rata-rata Laba</span>
                     <span class="text-sm font-bold font-mono {{ $avgProfit < 0 ? 'text-red-600' : 'text-emerald-600' }}" style="color:{{ $avgProfit < 0 ? 'var(--warn)' : 'var(--success)' }}">
                         Rp {{ number_format($avgProfit, 0, ',', '.') }}
                     </span>
                 </div>
-                <div class="px-4">
+                <div class="sm:px-4 py-2 sm:py-0">
                     <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Laba Tertinggi</span>
                     <span class="text-sm font-bold font-mono text-blue-600" style="color:#2563EB">
                         Rp {{ number_format($maxProfit, 0, ',', '.') }}
                     </span>
                 </div>
-                <div class="pl-4">
+                <div class="sm:pl-4 pt-2 sm:pt-0">
                     <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--success)">Laba Bulan Ini</span>
                     <span class="text-sm font-bold font-mono {{ $thisMonthProfit < 0 ? 'text-red-600' : 'text-emerald-600' }}" style="color:{{ $thisMonthProfit < 0 ? 'var(--warn)' : 'var(--success)' }}">
                         Rp {{ number_format($thisMonthProfit, 0, ',', '.') }}
@@ -266,20 +266,20 @@
                 $totalExpense = array_sum($monthlyExpData);
                 $thisMonthExpense = count($monthlyExpData) > 0 ? end($monthlyExpData) : 0;
             @endphp
-            <div class="grid grid-cols-3 border-t mt-4 pt-4 divide-x" style="border-color:var(--line)">
-                <div class="pr-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-0 border-t mt-4 pt-4 divide-y sm:divide-y-0 sm:divide-x divide-gray-100" style="border-color:var(--line)">
+                <div class="sm:pr-4 pb-2 sm:pb-0">
                     <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Rata-rata</span>
                     <span class="text-sm font-bold font-mono text-red-600" style="color:var(--warn)">
                         Rp {{ number_format($avgExpense, 0, ',', '.') }}
                     </span>
                 </div>
-                <div class="px-4">
+                <div class="sm:px-4 py-2 sm:py-0">
                     <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Total 6 Bln</span>
                     <span class="text-sm font-bold font-mono text-red-600" style="color:var(--warn)">
                         Rp {{ number_format($totalExpense, 0, ',', '.') }}
                     </span>
                 </div>
-                <div class="pl-4">
+                <div class="sm:pl-4 pt-2 sm:pt-0">
                     <span class="text-[10px] font-medium uppercase tracking-widest font-mono block mb-1" style="color:var(--ink-mute)">Bulan Ini</span>
                     <span class="text-sm font-bold font-mono text-red-600" style="color:var(--warn)">
                         Rp {{ number_format($thisMonthExpense, 0, ',', '.') }}
@@ -448,64 +448,66 @@
             <a href="{{ route('units.create') }}" class="text-xs" style="color:var(--accent)">Tambah unit pertama →</a>
         </div>
         @else
-        <table class="w-full">
-            <thead>
-                <tr style="background:var(--bg-soft);border-bottom:1px solid var(--line)">
-                    <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Merek &amp; Nama Handphone</th>
-                    <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono hidden md:table-cell" style="color:var(--ink-mute)">Detail Fisik</th>
-                    <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono hidden lg:table-cell" style="color:var(--ink-mute)">Harga Modal</th>
-                    <th class="text-right px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Kondisi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($readyUnits as $unit)
-                <tr style="border-bottom:1px solid var(--line)"
-                    onmouseenter="this.style.background='var(--bg-soft)'" onmouseleave="this.style.background=''">
-                    <td class="px-5 py-3.5">
-                        <div class="text-sm font-semibold" style="color:var(--ink)">
-                            {{ $unit->model->name ?? '—' }}
-                        </div>
-                        <div class="text-[11px] font-medium mt-0.5 uppercase tracking-wide" style="color:var(--accent)">
-                            {{ $unit->model->brand->name ?? '—' }}
-                        </div>
-                    </td>
-                    <td class="px-5 py-3.5 hidden md:table-cell">
-                        <div class="text-xs font-mono" style="color:var(--ink-soft)">
-                            <span>Warna: <span style="color:var(--ink)">{{ $unit->color }}</span></span>
-                        </div>
-                        <div class="text-xs font-mono mt-0.5" style="color:var(--ink-soft)">
-                            RAM/ROM: <span style="color:var(--ink)">{{ $unit->ram }}/{{ $unit->rom }}</span>
-                        </div>
-                        <div class="text-xs font-mono mt-0.5" style="color:var(--ink-soft)">
-                            Kategori: <span class="font-semibold" style="{{ $unit->unit_type->value === 'baru' ? 'color:var(--accent)' : 'color:#B45309' }}">{{ ucfirst($unit->unit_type->value) }}</span>
-                        </div>
-                    </td>
-                    <td class="px-5 py-3.5 hidden lg:table-cell">
-                        <span class="text-sm font-mono tabular-nums font-semibold" style="color:var(--ink)">
-                            Rp {{ number_format($unit->purchase_price, 0, ',', '.') }}
-                        </span>
-                    </td>
-                    <td class="px-5 py-3.5 text-right">
-                        @if($unit->grade)
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider" style="{{ $unit->grade === 'A' ? 'background:var(--ink);color:#fff' : 'background:#92400E;color:#fff' }}">
-                            Grade {{ $unit->grade }}
-                        </span>
-                        @else
-                            @if($unit->unit_type->value === 'baru')
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider" style="background:var(--ink);color:#fff">
-                                Grade A
+        <div class="overflow-x-auto w-full">
+            <table class="w-full min-w-[600px] md:min-w-0">
+                <thead>
+                    <tr style="background:var(--bg-soft);border-bottom:1px solid var(--line)">
+                        <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Merek &amp; Nama Handphone</th>
+                        <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono hidden md:table-cell" style="color:var(--ink-mute)">Detail Fisik</th>
+                        <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono hidden lg:table-cell" style="color:var(--ink-mute)">Harga Modal</th>
+                        <th class="text-right px-5 py-3 text-[11px] font-semibold uppercase tracking-widest font-mono" style="color:var(--ink-mute)">Kondisi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($readyUnits as $unit)
+                    <tr style="border-bottom:1px solid var(--line)"
+                        onmouseenter="this.style.background='var(--bg-soft)'" onmouseleave="this.style.background=''">
+                        <td class="px-5 py-3.5">
+                            <div class="text-sm font-semibold" style="color:var(--ink)">
+                                {{ $unit->model->name ?? '—' }}
+                            </div>
+                            <div class="text-[11px] font-medium mt-0.5 uppercase tracking-wide" style="color:var(--accent)">
+                                {{ $unit->model->brand->name ?? '—' }}
+                            </div>
+                        </td>
+                        <td class="px-5 py-3.5 hidden md:table-cell">
+                            <div class="text-xs font-mono" style="color:var(--ink-soft)">
+                                <span>Warna: <span style="color:var(--ink)">{{ $unit->color }}</span></span>
+                            </div>
+                            <div class="text-xs font-mono mt-0.5" style="color:var(--ink-soft)">
+                                RAM/ROM: <span style="color:var(--ink)">{{ $unit->ram }}/{{ $unit->rom }}</span>
+                            </div>
+                            <div class="text-xs font-mono mt-0.5" style="color:var(--ink-soft)">
+                                Kategori: <span class="font-semibold" style="{{ $unit->unit_type->value === 'baru' ? 'color:var(--accent)' : 'color:#B45309' }}">{{ ucfirst($unit->unit_type->value) }}</span>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3.5 hidden lg:table-cell">
+                            <span class="text-sm font-mono tabular-nums font-semibold" style="color:var(--ink)">
+                                Rp {{ number_format($unit->purchase_price, 0, ',', '.') }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3.5 text-right">
+                            @if($unit->grade)
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider" style="{{ $unit->grade === 'A' ? 'background:var(--ink);color:#fff' : 'background:#92400E;color:#fff' }}">
+                                Grade {{ $unit->grade }}
                             </span>
                             @else
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider" style="background:#92400E;color:#fff">
-                                Second
-                            </span>
+                                @if($unit->unit_type->value === 'baru')
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider" style="background:var(--ink);color:#fff">
+                                    Grade A
+                                </span>
+                                @else
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider" style="background:#92400E;color:#fff">
+                                    Second
+                                </span>
+                                @endif
                             @endif
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
         @endif
     </div>
 </div>

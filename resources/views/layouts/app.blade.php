@@ -262,6 +262,13 @@
         .rounded-lg {
             border-radius: 12px !important;
         }
+
+        /* Prevent iOS Zoom on Input Focus */
+        @media (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
     </style>
 </head>
 
@@ -553,7 +560,7 @@
                 </div>
             @endif
 
-            <main class="flex-1" style="padding: 2.5rem 2rem 3rem;">
+            <main class="flex-1 px-4 py-6 md:px-8 md:py-10">
                 @yield('content')
             </main>
         </div>
